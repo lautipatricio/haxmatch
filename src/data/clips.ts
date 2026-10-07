@@ -5,7 +5,7 @@ import type { Reel, Usuario } from '../domain/types'
 import { tokenDeSesion } from './cuenta'
 import { YO } from './seed'
 import { SUPABASE_URL } from './supabase'
-import { rpc } from './transporte'
+import { SIN_BASE, rpc } from './transporte'
 
 interface FilaReel {
   id: string; tiktok_id: string; titulo: string; hashtags: string[]; duracion: number | null
@@ -80,6 +80,16 @@ export const clipsApi = {
   reaccionar: (reel: string, marcar: boolean) => hacer('reaccionar', { p_reel: reel, p_marcar: marcar }),
   actualizar: () => hacer('tiktok_actualizar'),
   desvincular: () => hacer('tiktok_desvincular'),
+  /**
+   * Le pide a TikTok los videos nuevos de las cuentas vinculadas. Devuelve a cuántas
+   * se les pidió (después hay que esperar unos segundos y volver a leer), o el problema.
+   */
+  refrescar: async (): Promise<{ pedidas: number; error?: string }> => {
+    const r = await rpc<number>('clips_refrescar')
+    // Si la base todavía no tiene esta función, se sigue con lo que hay.
+    if (r.error) return r.error === SIN_BASE ? { pedidas: 0 } : { pedidas: 0, error: r.error }
+    return { pedidas: Number(r.data) || 0 }
+  },
 }
 
 /** ¿La web ya tiene cargadas las claves de TikTok? */

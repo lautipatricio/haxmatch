@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type TouchEvent, type WheelEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { REAL } from '../config'
 import { RESULTADO_TIKTOK, tiktokHabilitado } from '../data/clips'
@@ -128,6 +128,9 @@ function Reproductor({ id, titulo }: { id: string; titulo: string }) {
   )
 }
 
+/** Cuánto hay que deslizar hacia abajo (ya frenado a la mitad) para que busque clips nuevos. */
+const UMBRAL = 64
+
 /** Feed de clips: un video por pantalla, se pasa al siguiente deslizando (como TikTok). */
 export function Clips() {
   const s = useStore()
@@ -147,6 +150,54 @@ export function Clips() {
   const activo = posicion === -1 ? 0 : posicion
   /** Reacciones a los clips de muestra: no se guardan. */
   const [gustan, setGustan] = useState<string[]>([])
+
+  // Deslizar hacia abajo estando en el primer clip (o girar la rueda hacia arriba): busca clips nuevos.
+  const [tiron, setTiron] = useState(0)
+  const [buscando, setBuscando] = useState(false)
+  const [novedad, setNovedad] = useState<string | null>(null)
+  const gesto = useRef({ desde: null as number | null, tiron: 0, rueda: 0, ruedaAt: -1e9, ruedaArriba: false, ocupado: false })
+  const refrescar = s.refrescarClips
+  const actualizar = useCallback(async () => {
+    const g = gesto.current
+    if (g.ocupado) return
+    g.ocupado = true
+    setNovedad(null); setBuscando(true)
+    const texto = await refrescar()
+    setBuscando(false); setNovedad(texto)
+    // Los clips nuevos entran arriba de todo: se vuelve ahí para verlos.
+    window.requestAnimationFrame(() => lista.current?.scrollTo({ top: 0, behavior: 'smooth' }))
+    window.setTimeout(() => { setNovedad(null); g.ocupado = false }, 2500)
+  }, [refrescar])
+  const arriba = () => (lista.current?.scrollTop ?? 1) <= 0
+  const alTocar = (e: TouchEvent) => {
+    const g = gesto.current
+    g.desde = !g.ocupado && arriba() ? e.touches[0].clientY : null
+    g.tiron = 0
+  }
+  const alMover = (e: TouchEvent) => {
+    const g = gesto.current
+    if (g.desde === null) return
+    // Si la lista se movió, es un deslizamiento común y no un pedido de actualizar.
+    if (!arriba()) g.desde = null
+    g.tiron = g.desde === null ? 0 : Math.max(0, Math.min((e.touches[0].clientY - g.desde) * 0.5, 96))
+    setTiron(g.tiron)
+  }
+  const alSoltar = () => {
+    const g = gesto.current
+    const llego = g.desde !== null && g.tiron >= UMBRAL
+    g.desde = null; g.tiron = 0
+    setTiron(0)
+    if (llego) void actualizar()
+  }
+  const alRodar = (e: WheelEvent) => {
+    const g = gesto.current
+    // Cuenta solo un giro que empezó estando arriba de todo (no el envión de haber vuelto al primero).
+    if (e.timeStamp - g.ruedaAt > 400) { g.rueda = 0; g.ruedaArriba = arriba() }
+    g.ruedaAt = e.timeStamp
+    if (g.ocupado || !g.ruedaArriba || e.deltaY >= 0) { g.rueda = 0; return }
+    g.rueda -= e.deltaY
+    if (g.rueda > 150) { g.rueda = 0; g.ruedaArriba = false; void actualizar() }
+  }
 
   // Con servidor: se traen los clips al entrar y cada tanto mientras la pantalla está abierta.
   useEffect(() => {
@@ -194,7 +245,8 @@ export function Clips() {
   return (
     <div className="screen">
       <div className="screen">
-        <div className="feed" ref={lista} aria-label="Clips. Deslizá para pasar al siguiente">
+        <div className="feed" ref={lista} aria-label="Clips. Deslizá para pasar al siguiente. En el primero, deslizá hacia abajo para buscar clips nuevos"
+          onTouchStart={alTocar} onTouchMove={alMover} onTouchEnd={alSoltar} onTouchCancel={alSoltar} onWheel={alRodar}>
           {reels.map((r, i) => {
             const mio = r.userId === YO
             const autor = s.usuarios[r.userId]
@@ -241,6 +293,12 @@ export function Clips() {
             )
           })}
         </div>
+        {(tiron > 0 || buscando || novedad) && (
+          <div className="feed-aviso" role="status"
+            style={!buscando && !novedad ? { opacity: Math.min(1, tiron / UMBRAL), transform: `translate(-50%, ${Math.round(tiron - UMBRAL)}px)` } : undefined}>
+            {buscando ? 'Buscando clips nuevos…' : novedad ?? (tiron >= UMBRAL ? 'Soltá para actualizar' : 'Deslizá para actualizar')}
+          </div>
+        )}
         <div className="feed-top">
           <Head title="Clips">
             <Link className="btn btn--sec" to="/clips/mis-videos">{s.tiktok ? 'Mis videos' : 'Vincular TikTok'}</Link>

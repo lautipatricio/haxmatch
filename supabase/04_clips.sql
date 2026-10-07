@@ -399,6 +399,33 @@ begin
   return v;
 end $$;
 
+-- "Deslizar para actualizar" en Clips: le pide a TikTok los videos nuevos de las
+-- cuentas vinculadas. La mía siempre; las de los demás, si hace más de 2 minutos
+-- que no se revisan. Hasta 20 por vez. Devuelve cuántas pidió.
+create or replace function public.clips_refrescar()
+returns int language plpgsql security definer set search_path = '' as $$
+declare
+  yo uuid := (select auth.uid());
+  c record;
+  n int := 0;
+begin
+  if yo is null then
+    raise exception 'Hay que entrar con Discord';
+  end if;
+  for c in
+    select user_id from public.tiktok_cuentas
+    where error is null
+      and (user_id = yo or ((sincronizada_at is null or sincronizada_at < now() - interval '2 minutes')
+                            and (pedida_at is null or pedida_at < now() - interval '2 minutes')))
+    order by (user_id = yo) desc, sincronizada_at nulls first limit 20
+  loop
+    if public._tiktok_sincronizar(c.user_id) = 'pedido' then
+      n := n + 1;
+    end if;
+  end loop;
+  return n;
+end $$;
+
 -- Desvincular TikTok: se borran las llaves y todos mis videos, y se le avisa a TikTok.
 create or replace function public.tiktok_desvincular()
 returns void language plpgsql security definer set search_path = '' as $$
@@ -463,7 +490,7 @@ from public, anon, authenticated;
 
 revoke all on function
   public.clips(), public.reel_visible(uuid, boolean), public.reaccionar(uuid, boolean),
-  public.tiktok_actualizar(), public.tiktok_desvincular(),
+  public.tiktok_actualizar(), public.tiktok_desvincular(), public.clips_refrescar(),
   public.tiktok_empezar(text, uuid), public.tiktok_llaves(text, uuid, jsonb),
   public.tiktok_guardar(text, text, text, text, text, text, int, int, text),
   public.tiktok_importar(text, uuid, jsonb, boolean, boolean, jsonb),
@@ -472,7 +499,7 @@ from public, anon;
 
 grant execute on function
   public.clips(), public.reel_visible(uuid, boolean), public.reaccionar(uuid, boolean),
-  public.tiktok_actualizar(), public.tiktok_desvincular()
+  public.tiktok_actualizar(), public.tiktok_desvincular(), public.clips_refrescar()
 to authenticated;
 
 -- Estas las llama la web de HaxMatch sin sesión de usuario; las protege la clave compartida.

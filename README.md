@@ -14,7 +14,7 @@ Necesitás Node 20 o más nuevo.
 npm install
 npm run dev        # abre la app en http://localhost:5173, con el servidor real
 npm test           # tests de las reglas (puntos, niveles, validación)
-npm run test:sql   # prueba los SQL de supabase/ en una base local (241 comprobaciones)
+npm run test:sql   # prueba los SQL de supabase/ en una base local (246 comprobaciones)
 npm run test:push  # prueba el envío de notificaciones (worker/index.js)
 npm run test:tiktok  # prueba la vinculación con TikTok contra un TikTok de mentira (37 comprobaciones)
 npm run build      # versión para publicar, en dist/
@@ -89,7 +89,7 @@ Necesita los avisos ya configurados (usa la misma clave compartida entre la base
 
 Mientras la app de TikTok esté en modo *Sandbox* solo pueden vincular las cuentas de TikTok anotadas como "Target users" (hasta 10). Para que pueda cualquiera hay que mandarla a revisión, con un video que muestre el recorrido.
 
-Cómo funciona: la app le pide a la web (`/api/tiktok/entrar`) empezar una vinculación > el usuario da el permiso en la página de TikTok > TikTok lo devuelve a `/api/tiktok/volver` > el Worker cambia ese permiso por las llaves de acceso, las guarda en la base (en una tabla que la app no puede leer) y trae la lista de videos. De TikTok se guarda solo la lista (título, fecha, duración y enlace): los videos se reproducen desde TikTok. En Clips aparecen los que tienen `#haxball` o `#haxmatch` y que su dueño no ocultó. La lista se actualiza al abrir "Mis videos", con el botón "Actualizar", y cada 6 horas si el proyecto de Supabase tiene `pg_cron`. Al desvincular se borran las llaves y los videos, y se le pide a TikTok que anule el permiso.
+Cómo funciona: la app le pide a la web (`/api/tiktok/entrar`) empezar una vinculación > el usuario da el permiso en la página de TikTok > TikTok lo devuelve a `/api/tiktok/volver` > el Worker cambia ese permiso por las llaves de acceso, las guarda en la base (en una tabla que la app no puede leer) y trae la lista de videos. De TikTok se guarda solo la lista (título, fecha, duración y enlace): los videos se reproducen desde TikTok. En Clips aparecen los que tienen `#haxball` o `#haxmatch` y que su dueño no ocultó. La lista se actualiza al abrir "Mis videos", con el botón "Actualizar", al deslizar hacia abajo en el primer clip (ahí se piden los videos nuevos de todas las cuentas vinculadas), y cada 6 horas si el proyecto de Supabase tiene `pg_cron`. Al desvincular se borran las llaves y los videos, y se le pide a TikTok que anule el permiso.
 
 ## Servidor (Supabase)
 

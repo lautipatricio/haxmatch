@@ -149,6 +149,8 @@ interface Acciones {
 
   /** Con servidor: vuelve a pedir los clips, mis videos y el estado de mi TikTok. */
   cargarClips: () => Promise<void>
+  /** Deslizar para actualizar en Clips: busca clips nuevos. Devuelve qué decirle al usuario. */
+  refrescarClips: () => Promise<string>
   reaccionar: (reelId: string) => void
   /** Con servidor manda al usuario a TikTok a dar el permiso. Devuelve el problema, si no se pudo empezar. */
   vincularTikTok: () => Promise<string | null>
@@ -1525,6 +1527,30 @@ export const useStore = create<Store>()((set, get) => {
     })
     guardar(get())
     return null
+  },
+
+  refrescarClips: async () => {
+    const pausa = (ms: number) => new Promise((listo) => setTimeout(listo, ms))
+    const SIN_NOVEDAD = 'No hay clips nuevos'
+    if (!REAL) {
+      await pausa(600)
+      return SIN_NOVEDAD
+    }
+    const antes = new Set(feed(get()).map((r) => r.id))
+    const nuevos = () => feed(get()).filter((r) => !antes.has(r.id)).length
+    const r = await clipsApi.refrescar()
+    if (r.error) return r.error
+    await get().cargarClips()
+    // TikTok tarda unos segundos en contestar: se mira un par de veces.
+    if (r.pedidas > 0) {
+      for (const espera of [2500, 3500]) {
+        if (nuevos() > 0) break
+        await pausa(espera)
+        await get().cargarClips()
+      }
+    }
+    const n = nuevos()
+    return n === 0 ? SIN_NOVEDAD : n === 1 ? '1 clip nuevo' : `${n} clips nuevos`
   },
 
   actualizarTikTok: async () => {

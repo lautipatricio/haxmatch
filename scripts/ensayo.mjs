@@ -438,6 +438,29 @@ try {
   await pato.page.goto(`${URL}/clips`)
   await pato.ver('Triple pared y adentro')
   await pato.noVer('Golazo de media cancha')
+  // Deslizar para actualizar: Olga sube otro video y Pato lo encuentra sin que ella haga nada.
+  servidor.tiktok.publicar('olga_tt', 'Atajadón sobre la línea #haxball', 12)
+  await servidor.acceso.admin(`update public.tiktok_cuentas set sincronizada_at = now() - interval '10 minutes', pedida_at = null`)
+  await pato.page.locator('.feed').hover()
+  await pato.page.mouse.wheel(0, -400)
+  await pato.ver('Buscando clips nuevos')
+  await pato.ver('1 clip nuevo', 15000); await pato.ver('Atajadón sobre la línea'); await pato.foto('clip-nuevo-al-deslizar')
+  // El clip nuevo queda en pantalla y arranca solo.
+  await pato.page.waitForFunction(() => document.querySelector('.feed').scrollTop === 0 && document.querySelector('.reel')?.textContent.includes('Atajadón'))
+  await pato.page.frameLocator('.reel__video iframe').getByText('reproduciendo').waitFor()
+  await pato.page.locator('.feed-aviso').waitFor({ state: 'detached' })
+  // Con el dedo: en el primer clip, deslizar hacia abajo.
+  const dedo = (tipo, y) => pato.page.evaluate(([tipo, y]) => {
+    const el = document.querySelector('.reel')
+    const toque = new Touch({ identifier: 1, target: el, clientX: 180, clientY: y })
+    el.dispatchEvent(new TouchEvent(tipo, { bubbles: true, cancelable: true, touches: tipo === 'touchend' ? [] : [toque], changedTouches: [toque] }))
+  }, [tipo, y])
+  await dedo('touchstart', 300); await dedo('touchmove', 340)
+  await pato.ver('Deslizá para actualizar')
+  await dedo('touchmove', 520)
+  await pato.ver('Soltá para actualizar')
+  await dedo('touchend', 520)
+  await pato.ver('No hay clips nuevos', 15000)
   // Desvincula: se va todo.
   await olga.boton('Desvincular TikTok').click()
   await olga.boton('Sí, desvincular').click()

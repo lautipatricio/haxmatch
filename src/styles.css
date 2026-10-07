@@ -345,6 +345,12 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
   background: linear-gradient(rgba(14, 21, 18, .92) 35%, transparent);
 }
 .feed-top > * { pointer-events: auto; }
+/* Aviso de "deslizá para actualizar" y su resultado. */
+.feed-aviso {
+  position: absolute; z-index: 6; top: calc(128px + var(--safe-top)); left: 50%; transform: translate(-50%, 0);
+  padding: 10px 16px; border-radius: 22px; background: rgba(14, 21, 18, .88); border: 1px solid var(--line);
+  color: var(--fg); font-size: 14px; font-weight: 600; white-space: nowrap; pointer-events: none;
+}
 
 .like { background: none; border: 0; min-height: 44px; padding: 0 6px; display: inline-flex; align-items: center; gap: 6px; color: var(--fg2); font-weight: 600; border-radius: 10px; }
 .like[aria-pressed="true"] { color: var(--accent); }
