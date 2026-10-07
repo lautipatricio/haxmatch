@@ -1,38 +1,73 @@
-import { useId } from 'react'
-import { Link } from 'react-router-dom'
+import { useId, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { REAL } from '../config'
 import { buscarMia, nivelTexto, useStore } from '../data/store'
-import type { Modo } from '../domain/types'
 import { BannerBusqueda, BannerMatch, Campana, Icon, TabBar, hace, useAhora } from '../ui'
 import { FilaDisponible, resumenBusqueda } from './Buscando'
 
-/** Una de las dos entradas: el título es el nombre del enlace y el renglón de abajo, su descripción. */
-function BotonModo({ modo, titulo, detalle, destino }: { modo: Modo; titulo: string; detalle: string; destino: string }) {
+/** Lo que va adentro de cada una de las dos entradas: el título es su nombre y el renglón de abajo, su descripción. */
+function Modo({ titulo, detalle, idTitulo, idDetalle, flecha = true }: { titulo: string; detalle: string; idTitulo: string; idDetalle: string; flecha?: boolean }) {
+  return (
+    <>
+      <span className="grow">
+        <span className="h" id={idTitulo}>{titulo}</span>
+        <span className="modo__d" id={idDetalle}>{detalle}</span>
+      </span>
+      {flecha && <Icon name="flecha" size={24} />}
+    </>
+  )
+}
+
+/** "Quiero jugar un amistoso": un toque y ya está en la cola, sin formulario. */
+function BotonJugar({ onError }: { onError: (texto: string | null) => void }) {
   const mia = useStore(buscarMia)
-  const idTitulo = useId()
-  const idDetalle = useId()
-  if (mia && mia.modo !== modo) {
-    // Una sola búsqueda activa: el otro modo queda bloqueado hasta cancelarla.
+  const entrar = useStore((s) => s.entrarALaCola)
+  const nav = useNavigate()
+  const [ocupado, setOcupado] = useState(false)
+  const ids = { idTitulo: useId(), idDetalle: useId() }
+  const titulo = 'Quiero jugar un amistoso'
+  if (mia?.modo === 'sala') {
+    // Una sola búsqueda activa: con una sala abierta, esta opción queda bloqueada hasta cerrarla.
     return (
-      <button className="modo modo--off" aria-disabled="true" aria-labelledby={idTitulo} aria-describedby={idDetalle}>
-        <span className="grow">
-          <span className="h" id={idTitulo}>{titulo}</span>
-          <span className="modo__d" id={idDetalle}>Cancelá tu búsqueda actual para usar esta opción</span>
-        </span>
+      <button className="modo modo--off" aria-disabled="true" aria-labelledby={ids.idTitulo} aria-describedby={ids.idDetalle}>
+        <Modo titulo={titulo} detalle="Cancelá tu búsqueda actual para usar esta opción" flecha={false} {...ids} />
       </button>
     )
   }
-  // El amarillo va en "jugar un amistoso", salvo que la búsqueda abierta sea la de la sala.
-  const principal = mia ? true : modo === 'jugador'
+  const tocar = async () => {
+    if (mia) return nav('/buscando')
+    setOcupado(true)
+    onError(null)
+    const error = await entrar()
+    setOcupado(false)
+    // Si ya tenía una búsqueda (la app todavía no se había enterado), no es un error: va a verla.
+    if (error && !/búsqueda activa/i.test(error)) onError(error)
+    else nav('/buscando')
+  }
   return (
-    <Link className={`modo${principal ? ' modo--principal' : ''}`} to={mia ? '/buscando' : destino} aria-labelledby={idTitulo} aria-describedby={idDetalle}>
-      <span className="grow">
-        <span className="h" id={idTitulo}>{titulo}</span>
-        <span className="modo__d" id={idDetalle}>
-          {!mia ? detalle : mia.modo === 'sala' && mia.completaAt ? 'Tu sala está completa. Tocá para ver quién entró.' : 'Ya estás buscando. Tocá para ver cómo va.'}
-        </span>
-      </span>
-      <Icon name="flecha" size={24} />
+    <button className="modo modo--principal" disabled={ocupado} onClick={() => void tocar()} aria-labelledby={ids.idTitulo} aria-describedby={ids.idDetalle}>
+      <Modo titulo={titulo} {...ids}
+        detalle={mia ? 'Ya estás buscando. Tocá para ver cómo va.' : ocupado ? 'Entrando a la cola…' : 'Entrás directo a la cola y las salas te invitan'} />
+    </button>
+  )
+}
+
+/** "Necesito un jugador": lleva al formulario de la sala. */
+function BotonSala() {
+  const mia = useStore(buscarMia)
+  const ids = { idTitulo: useId(), idDetalle: useId() }
+  const titulo = 'Necesito un jugador'
+  if (mia?.modo === 'jugador') {
+    return (
+      <button className="modo modo--off" aria-disabled="true" aria-labelledby={ids.idTitulo} aria-describedby={ids.idDetalle}>
+        <Modo titulo={titulo} detalle="Cancelá tu búsqueda actual para usar esta opción" flecha={false} {...ids} />
+      </button>
+    )
+  }
+  return (
+    <Link className={`modo${mia ? ' modo--principal' : ''}`} to={mia ? '/buscando' : '/sala'} aria-labelledby={ids.idTitulo} aria-describedby={ids.idDetalle}>
+      <Modo titulo={titulo} {...ids}
+        detalle={!mia ? 'Tenés sala y elegís a quién invitar' : mia.completaAt ? 'Tu sala está completa. Tocá para ver quién entró.' : 'Tu sala está buscando. Tocá para invitar jugadores.'} />
     </Link>
   )
 }
@@ -62,10 +97,9 @@ export function Inicio() {
   const errorCola = useStore((s) => s.errorCola)
   const nick = useStore((s) => s.perfil?.nick)
   const suspension = useStore((s) => s.suspension)
+  /** Por qué no se pudo entrar a la cola (sin conexión, por ejemplo). */
+  const [error, setError] = useState<string | null>(null)
   const activas = busquedas.filter((b) => b.estado === 'activa')
-  const cuenta = new Map<string, number>()
-  for (const b of activas) for (const f of b.formato ?? []) if (f !== 'Cualquiera') cuenta.set(f, (cuenta.get(f) ?? 0) + 1)
-  const masActivo = [...cuenta.entries()].sort((a, b) => b[1] - a[1])[0]?.[0]
 
   return (
     <div className="screen">
@@ -84,7 +118,7 @@ export function Inicio() {
                   ? errorCola ?? 'Buscando jugadores…'
                   : activas.length === 0
                   ? 'Nadie buscando ahora. Sé el primero.'
-                  : `${activas.length} buscando ahora${masActivo ? ` · ${masActivo} es lo que más sale` : ''}`}
+                  : `${activas.length} buscando ahora`}
               </span>
             </div>
           </div>
@@ -94,8 +128,9 @@ export function Inicio() {
             </div>
           )}
           <div className="modos">
-            <BotonModo modo="jugador" titulo="Quiero jugar un amistoso" detalle="Entrás a la cola y te acercamos una sala" destino="/jugar" />
-            <BotonModo modo="sala" titulo="Necesito un jugador" detalle="Ya tenés sala y te falta gente" destino="/sala" />
+            <BotonJugar onError={setError} />
+            <BotonSala />
+            {error && !suspension && <div className="err" role="alert">{error}</div>}
           </div>
           <AmigosBuscando />
         </div>

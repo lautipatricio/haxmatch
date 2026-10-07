@@ -148,7 +148,9 @@ a, button, label, [role="switch"] { touch-action: manipulation; }
   font-family: var(--body); text-align: left; text-decoration: none;
   transition: transform 140ms var(--ease-out);
 }
-.modo:active:not([aria-disabled="true"]) { transform: scale(.98); }
+.modo:active:not([aria-disabled="true"]):not(:disabled) { transform: scale(.98); }
+.modo:disabled { opacity: .7; }
+button.modo { cursor: pointer; }
 .modo > .grow { display: flex; flex-direction: column; gap: 2px; }
 .modo .h { font-size: 24px; }
 .modo__d { font-size: 14px; color: var(--fg2); }

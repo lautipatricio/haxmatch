@@ -39,13 +39,14 @@ export function seedBusquedas(ahora: number): Busqueda[] {
     expiraAt: null, estado: 'activa', avisar: true, ...datos,
   })
   return [
-    b('b_mati', 'u_mati', 2 * MIN, { modo: 'jugador', formato: ['3v3'], cancha: ['Big'], region: ['ARG'], posicion: ['MC', 'DC'] }),
-    b('b_nico', 'u_nico', 4 * MIN, { modo: 'sala', cancha: ['Big'], region: ['ARG'], nombreSala: 'nico 3v3 amistoso', faltan: 2 }),
-    b('b_tobi', 'u_tobi', 6 * MIN, { modo: 'jugador', formato: ['3v3', '4v4'], cancha: ['Classic', 'Big'], region: ['ARG'], posicion: ['GK'], grupo: ['u_fede'] }),
+    // Quien busca partido no elige nada: entra a la cola con las regiones de su perfil.
+    b('b_mati', 'u_mati', 2 * MIN, { modo: 'jugador', formato: ['Cualquiera'], cancha: ['Cualquiera'], region: ['ARG'] }),
+    b('b_nico', 'u_nico', 4 * MIN, { modo: 'sala', posicion: ['GK', 'DFC'], cancha: ['Big'], region: ['ARG'], nombreSala: 'nico 3v3 amistoso', faltan: 2 }),
+    b('b_tobi', 'u_tobi', 6 * MIN, { modo: 'jugador', formato: ['Cualquiera'], cancha: ['Cualquiera'], region: ['ARG'], grupo: ['u_fede'] }),
     // Fede_7 busca en grupo con Tobi_GK: comparten reloj.
-    b('b_fede', 'u_fede', 6 * MIN, { modo: 'jugador', formato: ['3v3', '4v4'], cancha: ['Classic', 'Big'], region: ['ARG'], posicion: ['DFC'], estado: 'agrupada' }),
-    b('b_pibe', 'u_pibe', 9 * MIN, { modo: 'jugador', formato: ['2v2'], cancha: ['Futsal'], region: ['ARG', 'CHI'], posicion: ['DC'] }),
-    b('b_cami', 'u_cami', 11 * MIN, { modo: 'jugador', formato: ['1v1', '2v2'], cancha: ['Classic'], region: ['CHI'], posicion: ['ED', 'EI'] }),
+    b('b_fede', 'u_fede', 6 * MIN, { modo: 'jugador', formato: ['Cualquiera'], cancha: ['Cualquiera'], region: ['ARG'], estado: 'agrupada' }),
+    b('b_pibe', 'u_pibe', 9 * MIN, { modo: 'jugador', formato: ['Cualquiera'], cancha: ['Cualquiera'], region: ['ARG', 'CHI'] }),
+    b('b_cami', 'u_cami', 11 * MIN, { modo: 'jugador', formato: ['Cualquiera'], cancha: ['Cualquiera'], region: ['CHI'] }),
     b('b_rolo', 'u_rolo', 14 * MIN, { modo: 'sala', cancha: ['Futsal', 'Real Futsal'], region: ['UY', 'BR'], nombreSala: 'futsal rolo', faltan: 1 }),
   ]
 }

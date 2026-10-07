@@ -7,6 +7,8 @@
 -- - La app no toca estas tablas directamente. Todo pasa por las funciones de
 --   abajo, que son las que aplican las reglas (una sola búsqueda activa,
 --   cupos de la sala, quién puede aceptar a quién, cuándo cuenta un partido).
+-- - La app no empareja sola: la sala invita al jugador que elige (o el jugador
+--   le pide lugar a la sala) y el otro acepta.
 -- - "estado_cola" devuelve de una vez todo lo que la app necesita mostrar.
 -- - La tabla "cambios" es solo una señal: cada vez que algo cambia se
 --   actualiza, y las apps abiertas vuelven a pedir el estado.
@@ -115,6 +117,9 @@ create table if not exists public.mensajes (
   -- Jugadores que vienen en grupo con quien escribe.
   con uuid[] not null default '{}'
 );
+-- Cuándo dijo que no quien lo recibió. Vacío si el pedido se cayó solo (la sala se llenó,
+-- alguno dejó de buscar): eso no es un "no", y se le puede volver a escribir.
+alter table public.mensajes add column if not exists rechazo_at timestamptz;
 create index if not exists mensajes_pendientes_a on public.mensajes (a) where estado = 'pendiente';
 create index if not exists mensajes_pendientes_de on public.mensajes (de) where estado = 'pendiente';
 create index if not exists mensajes_por_a on public.mensajes (a, creado_at);
@@ -376,65 +381,36 @@ begin
           and (p.user_id = j.user_id or p.user_id = any (public._miembros(j.id)))));
 end $$;
 
--- ¿Hay un bloqueo entre uno y alguno de los otros? Los bloqueos llegan con el paso 6,
--- que reemplaza esta función por la de verdad; por eso acá solo se crea si no existe.
-do $$
-begin
-  if to_regprocedure('public._bloqueo_entre(uuid, uuid[])') is null then
-    execute 'create function public._bloqueo_entre(p_uno uuid, p_otros uuid[]) returns boolean '
-      || 'language sql stable security definer set search_path = '''' '
-      || 'as ''select false'' ';
-  end if;
-end $$;
-
--- Emparejamiento automático: a cada sala con lugares libres la app le acerca
--- gente para que su dueño acepte o rechace. Primero un grupo (o jugador) que sea
--- justo los que faltan, después jugadores sueltos, después grupos más chicos.
--- Un mismo jugador puede quedar propuesto a varias salas: entra a la primera
--- que lo acepta y los otros pedidos se caen solos.
+-- La app ya no empareja sola. Quien tiene una sala ve la lista de jugadores que
+-- buscan partido y elige a quién invitar; el invitado decide si entra. Un jugador
+-- también puede pedirle lugar a una sala, y ahí acepta el dueño.
+-- Esta función quedó solo para poner al día los pedidos después de cada cambio
+-- (conserva el nombre porque la llaman los demás pasos).
 create or replace function public._emparejar()
 returns void language plpgsql security definer set search_path = '' as $$
-declare
-  sala public.busquedas;
-  cand public.busquedas;
 begin
   perform public._limpiar_pedidos();
-  for sala in
-    select * from public.busquedas
-    where estado = 'activa' and modo = 'sala' and coalesce(faltan, 0) > 0
-    order by creada_at
-  loop
-    -- De a un pedido por vez: si el dueño tiene uno sin responder, espera.
-    continue when exists (select 1 from public.mensajes where a = sala.user_id and estado = 'pendiente');
-
-    select c.* into cand
-    from public.busquedas c
-    where c.estado = 'activa' and c.modo = 'jugador'
-      and c.user_id <> sala.user_id
-      -- Ni él ni nadie de su grupo fue rechazado por esta sala...
-      and not (c.user_id = any (sala.rechazados))
-      and not (public._miembros(c.id) && sala.rechazados)
-      -- ...ni está ya adentro.
-      and not exists (
-        select 1 from public.match_participantes p
-        where p.match_id = sala.match_id and p.salio_at is null
-          and (p.user_id = c.user_id or p.user_id = any (public._miembros(c.id))))
-      and (c.expira_at is null or c.expira_at > now())
-      and public._compatibles(c.region, c.cancha, sala.region, sala.cancha)
-      -- Ni el dueño de la sala bloqueó a alguno de ellos, ni alguno de ellos al dueño (paso 6).
-      and not public._bloqueo_entre(sala.user_id, array[c.user_id] || public._miembros(c.id))
-      and public._somos(c.id) <= sala.faltan
-    order by
-      case when public._somos(c.id) = sala.faltan then 0 when public._somos(c.id) = 1 then 1 else 2 end,
-      c.creada_at
-    limit 1;
-
-    if found then
-      insert into public.mensajes (de, a, texto, auto, con)
-      values (cand.user_id, sala.user_id, 'La app lo conectó con tu sala', true, public._miembros(cand.id));
-    end if;
-  end loop;
 end $$;
+
+-- Los pedidos que la app había armado sola antes de este cambio ya no corren.
+update public.mensajes set estado = 'rechazado' where auto and estado = 'pendiente';
+
+-- Lo que le llega al jugador cuando una sala lo invita:
+-- "los pibes" está necesitando un GK/DFC en la cancha Big. ¿Querés jugar?
+-- Con "Polifuncional" dice "un jugador" (o cuántos faltan); con "Cualquiera" no nombra la cancha.
+create or replace function public._texto_invitacion(p_nombre text, p_posicion text[], p_cancha text[], p_faltan int)
+returns text language sql immutable set search_path = '' as $$
+  select '"' || coalesce(p_nombre, '') || '" está necesitando '
+    || case
+         when coalesce(cardinality(p_posicion), 0) = 0 or 'Polifuncional' = any (p_posicion) then
+           case when coalesce(p_faltan, 1) > 1 then p_faltan || ' jugadores' else 'un jugador' end
+         else 'un ' || array_to_string(p_posicion, '/') end
+    || case
+         when coalesce(cardinality(p_cancha), 0) = 0 or 'Cualquiera' = any (p_cancha) then ''
+         when cardinality(p_cancha) = 1 then ' en la cancha ' || p_cancha[1]
+         else ' en la cancha ' || array_to_string(p_cancha[1:cardinality(p_cancha) - 1], ', ') || ' o ' || p_cancha[cardinality(p_cancha)] end
+    || '. ¿Querés jugar?'
+$$;
 
 -- Cuánto aguanta una búsqueda sin señales de su dueño. El paso 3 (avisos) la
 -- reemplaza para darle más tiempo a quien tiene los avisos activados; por eso
@@ -525,7 +501,7 @@ begin
     'mensajes', (
       select coalesce(json_agg(json_build_object(
         'id', m.id, 'de', m.de, 'a', m.a, 'texto', m.texto, 'creado_at', m.creado_at,
-        'estado', m.estado, 'auto', m.auto, 'con', m.con
+        'estado', m.estado, 'auto', m.auto, 'con', m.con, 'dijo_no', m.rechazo_at is not null, 'rechazo_at', m.rechazo_at
       ) order by m.creado_at desc), '[]'::json)
       from public.mensajes m
       where (m.de = yo or m.a = yo) and m.creado_at > now() - interval '1 day'
@@ -679,6 +655,7 @@ begin
 end $$;
 
 -- Mensaje rápido a un jugador o a una sala. Hay que estar buscando para escribir.
+-- Es también la invitación de una sala: su dueño elige a un jugador de la lista.
 create or replace function public.enviar_mensaje(p_a uuid)
 returns uuid language plpgsql security definer set search_path = '' as $$
 declare
@@ -733,7 +710,7 @@ begin
         and (p.user_id = p_a or p.user_id = any (public._miembros(suya.id)))) then
       raise exception 'Ese jugador ya está en tu sala';
     end if;
-    v_texto := '¿Te sumás a mi sala?';
+    v_texto := public._texto_invitacion(mia.nombre_sala, mia.posicion, mia.cancha, mia.faltan);
   else
     v_texto := case
       when cardinality(array_remove(mia.formato, 'Cualquiera')) = 1
@@ -751,10 +728,17 @@ begin
     return previo.id;
   end if;
   -- Para que nadie insista: después de un "no", hay que esperar un rato para volver a escribirle.
+  -- Solo cuenta el "no" de la persona: un pedido que se cayó solo no frena nada.
   if exists (
     select 1 from public.mensajes
-    where de = yo and a = p_a and estado = 'rechazado' and not auto and creado_at > now() - interval '2 minutes') then
+    where de = yo and a = p_a and estado = 'rechazado' and not auto and rechazo_at > now() - interval '2 minutes') then
     raise exception 'Ya le escribiste hace un momento. Esperá un rato para volver a intentar.';
+  end if;
+  -- Y aunque nadie haya dicho que no: a la misma persona, hasta 4 mensajes en 10 minutos
+  -- (invitar, cancelar la búsqueda y volver a invitar no sirve para molestar).
+  if (select count(*) from public.mensajes
+      where de = yo and a = p_a and not auto and creado_at > now() - interval '10 minutes') >= 4 then
+    raise exception 'Ya le escribiste varias veces. Esperá un rato para volver a intentar.';
   end if;
   if (select count(*) from public.mensajes where de = yo and estado = 'pendiente' and not auto) >= 10 then
     raise exception 'Tenés muchos mensajes sin responder. Esperá a que te contesten.';
@@ -790,9 +774,9 @@ begin
   hay_suya := found;
 
   if p_aceptar is not true then
-    update public.mensajes set estado = 'rechazado' where id = msg.id;
+    update public.mensajes set estado = 'rechazado', rechazo_at = now() where id = msg.id;
     if hay_mia and mia.modo = 'sala' then
-      -- El lugar sigue libre y la app no me lo vuelve a acercar.
+      -- El lugar sigue libre. Queda anotado a quién rechazó la sala.
       update public.busquedas set rechazados = array_append(rechazados, msg.de) where id = mia.id;
     end if;
     perform public._emparejar();
@@ -1038,7 +1022,8 @@ end $$;
 
 revoke all on function
   public._avisar(), public._turno(), public._somos(uuid), public._miembros(uuid),
-  public._compatibles(text[], text[], text[], text[]), public._equipo_completo(text[], int), public._bloqueo_entre(uuid, uuid[]),
+  public._compatibles(text[], text[], text[], text[]), public._equipo_completo(text[], int),
+  public._texto_invitacion(text, text[], text[], int),
   public._elegir_cancha(text[], text[]), public._recalcular_grupo(uuid), public._evaluar(uuid),
   public._terminar(uuid, text), public._ocupar(uuid, uuid[], text), public._limpiar_pedidos(),
   public._emparejar(), public._vencer(), public._aguante(uuid)

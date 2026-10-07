@@ -5,7 +5,7 @@ import { Ingresar, Onboarding } from './screens/Acceso'
 import { Amigos } from './screens/Amigos'
 import { Buscando } from './screens/Buscando'
 import { Clips, MisVideos } from './screens/Clips'
-import { FormJugador, FormSala } from './screens/Formularios'
+import { FormSala } from './screens/Formularios'
 import { Inicio } from './screens/Inicio'
 import { MatchListo } from './screens/MatchListo'
 import { Nivel } from './screens/Nivel'
@@ -113,7 +113,6 @@ export function App() {
         <Route path="/bienvenida" element={!perfil ? <Navigate to="/ingresar" replace /> : perfil.onboarding ? <Navigate to="/" replace /> : <Onboarding />} />
         <Route element={<ConSesion />}>
           <Route path="/" element={<Inicio />} />
-          <Route path="/jugar" element={<FormJugador />} />
           <Route path="/sala" element={<FormSala />} />
           <Route path="/buscando" element={<Buscando />} />
           <Route path="/match/:id" element={<MatchListo />} />

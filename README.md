@@ -14,7 +14,7 @@ Necesitás Node 20 o más nuevo.
 npm install
 npm run dev        # abre la app en http://localhost:5173, con el servidor real
 npm test           # tests de las reglas (puntos, niveles, validación)
-npm run test:sql   # prueba los SQL de supabase/ en una base local (368 comprobaciones)
+npm run test:sql   # prueba los SQL de supabase/ en una base local (379 comprobaciones)
 npm run test:push  # prueba el envío de notificaciones (worker/index.js)
 npm run test:tiktok  # prueba la vinculación con TikTok contra un TikTok de mentira (38 comprobaciones)
 npm run build      # versión para publicar, en dist/
@@ -134,7 +134,10 @@ Si alguien borra su cuenta y vuelve a entrar con el mismo Discord, una suspensi�
 - La app pide `estado_cola`, que devuelve de una vez todo lo que hay que mostrar, y cada acción llama a una función (`crear_busqueda`, `enviar_mensaje`, `responder_mensaje`, `marcar_entro`, `confirmar_match`…).
 - Cada vez que algo cambia, el servidor toca la tabla `cambios`. Las apps abiertas la escuchan por Realtime y vuelven a pedir el estado. Además preguntan cada 8 segundos, por si el aviso no llega.
 - Ese pedido periódico también es la señal de vida: una búsqueda cuyo dueño no aparece hace 10 minutos sale de la cola.
-- El emparejamiento automático corre dentro de esas mismas funciones: a cada sala con lugares libres le acerca un jugador o grupo para que el dueño acepte o rechace.
+- **Quien busca partido** entra a la cola de un toque, sin elegir nada: va con las regiones de su perfil y por 15 minutos (renovables).
+- **Quien tiene una sala** completa el formulario (nombre, cuántos faltan, posición, cancha, región) y ve la lista de jugadores que están buscando. Elige a quién invitar; al invitado le llega `"(sala)" está necesitando un GK/DFC en la cancha Big. ¿Querés jugar?` y, si acepta, entra directo. Puede invitar a varios: el primero que acepta se queda con el lugar y las demás invitaciones se caen solas.
+- Un jugador también puede pedirle lugar a una sala; ahí acepta el dueño.
+- **La app no empareja sola.** Lo hacía hasta el 7/10/2026 (le acercaba jugadores a cada sala); `_emparejar` quedó solo para poner al día los pedidos después de cada cambio.
 - Los cambios se hacen de a uno (un candado por transacción), para que dos acciones simultáneas no se pisen.
 - Los reportes se ven en Supabase > Table Editor > `reportes`.
 
@@ -179,7 +182,7 @@ En modo demostración (`npm run probar`) todo está simulado:
 - **Ingreso:** entra siempre como `Jugador_Demo`.
 - **Otros jugadores:** 9 usuarios inventados. Mati_ acepta y se suma a tu búsqueda; Tobi_GK busca en grupo con Fede_7 (si acepta, se suman los dos); Pibe9 rechaza los mensajes; la sala de Nico (faltan 2) acepta y confirma; la de Rolo (falta 1) acepta pero nunca confirma, para ver un partido sin contar.
 - **Mensaje entrante:** a los 15 segundos de buscar partido te escribe Mati_ (al aceptar te sumás a su búsqueda).
-- **Emparejamiento automático:** si tenés sala, la app te acerca gente a los 8 segundos y después cada 12. Si buscás partido, te conecta sola con una sala a los 45 segundos. En la pantalla de espera hay un botón de prueba para dispararlo ya, y otro para simular que pasaron los 15 minutos.
+- **Invitación de una sala:** a los 40 segundos de buscar partido te invita una sala con lugar. En la pantalla de espera hay un botón de prueba para que te invite ya, y otro para simular que pasaron los 15 minutos. Si la sala es tuya, invitás vos desde la lista y los jugadores simulados contestan a los 4 segundos.
 - **Herramientas de prueba** (Perfil, Mis videos, Referir): avanzar un día, simular un video nuevo, simular amistosos de un referido, reiniciar los datos.
 
 Códigos de amigo de la demostración: `NICO23`, `MATI10`.

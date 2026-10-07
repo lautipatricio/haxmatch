@@ -109,8 +109,15 @@ export interface Mensaje {
   texto: string
   at: number
   estado: 'pendiente' | 'aceptado' | 'rechazado'
-  /** Lo generó el emparejamiento automático, no una persona. */
+  /** Lo generó el emparejamiento automático de antes (ya no se usa), no una persona. */
   auto?: boolean
+  /**
+   * Rechazado: ¿dijo que no quien lo recibió? false si se cayó solo (la sala se llenó,
+   * alguno dejó de buscar). Sin dato (servidor sin actualizar) se toma como un "no".
+   */
+  dijoNo?: boolean
+  /** Cuándo dijo que no. Por 2 minutos no se le puede volver a escribir. */
+  rechazoAt?: number | null
   /** Jugadores que vienen en grupo con quien escribe. */
   con?: string[]
 }

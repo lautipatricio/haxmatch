@@ -48,7 +48,7 @@ Con varias opciones marcadas, el match se arma con la primera opción que les si
 
 | Tema | Cómo quedó |
 |---|---|
-| Match automático | La app conecta sola, sin mensajes. A una sala le acerca primero un grupo que sea justo los que le faltan, después jugadores sueltos y después grupos más chicos. A quien busca partido lo mete en una sala donde entre (solo o con su grupo), y prefiere la que le faltan justo los que son |
+| Match automático | *(Se sacó el 7/10/2026: ahora la sala invita. Ver más abajo.)* La app conecta sola, sin mensajes. A una sala le acerca primero un grupo que sea justo los que le faltan, después jugadores sueltos y después grupos más chicos. A quien busca partido lo mete en una sala donde entre (solo o con su grupo), y prefiere la que le faltan justo los que son |
 | Mensajes | Siguen funcionando igual, además del emparejamiento automático |
 | Grupo que completa un equipo | Tres jugadores buscando 3v3 ya son un equipo: quien armó el grupo crea la sala, carga el nombre, y pasan a figurar como sala a la que le faltan 3. En 1v1 el "equipo completo" son los dos jugadores y no se busca a nadie más |
 | A los 15 minutos | Cartel con: renovar la búsqueda, jugar entre los del grupo (1v1, 1v1v1), crear una sala y seguir buscando, o dejar de buscar. Si nadie responde en 2 minutos, la búsqueda vence |
@@ -98,6 +98,7 @@ Qué decidí yo en esta ronda:
 La cola, los mensajes, los grupos, las salas y los partidos pasan al servidor. Los jugadores inventados desaparecen de la web publicada. Decisiones que tomé al pasarlo a usuarios de verdad:
 
 - **Las reglas las aplica el servidor,** no la app: una sola búsqueda activa, cupos de la sala, quién puede aceptar a quién y cuándo cuenta un partido. Desde la app no se pueden tocar los datos directamente.
+- *(Desde el 7/10/2026 la app ya no empareja sola: ver "Entrar a la cola de un toque y salas que invitan", más abajo.)*
 - **Emparejamiento automático:** a cada sala con lugares libres la app le acerca un jugador o un grupo para que el dueño acepte o rechace (primero el grupo que es justo los que faltan, después jugadores sueltos, después grupos más chicos). Corre cada vez que alguien busca, cancela, acepta o rechaza.
 - **El jugador no ve ese pedido.** Cuando la app lo acerca a una sala, solo se entera el dueño. Si lo aceptan, le aparece "Match listo". Si lo rechazan, sigue buscando y no se entera.
 - **Un mismo jugador puede quedar propuesto a varias salas a la vez.** Entra a la primera que lo acepta y los otros pedidos se caen. Así nadie queda trabado esperando a un dueño que no contesta.
@@ -230,6 +231,32 @@ Pedido: que la app se vea más profesional. Se mostraron tres propuestas y se el
 - **Términos y Privacidad:** mismos títulos en minúscula que la app.
 
 Cómo se probó: el recorrido de la demostración, el ensayo con usuarios simultáneos, el ensayo de la versión que se publica y las pruebas del servidor, todos mirando las capturas; además, un celular chico (320 de ancho) y una pantalla de computadora, y una revisión independiente del cambio (encontró cuatro detalles menores, corregidos). Lo que no se pudo probar desde acá: cómo se siente en un celular de verdad (los toques, las animaciones de los carteles) y el reproductor real de TikTok con el diseño nuevo.
+
+## Entrar a la cola de un toque y salas que invitan (7/10/2026)
+
+Pedido: que "Quiero jugar un amistoso" meta directo en la cola, sin preguntar nada; que "Necesito un jugador" pida lo mismo que antes; y que a quien busca partido le llegue un aviso del estilo "(sala) está necesitando un GK/DFC/MC en la cancha (cancha), ¿querés jugar?". Se definió además que **es el dueño de la sala quien elige**, de la lista de jugadores que buscan, a quién invitar.
+
+| Tema | Cómo quedó |
+|---|---|
+| Quiero jugar un amistoso | Un toque y a la cola. No hay formulario: va con las regiones del perfil, por 15 minutos renovables. Ya no se elige modalidad, posición, cancha ni "hasta match" |
+| Necesito un jugador | El mismo formulario: nombre de la sala, cuántos faltan, posición, cancha y región |
+| Quién elige | El dueño de la sala ve "Jugadores buscando partidos" y toca "Invitar" en el que quiera. Puede invitar a varios a la vez |
+| La invitación | `"los pibes" está necesitando un GK/DFC en la cancha Big. ¿Querés jugar?` Con "Polifuncional" dice "un jugador" (o "3 jugadores" si faltan varios); con "Cualquiera" no nombra la cancha. Al jugador le aparece como cartel ("Te invitan a jugar"), como aviso dentro de la app y como notificación del celular |
+| Si acepta | Entra directo: la sala ya lo eligió. El primero que acepta se queda con el lugar; las otras invitaciones se caen solas y eso no cuenta como un "no" (se lo puede volver a invitar) |
+| Si dice que no | A la sala le figura "No puede" y no le puede insistir por 2 minutos; después puede volver a invitarlo |
+| Para que nadie moleste | A una misma persona se le puede escribir hasta 4 veces en 10 minutos (aunque se cancele la búsqueda y se vuelva a empezar), y no más de 10 invitaciones sin responder a la vez |
+| Grupos | La invitación le llega a quien armó el grupo; si acepta, entran todos. Una sala no puede invitar a un grupo más grande que los lugares que le quedan |
+| Pedirle lugar a una sala | Sigue igual: el jugador le escribe a la sala y el dueño acepta o rechaza |
+| Emparejamiento automático | Se sacó. La app ya no le acerca jugadores a las salas |
+| "Equipo completo" | Se sacó: sin modalidad no se puede saber cuándo un grupo es un equipo. A cambio, quien armó un grupo tiene el botón **"Armar una sala con el grupo"** desde el primer momento (antes había que esperar el cartel de los 15 minutos) |
+| "¿Te avisamos?" | Se sacó el cartel que aparecía al empezar a buscar (era una pregunta más). Si el celular no tiene los avisos activados, al final de la pantalla de búsqueda hay un bloque para activarlos |
+| Datos de los partidos | Ya no dicen "3v3 con Ana": dicen "Sala de Ana" o "Amistoso con Ana" |
+
+Para que funcione con servidor hay que **volver a ejecutar `supabase/02_cola.sql`** (solo ese). Hasta entonces la app nueva anda igual, con el comportamiento viejo del servidor: sigue acercando jugadores a las salas y la invitación dice "¿Te sumás a mi sala?".
+
+Cómo se probó: 379 comprobaciones del servidor (las de la cola se reescribieron para el flujo nuevo), el recorrido de la demostración, el ensayo con usuarios simultáneos (invitar, decir que no, grupo invitado, armar sala con el grupo) y el de la versión que se publica. Lo que no se pudo probar desde acá: la notificación real en un celular con la app cerrada.
+
+Una revisión independiente del cambio no encontró problemas graves; se corrigieron cuatro detalles: "No puede" quedaba para toda la vida de la sala (ahora 2 minutos, como en el servidor), tocar "Quiero jugar" antes de que cargue la cola mostraba un error de más, el tope de mensajes a una misma persona, y el bloque de avisos que escondía su propio error. Queda anotado, sin corregir: si a un grupo que una sala invitó se le suma después alguien bloqueado por el dueño, la invitación no se cae sola (falla al aceptar, con un texto que deja ver que hay un bloqueo).
 
 ## Decisiones que tomé al construir (revisar)
 

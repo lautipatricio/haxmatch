@@ -71,7 +71,7 @@ try {
   for (let i = 0; i < 60; i++) {
     try { if ((await fetch(URL)).ok) break } catch { await new Promise((r) => setTimeout(r, 250)) }
   }
-  console.log('· Versión publicada: sala, pedido, match y confirmación entre dos usuarios')
+  console.log('· Versión publicada: sala, invitación, match y confirmación entre dos usuarios')
   const ana = await abrir('ana')
   const beto = await abrir('beto')
   await ana.link('Necesito un jugador').click()
@@ -80,16 +80,16 @@ try {
   await ana.page.getByLabel('Nombre de la sala').fill('sala de ana')
   await ana.boton('Buscar jugador').click()
   await ana.ver('Buscando jugador')
-  await ana.boton('Sí, avisarme y ver clips').click()
-  await beto.link('Quiero jugar un amistoso').click()
-  await beto.boton('Buscar amistoso').click()
+  // Un toque y a la cola, sin formulario.
+  await beto.boton('Quiero jugar un amistoso').click()
   await beto.ver('Jugadores buscando partidos')
-  // Ana está mirando clips: el pedido le llega como aviso.
-  await ana.ver('Beto quiere entrar a tu sala')
-  await ana.boton('Aceptar').click()
+  // Beto se va a mirar clips. Ana lo elige de su lista y a él la invitación le llega como aviso.
+  await beto.page.locator('.tabbar a', { hasText: 'Clips' }).click()
+  await ana.page.locator('.card--row', { hasText: 'Beto' }).getByRole('button', { name: 'Invitar' }).click()
+  await beto.ver('Ana te invita a su sala')
+  await beto.boton('Aceptar').click()
   await beto.ver('Sala de Ana')
   await beto.boton('Entendido').click()
-  await ana.page.locator('.banner a').first().click()
   await ana.boton('Ya entró Beto a la sala').last().click()
   await ana.ver('Tu sala está completa')
   await beto.boton('Ya entré a la sala').click()
@@ -100,7 +100,7 @@ try {
   await beto.boton('Enviar reporte').click()
   await beto.ver('Reporte enviado')
   // Sin las funciones nuevas en la base (falta ejecutar el SQL), la app lo dice claro.
-  const esperadas = ['mi_perfil', 'completar_registro', 'estado_completo', 'crear_busqueda', 'responder_aviso', 'responder_mensaje', 'marcar_entro', 'confirmar_match', 'reportar']
+  const esperadas = ['mi_perfil', 'completar_registro', 'estado_completo', 'crear_busqueda', 'enviar_mensaje', 'responder_mensaje', 'marcar_entro', 'confirmar_match', 'reportar']
   const faltan = esperadas.filter((f) => !llamadas.has(f))
   if (faltan.length) throw new Error(`La app no llamó a: ${faltan.join(', ')}`)
   console.log('\nVersión publicada: todo bien.')

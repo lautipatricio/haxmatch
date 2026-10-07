@@ -4,8 +4,8 @@
 --
 -- Qué agrega:
 -- - Borrar la cuenta desde la app: se va el perfil con todo lo suyo.
--- - Bloqueos guardados en el servidor: a quien bloqueo no me lo acerca la app,
---   y no puede escribirme ni mandarme solicitud de amistad (ni yo a él).
+-- - Bloqueos guardados en el servidor: a quien bloqueo no puedo invitarlo a mi
+--   sala, y no puede escribirme ni mandarme solicitud de amistad (ni yo a él).
 -- - Suspender una cuenta por un tiempo. Solo se puede desde acá (SQL Editor),
 --   con las funciones "mod_" que están al final. La app no puede llamarlas.
 
@@ -104,52 +104,6 @@ returns text language sql stable security definer set search_path = '' as $$
   from public.profiles p
   where p.id = p_user and p.suspendido_hasta is not null and p.suspendido_hasta > now()
 $$;
-
--- El emparejamiento automático, igual que en el paso 2 (que ya pregunta por los
--- bloqueos). Va repetido acá para que alcance con ejecutar este archivo.
-create or replace function public._emparejar()
-returns void language plpgsql security definer set search_path = '' as $$
-declare
-  sala public.busquedas;
-  cand public.busquedas;
-begin
-  perform public._limpiar_pedidos();
-  for sala in
-    select * from public.busquedas
-    where estado = 'activa' and modo = 'sala' and coalesce(faltan, 0) > 0
-    order by creada_at
-  loop
-    -- De a un pedido por vez: si el dueño tiene uno sin responder, espera.
-    continue when exists (select 1 from public.mensajes where a = sala.user_id and estado = 'pendiente');
-
-    select c.* into cand
-    from public.busquedas c
-    where c.estado = 'activa' and c.modo = 'jugador'
-      and c.user_id <> sala.user_id
-      -- Ni él ni nadie de su grupo fue rechazado por esta sala...
-      and not (c.user_id = any (sala.rechazados))
-      and not (public._miembros(c.id) && sala.rechazados)
-      -- ...ni está ya adentro.
-      and not exists (
-        select 1 from public.match_participantes p
-        where p.match_id = sala.match_id and p.salio_at is null
-          and (p.user_id = c.user_id or p.user_id = any (public._miembros(c.id))))
-      and (c.expira_at is null or c.expira_at > now())
-      and public._compatibles(c.region, c.cancha, sala.region, sala.cancha)
-      -- Ni el dueño de la sala bloqueó a alguno de ellos, ni alguno de ellos al dueño (paso 6).
-      and not public._bloqueo_entre(sala.user_id, array[c.user_id] || public._miembros(c.id))
-      and public._somos(c.id) <= sala.faltan
-    order by
-      case when public._somos(c.id) = sala.faltan then 0 when public._somos(c.id) = 1 then 1 else 2 end,
-      c.creada_at
-    limit 1;
-
-    if found then
-      insert into public.mensajes (de, a, texto, auto, con)
-      values (cand.user_id, sala.user_id, 'La app lo conectó con tu sala', true, public._miembros(cand.id));
-    end if;
-  end loop;
-end $$;
 
 -- ---------------------------------------------------------------------------
 -- Disparadores: lo que una cuenta suspendida o bloqueada no puede hacer
@@ -583,7 +537,7 @@ end $$;
 
 revoke all on function
   public._huella(text), public._bloqueo_entre(uuid, uuid[]), public._bloqueo_grupos(uuid[], uuid[]), public._grupo_de(uuid),
-  public._discord(uuid), public._suspension(uuid), public._emparejar(),
+  public._discord(uuid), public._suspension(uuid),
   public._seg_busqueda(), public._seg_mensaje(), public._seg_mensaje_grupo(), public._seg_participante(), public._seg_grupo(),
   public._seg_amistad(), public._seg_amistad_aceptar(), public._seg_alta(), public._seg_referido(),
   public._mod_buscar(text), public.mod_reportes(int), public.mod_detalle(text),

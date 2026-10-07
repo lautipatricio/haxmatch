@@ -121,24 +121,25 @@ async function abrir(nombre) {
     ver: (texto, timeout = 12000) => page.getByText(texto, { exact: false }).first().waitFor({ timeout }),
     noVer: async (texto) => { if (await page.getByText(texto, { exact: false }).count()) throw new Error(`${nombre} no debería ver: ${texto}`) },
     foto: (titulo) => page.screenshot({ path: `${dir}/${String(++n).padStart(2, '0')}-${nombre}-${titulo}.png` }),
-    async buscar(modalidad) {
-      await u.link('Quiero jugar un amistoso').click()
-      if (modalidad && modalidad !== '3v3') {
-        await u.boton(modalidad).click()
-        await u.boton('3v3').click()
-      }
-      await u.boton('Buscar amistoso').click()
-      await u.boton('No, gracias').click()
+    /** "Quiero jugar un amistoso": un toque y a la cola, sin formulario. */
+    async buscar() {
+      await u.boton('Quiero jugar un amistoso').click()
       await u.ver('Jugadores buscando partidos')
     },
-    async abrirSala(sala, faltan = 1) {
+    /** `marcar`: opciones del formulario a tocar (una posición, una cancha). */
+    async abrirSala(sala, faltan = 1, marcar = []) {
       await u.link('Necesito un jugador').click()
       await page.getByLabel('Nombre de la sala').fill(sala)
       if (faltan !== 1) await u.boton(String(faltan)).click()
+      for (const opcion of marcar) await u.boton(opcion).click()
       await u.boton('Buscar jugador').click()
       await u.ver('Buscando jugador')
-      // Si ya había alguien esperando, el pedido aparece antes que el cartel "¿Te avisamos?".
-      await u.boton('No, gracias').click({ timeout: 1500 }).catch(() => {})
+    },
+    /** Desde mi sala invito a un jugador de la lista, y él acepta la invitación. */
+    async invitar(otro, nombreDelOtro) {
+      await u.fila(nombreDelOtro).getByRole('button', { name: 'Invitar' }).click()
+      await otro.ver('Te invitan a jugar')
+      await otro.boton('Sí, quiero jugar').click()
     },
     async inicio() {
       await page.goto(URL)
@@ -160,7 +161,7 @@ try {
   await esperarWeb()
 
   // -------------------------------------------------------------------------
-  paso('Sala de 1: la app acerca a un jugador, el dueño acepta, entra y los dos confirman')
+  paso('Sala de 1: la dueña elige a un jugador de la lista, él acepta la invitación, entra y los dos confirman')
   const ana = await abrir('ana')
   const beto = await abrir('beto')
   await ana.ver('Nadie buscando ahora')
@@ -169,9 +170,16 @@ try {
   await beto.buscar()
   await beto.fila('Ana').waitFor()
   await beto.ver('sala "sala de ana"'); await beto.foto('ve-la-sala')
-  await ana.ver('¿Aceptás a Beto?'); await ana.ver('La app lo conectó con tu sala'); await ana.foto('pedido')
-  await ana.boton('Aceptar').click()
-  await beto.ver('Sala de Ana'); await beto.ver('sala de ana'); await beto.foto('match-listo')
+  // La app no los junta sola: Ana ve a Beto en su lista y decide invitarlo.
+  await ana.fila('Beto').waitFor(); await ana.ver('Elegí a quién invitar')
+  await ana.page.waitForTimeout(1500); await ana.noVer('¿Aceptás a'); await ana.noVer('¿Te avisamos?'); await ana.foto('lista-de-jugadores')
+  await beto.noVer('Te invitan a jugar')
+  await ana.fila('Beto').getByRole('button', { name: 'Invitar' }).click()
+  await ana.fila('Beto').getByRole('button', { name: 'Invitado' }).waitFor()
+  await beto.ver('Te invitan a jugar'); await beto.ver('"sala de ana" está necesitando un jugador. ¿Querés jugar?')
+  await beto.ver('Sala de Ana · Nivel 0'); await beto.ver('Si aceptás, entrás directo'); await beto.foto('invitacion')
+  await beto.boton('Sí, quiero jugar').click()
+  await beto.ver('sala de ana'); await beto.ver('No te olvides'); await beto.foto('match-listo')
   await beto.boton('Entendido').click()
   await ana.ver('Beto va a entrar'); await ana.ver('Sala completa'); await ana.foto('va-a-entrar')
   await ana.boton('Ya entró Beto a la sala').last().click()
@@ -222,17 +230,18 @@ try {
   await ana.inicio()
 
   // -------------------------------------------------------------------------
-  paso('Sala de 2: rechazar, mensaje del jugador a la sala, "Todavía no", "Se salió" y cerrar la sala')
+  paso('Sala de 2: el invitado dice que no, después le pide lugar a la sala, "Todavía no", "Se salió" y cerrar la sala')
   const caro = await abrir('caro')
   await ana.inicio()
   await beto.inicio()
-  await ana.abrirSala('sala dos', 2)
+  await ana.abrirSala('sala dos', 2, ['GK', 'Big'])
   await beto.buscar()
-  await ana.ver('¿Aceptás a Beto?')
-  await ana.boton('Rechazar').click()
-  await ana.page.waitForTimeout(1500)
-  await ana.noVer('¿Aceptás a Beto?')
-  // Beto sigue buscando y le escribe él a la sala.
+  await ana.fila('Beto').getByRole('button', { name: 'Invitar' }).click()
+  // La invitación dice qué sala es, qué posición busca y en qué cancha.
+  await beto.ver('"sala dos" está necesitando un GK en la cancha Big. ¿Querés jugar?'); await beto.foto('invitacion-con-datos')
+  await beto.boton('Ahora no').click()
+  await ana.ver('Beto no puede ahora'); await ana.fila('Beto').getByRole('button', { name: 'No puede' }).waitFor()
+  // Beto sigue buscando y, si cambia de idea, le pide lugar él a la sala.
   await beto.fila('Ana').getByRole('button', { name: 'Mensaje' }).click()
   await beto.fila('Ana').getByRole('button', { name: 'Enviado' }).waitFor()
   await ana.ver('¿Aceptás a Beto?'); await ana.ver('Te escribió: ¿Me sumo a tu sala?'); await ana.foto('pedido-escrito')
@@ -241,10 +250,9 @@ try {
   await beto.boton('Entendido').click()
   await ana.ver('Beto va a entrar')
   await ana.boton('Todavía no').click()
-  await ana.ver('Aceptado · todavía no entró'); await ana.ver('Falta 1 · ARG')
+  await ana.ver('Aceptado · todavía no entró'); await ana.ver('Falta 1 · GK · ARG · Cancha: Big')
   await caro.buscar()
-  await ana.ver('¿Aceptás a Caro?')
-  await ana.boton('Aceptar').click()
+  await ana.invitar(caro, 'Caro')
   await caro.ver('Sala de Ana'); await caro.ver('Entra con vos')
   await caro.boton('Entendido').click()
   await ana.ver('Caro va a entrar')
@@ -253,16 +261,16 @@ try {
   await ana.boton('Ya entró Beto a la sala').last().click()
   await ana.ver('Adentro')
   await ana.boton('Beto se salió').click()
-  await ana.ver('Se liberó el lugar de Beto'); await ana.ver('Falta 1 · ARG')
+  await ana.ver('Se liberó el lugar de Beto'); await ana.ver('Falta 1 · GK · ARG')
   await beto.ver('Ya no estás en la sala de Ana'); await beto.ver('Match no encontrado')
   // A Caro, que nunca entró, se la puede sacar con "No vino": la sala vuelve a tener 2 lugares.
   await ana.boton('Caro no vino').click()
-  await ana.ver('Se liberó el lugar de Caro'); await ana.ver('Faltan 2 · ARG')
+  await ana.ver('Se liberó el lugar de Caro'); await ana.ver('Faltan 2 · GK · ARG')
   await caro.ver('Ya no estás en la sala de Ana')
   await caro.inicio()
   await caro.buscar()
-  await ana.ver('¿Aceptás a Caro?')
-  await ana.boton('Aceptar').click()
+  // A la que se fue se la puede volver a invitar.
+  await ana.invitar(caro, 'Caro')
   await caro.ver('Sala de Ana')
   await caro.boton('Entendido').click()
   await ana.ver('Caro va a entrar')
@@ -279,14 +287,14 @@ try {
   await caro.noVer('Por confirmar')
 
   // -------------------------------------------------------------------------
-  paso('Grupo: un jugador invita a otro, buscan juntos y una sala de 2 los recibe a los dos')
+  paso('Grupo: un jugador invita a otro, buscan juntos y una sala de 2 los invita a los dos')
   const dani = await abrir('dani')
   const eva = await abrir('eva')
   const fran = await abrir('fran')
   await dani.buscar()
   await eva.buscar()
   await dani.fila('Eva').getByRole('button', { name: 'Mensaje' }).click()
-  await eva.ver('Te escribieron'); await eva.ver('¿Jugamos un 3v3?'); await eva.foto('te-escribieron')
+  await eva.ver('Te escribieron'); await eva.ver('¿Jugamos?'); await eva.foto('te-escribieron')
   await eva.boton('Aceptar a Dani').click()
   await eva.ver('Te sumaste a la búsqueda de Dani'); await eva.ver('armó el grupo y maneja la búsqueda')
   await eva.boton('Salir del grupo').waitFor(); await eva.foto('sumada')
@@ -298,8 +306,13 @@ try {
   await gus.boton('Cancelar búsqueda').click()
   await dani.ver('Eva se sumó a tu búsqueda'); await dani.ver('Buscan con vos'); await dani.foto('grupo')
   await fran.abrirSala('sala de fran', 2)
-  await fran.ver('¿Aceptás a Dani y Eva?'); await fran.ver('son un grupo de 2'); await fran.foto('pedido-grupo')
-  await fran.boton('Aceptar').click()
+  // El grupo figura como una sola fila, marcado como justo lo que le falta a la sala.
+  await fran.fila('Dani').getByText('JUSTO').waitFor(); await fran.ver('Grupo de 2'); await fran.foto('grupo-en-la-lista')
+  await fran.fila('Dani').getByRole('button', { name: 'Invitar' }).click()
+  // La invitación le llega a quien armó el grupo; si acepta, entran los dos.
+  await dani.ver('Te invitan a jugar'); await dani.ver('Si aceptás, entran los 2 del grupo'); await dani.foto('invitacion-al-grupo')
+  await eva.noVer('Te invitan a jugar')
+  await dani.boton('Sí, quiero jugar').click()
   await dani.ver('Sala de Fran')
   await eva.ver('Sala de Fran'); await eva.ver('Entra con vos')
   await dani.boton('Entendido').click()
@@ -323,20 +336,23 @@ try {
   await fran.ver('Quiero jugar un amistoso')
 
   // -------------------------------------------------------------------------
-  paso('Equipo completo: dos buscando 2v2 arman sala y pasan a buscar rival')
+  paso('El grupo arma su sala cuando quiere, sin esperar los 15 minutos')
   const gabi = await abrir('gabi')
   const hugo = await abrir('hugo')
-  await gabi.buscar('2v2')
-  await hugo.buscar('2v2')
+  await gabi.buscar()
+  await hugo.buscar()
   await gabi.fila('Hugo').getByRole('button', { name: 'Mensaje' }).click()
   await hugo.boton('Aceptar a Gabi').click()
-  await gabi.ver('Equipo completo'); await gabi.ver('Ya son 2 para un 2v2'); await gabi.foto('equipo-completo')
-  await gabi.boton('Ahora no, seguir buscando una sala').click()
+  await gabi.ver('Hugo se sumó a tu búsqueda')
+  await gabi.boton('Armar una sala con el grupo').click()
+  await gabi.ver('Son 2. Uno crea la sala en HaxBall'); await gabi.foto('armar-sala')
+  await gabi.boton('Ahora no').click()
   await gabi.ver('Buscan con vos')
-  await gabi.page.reload()
-  await gabi.ver('Equipo completo')
-  await gabi.page.locator('#sala-equipo').fill('equipo gabi')
-  await gabi.boton('Crear sala y buscar rival').click()
+  await gabi.boton('Armar una sala con el grupo').click()
+  await gabi.boton('Crear una sala entre nosotros y seguir buscando').click()
+  await gabi.page.locator('#sala-nueva').fill('equipo gabi')
+  await gabi.boton('2').click()
+  await gabi.boton('Crear sala').click()
   await gabi.ver('Buscando jugador'); await gabi.ver('Faltan 2 · ARG'); await gabi.ver('Hugo va a entrar')
   await hugo.ver('Sala de Gabi'); await hugo.ver('equipo gabi')
   await gabi.boton('Todavía no').click()
@@ -423,7 +439,7 @@ try {
   await mora.ver('Agregá amigos por su usuario de Discord')
   await lola.page.waitForTimeout(1000)
   if (await lola.fila('Mora').getByText('AMIGO').count()) throw new Error('Mora ya no tendría que figurar como amiga de Lola')
-  await lola.boton('Cancelar búsqueda').click(); await mora.inicio(); await mora.link('Quiero jugar un amistoso').click(); await mora.boton('Cancelar búsqueda').click()
+  await lola.boton('Cancelar búsqueda').click(); await mora.inicio(); await mora.boton('Quiero jugar un amistoso').click(); await mora.boton('Cancelar búsqueda').click()
 
   // -------------------------------------------------------------------------
   paso('Clips: vincular TikTok, ver y reproducir los clips, reaccionar, video nuevo, ocultar y desvincular')
@@ -574,7 +590,7 @@ try {
   await ana.abrirSala('sala tres')
   await kira.inicio()
   await kira.buscar()
-  await ana.boton('Aceptar').click()
+  await ana.invitar(kira, 'Kira')
   await kira.ver('Sala de Ana')
   await kira.boton('Entendido').click()
   await kira.link('Reportar a Ana').click()
@@ -629,9 +645,12 @@ try {
   await servidor.acceso.admin(`select public.mod_suspender('kira', 3, 'Prueba de moderación')`)
   await kira.page.goto(URL)
   await kira.ver('Tu cuenta está suspendida hasta el'); await kira.ver('Motivo: Prueba de moderación'); await kira.foto('suspendida')
-  await kira.link('Quiero jugar un amistoso').click()
-  await kira.boton('Buscar amistoso').click()
-  await kira.page.locator('.err', { hasText: 'Tu cuenta está suspendida' }).waitFor()
+  await kira.boton('Quiero jugar un amistoso').click()
+  await kira.page.waitForTimeout(1500)
+  await kira.page.locator('.err', { hasText: 'Tu cuenta está suspendida' }).first().waitFor()
+  if (kira.page.url().includes('/buscando')) throw new Error('Una cuenta suspendida no tiene que salir del Inicio al tocar "Quiero jugar"')
+  const deKira = await servidor.acceso.admin(`select 1 from public.busquedas where user_id = $1 and estado = 'activa'`, [servidor.usuario('kira').id])
+  if (deKira.length) throw new Error('Una cuenta suspendida no tiene que entrar a la cola')
   await servidor.acceso.admin(`select public.mod_levantar('kira')`)
   await kira.page.goto(URL)
   await kira.ver('Quiero jugar un amistoso')

@@ -19,6 +19,9 @@ interface FilaBusqueda {
 interface FilaMensaje {
   id: string; de: string; a: string; texto: string; creado_at: string
   estado: Mensaje['estado']; auto: boolean; con: string[]
+  /** Solo lo manda el servidor desde que las salas invitan (paso 2 actualizado). */
+  dijo_no?: boolean
+  rechazo_at?: string | null
 }
 interface FilaMatch {
   /** null si quien creó la sala borró su cuenta. */
@@ -157,10 +160,11 @@ export function aLocal(e: EstadoCola, miId: string): ColaLocal {
     return base
   })
 
-  // Cuando la app me acerca a una sala, yo no escribí nada: ese pedido solo lo ve el dueño de la sala.
+  // Los pedidos que armaba la app sola (antes de que las salas invitaran) no los escribió nadie: solo los ve el dueño de la sala.
   const mensajes: Mensaje[] = e.mensajes.filter((m) => !(m.auto && m.de === miId)).map((m) => ({
     id: m.id, de: id(m.de), a: id(m.a), texto: m.texto, at: Date.parse(m.creado_at),
-    estado: m.estado, auto: m.auto, con: m.con.map(id),
+    estado: m.estado, auto: m.auto, con: m.con.map(id), dijoNo: m.dijo_no,
+    rechazoAt: m.rechazo_at ? Date.parse(m.rechazo_at) : m.rechazo_at === null ? null : undefined,
   }))
 
   const matches: Match[] = e.matches.map((m) => ({
@@ -248,7 +252,6 @@ export const cola = {
   cancelar: () => hacer('cancelar_busqueda'),
   bloquear: (user: string) => hacer('bloquear', { p_user: user }),
   desbloquear: (user: string) => hacer('desbloquear', { p_user: user }),
-  responderAviso: (avisar: boolean) => hacer('responder_aviso', { p_avisar: avisar }),
   renovar: () => hacer('renovar_busqueda'),
   enviarMensaje: (a: string) => hacer('enviar_mensaje', { p_a: a }),
   responderMensaje: (id: string, aceptar: boolean) => hacer('responder_mensaje', { p_id: id, p_aceptar: aceptar }),

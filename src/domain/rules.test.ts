@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  bonusRacha, compatibles, equipoCompleto, esPendiente, jugadoresPorEquipo, matchCuenta, nivelDe,
-  prioridadParaSala, progresoNivel, puntosAmistoso, puntosReaccion, puntosReel, puntosReferido, rachaActual, rivalDe,
+  bonusRacha, esPendiente, matchCuenta, nivelDe,
+  progresoNivel, puntosAmistoso, puntosReaccion, puntosReel, puntosReferido, rachaActual, rivalDe,
 } from './rules'
 import type { EventoPuntos, Match, Participante } from './types'
 
@@ -124,39 +124,4 @@ describe('partidos pendientes', () => {
   it('queda pendiente si no confirmé', () => expect(esPendiente(m, 'yo', HOY + DIA)).toBe(true))
   it('vence a los 7 días', () => expect(esPendiente(m, 'yo', HOY + 7 * DIA)).toBe(false))
   it('no es pendiente para quien ya confirmó', () => expect(esPendiente(m, 'rival', HOY)).toBe(false))
-})
-
-describe('grupos', () => {
-  it('toma la modalidad más chica elegida', () => {
-    expect(jugadoresPorEquipo(['4v4', '3v3'])).toBe(3)
-    expect(jugadoresPorEquipo(['Cualquiera'])).toBeNull()
-    expect(jugadoresPorEquipo(null)).toBeNull()
-  })
-  it('tres jugadores buscando 3v3 ya son un equipo completo', () => {
-    expect(equipoCompleto(['3v3'], 2)).toBe(false)
-    expect(equipoCompleto(['3v3'], 3)).toBe(true)
-  })
-  it('tres jugadores buscando 4v4 siguen buscando', () => expect(equipoCompleto(['4v4'], 3)).toBe(false))
-  it('en 1v1 hacen falta los dos', () => {
-    expect(equipoCompleto(['1v1'], 1)).toBe(false)
-    expect(equipoCompleto(['1v1'], 2)).toBe(true)
-  })
-  it('con "Cualquiera" nunca se completa solo', () => expect(equipoCompleto(['Cualquiera'], 5)).toBe(false))
-})
-
-describe('emparejamiento automático', () => {
-  it('un grupo del tamaño justo le gana a jugadores sueltos', () => {
-    const candidatos = [1, 1, 1, 3, 2].sort((a, b) => prioridadParaSala(a, 3) - prioridadParaSala(b, 3))
-    expect(candidatos[0]).toBe(3)
-    expect(candidatos.slice(1, 4)).toEqual([1, 1, 1])
-    expect(candidatos[4]).toBe(2)
-  })
-  it('un grupo más grande que los lugares libres no entra', () => expect(prioridadParaSala(4, 3)).toBe(-1))
-  it('una sala completa no recibe a nadie', () => expect(prioridadParaSala(1, 0)).toBe(-1))
-  it('hace falta compartir región y cancha', () => {
-    expect(compatibles({ region: ['ARG'], cancha: ['Big'] }, { region: ['ARG', 'UY'], cancha: ['Big', 'Futsal'] })).toBe(true)
-    expect(compatibles({ region: ['ARG'], cancha: ['Big'] }, { region: ['CHI'], cancha: ['Big'] })).toBe(false)
-    expect(compatibles({ region: ['ARG'], cancha: ['Big'] }, { region: ['ARG'], cancha: ['Futsal'] })).toBe(false)
-    expect(compatibles({ region: ['ARG'], cancha: ['Cualquiera'] }, { region: ['ARG'], cancha: ['Futsal'] })).toBe(true)
-  })
 })

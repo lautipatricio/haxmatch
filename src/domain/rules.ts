@@ -1,6 +1,6 @@
 // Reglas de producto de HaxMatch (especificación v1, sección 3).
 // Funciones puras: no leen ni guardan nada. El backend tiene que aplicar las mismas.
-import type { Busqueda, EventoPuntos, Formato, Match } from './types'
+import type { EventoPuntos, Match } from './types'
 
 export const PUNTOS = { amistoso: 10, reel: 8, reaccion: 1, conexion: 2, referido: 50 } as const
 
@@ -178,39 +178,4 @@ export function diasParaVencer(m: Match, ahora: number): number {
 
 export function entraAlSorteo(nivel: number): boolean {
   return nivel >= NIVEL_SORTEO
-}
-
-// ---------- Grupos y emparejamiento ----------
-
-/** Jugadores por equipo de la modalidad más chica elegida ("3v3" → 3). null si eligió "Cualquiera". */
-export function jugadoresPorEquipo(formatos: readonly Formato[] | null | undefined): number | null {
-  const ns = (formatos ?? []).filter((f) => f !== 'Cualquiera').map((f) => Number(f[0]))
-  return ns.length ? Math.min(...ns) : null
-}
-
-/**
- * ¿El grupo ya es un equipo completo? Tres jugadores buscando 3v3 lo son:
- * arman la sala y pasan a buscar rival. En 1v1 hacen falta los dos.
- */
-export function equipoCompleto(formatos: readonly Formato[] | null | undefined, cuantos: number): boolean {
-  const n = jugadoresPorEquipo(formatos)
-  return n !== null && cuantos >= Math.max(n, 2)
-}
-
-/** ¿Pueden jugar juntos? Comparten región y cancha ("Cualquiera" acepta todas). */
-export function compatibles(a: Pick<Busqueda, 'region' | 'cancha'>, b: Pick<Busqueda, 'region' | 'cancha'>): boolean {
-  const region = a.region.some((r) => b.region.includes(r))
-  const cancha = a.cancha.includes('Cualquiera') || b.cancha.includes('Cualquiera') || a.cancha.some((c) => b.cancha.includes(c))
-  return region && cancha
-}
-
-/**
- * Orden en que la app le acerca gente a una sala.
- * 0: justo los que faltan (un grupo del tamaño exacto le gana a jugadores sueltos).
- * 1: jugador suelto. 2: grupo más chico que los lugares libres. -1: no entran.
- */
-export function prioridadParaSala(cuantos: number, faltan: number): number {
-  if (cuantos > faltan || faltan <= 0) return -1
-  if (cuantos === faltan) return 0
-  return cuantos === 1 ? 1 : 2
 }

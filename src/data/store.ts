@@ -5,8 +5,8 @@
 // Los puntos, los clips, los amigos y los referidos todavía se guardan en el dispositivo.
 import { create } from 'zustand'
 import {
-  AMISTOSOS_REFERIDO, MINUTOS_DISPONIBLE, MINUTOS_OFERTA, bonusRacha, compatibles, conectoHoy, equipoCompleto,
-  matchCuenta, nivelDe, prioridadParaSala, PUNTOS, puntosAmistoso, puntosReaccion, puntosReel, puntosReferido,
+  AMISTOSOS_REFERIDO, MINUTOS_DISPONIBLE, MINUTOS_OFERTA, bonusRacha, conectoHoy,
+  matchCuenta, nivelDe, PUNTOS, puntosAmistoso, puntosReaccion, puntosReel, puntosReferido,
   rachaActual, rivalDe, totalPuntos,
 } from '../domain/rules'
 import type {
@@ -52,7 +52,7 @@ export interface Perfil {
 type Programado =
   | { at: number; tipo: 'respuesta_bot'; mensajeId: string }
   | { at: number; tipo: 'mensaje_entrante'; busquedaId: string }
-  | { at: number; tipo: 'emparejar'; busquedaId: string }
+  | { at: number; tipo: 'invitacion_sala'; busquedaId: string }
   | { at: number; tipo: 'confirma_bot'; matchId: string; userId: string }
   | { at: number; tipo: 'acepta_solicitud'; userId: string }
 
@@ -135,7 +135,6 @@ interface Acciones {
 
   crearBusqueda: (d: NuevaBusqueda) => Promise<string | null>
   cancelarBusqueda: () => void
-  responderAviso: (avisar: boolean) => void
   /** Cartel de los 15 minutos: 15 minutos más. */
   renovarBusqueda: () => void
   /** El grupo arma su sala: para buscar rival, para seguir buscando gente o para jugar entre ellos. */
@@ -143,8 +142,10 @@ interface Acciones {
 
   enviarMensaje: (aUserId: string) => void
   responderMensaje: (mensajeId: string, aceptar: boolean) => void
-  /** Demo: corre ya el emparejamiento automático. */
-  emparejarAhora: () => void
+  /** "Quiero jugar un amistoso": entra a la cola sin preguntar nada, con las regiones del perfil y por 15 minutos. */
+  entrarALaCola: () => Promise<string | null>
+  /** Demo: una sala con lugar me invita ahora. */
+  simularInvitacion: () => void
   /** Demo: adelanta la búsqueda hasta que se cumplen los 15 minutos. */
   simularQuinceMinutos: () => void
 
@@ -315,11 +316,6 @@ function enumerar(s: Store, ids: string[]): string {
   return n.length <= 1 ? n[0] ?? '' : `${n.slice(0, -1).join(', ')} y ${n[n.length - 1]}`
 }
 
-/** Programa (o reprograma) la próxima pasada del emparejamiento automático. */
-function conEmparejar(programados: Programado[], busquedaId: string, at: number): Programado[] {
-  return [...programados.filter((p) => !(p.tipo === 'emparejar' && p.busquedaId === busquedaId)), { at, tipo: 'emparejar', busquedaId }]
-}
-
 /** Devuelve a la cola a los jugadores que estaban sumados a una búsqueda que terminó sin match. */
 function soltarGrupo(busquedas: Busqueda[], mia: Busqueda, estado: 'cancelada' | 'vencida'): Busqueda[] {
   const grupo = mia.grupo ?? []
@@ -349,8 +345,6 @@ function agrupar(s: Store, ahora: number, otroId: string, invito: 'yo' | 'otro')
     busquedas = busquedas.map((b) => (b.id !== mia.id ? b : {
       ...b,
       grupo,
-      // Quien arma el grupo crea la sala cuando ya son un equipo completo.
-      equipoListo: invito === 'yo' && equipoCompleto(b.formato, 1 + grupo.length),
       // Si me sumo a la búsqueda de otro, paso a usar su reloj.
       ...(invito === 'otro' ? { creadaAt: suya.creadaAt, expiraAt: suya.expiraAt, ofertaHasta: null } : {}),
     }))
@@ -379,7 +373,7 @@ function agrupar(s: Store, ahora: number, otroId: string, invito: 'yo' | 'otro')
  */
 function crearMatch(
   s: Store, ahora: number,
-  d: { sala: Busqueda; otros: string[]; cancha: Cancha; auto?: boolean },
+  d: { sala: Busqueda; otros: string[]; cancha: Cancha },
 ): Cambio {
   const matchId = id('m')
   const creador = d.sala.userId
@@ -407,7 +401,6 @@ function crearMatch(
       return b
     }),
     notifs: conNotif(s, ahora, 'match', `Match listo con ${nombre}`, 'Entrá a la sala y confirmá', matchId),
-    toasts: d.auto ? conToast(s, { texto: `La app te conectó con la sala de ${nombre}` }) : s.toasts,
     irA: `/match/${matchId}`,
   }
 }
@@ -459,8 +452,19 @@ function evaluarMatch(s: Store, ahora: number, matches: Match[], matchId: string
   }
 }
 
+/**
+ * Lo que dice un mensaje. De una sala a un jugador es la invitación:
+ * "los pibes" está necesitando un GK/DFC en la cancha Big. ¿Querés jugar?
+ * (Con servidor el texto lo arma el servidor; esto es lo mismo, para la demostración.)
+ */
 function textoInvitacion(b: Busqueda | undefined): string {
-  if (b?.modo === 'sala') return '¿Te sumás a mi sala?'
+  if (b?.modo === 'sala') {
+    const posiciones = b.posicion.includes('Polifuncional') ? [] : b.posicion
+    const canchas = b.cancha.includes('Cualquiera') ? [] : b.cancha
+    const quien = posiciones.length ? `un ${posiciones.join('/')}` : (b.faltan ?? 1) > 1 ? `${b.faltan} jugadores` : 'un jugador'
+    const donde = canchas.length === 0 ? '' : ` en la cancha ${canchas.length === 1 ? canchas[0] : `${canchas.slice(0, -1).join(', ')} o ${canchas[canchas.length - 1]}`}`
+    return `"${b.nombreSala ?? ''}" está necesitando ${quien}${donde}. ¿Querés jugar?`
+  }
   const concretos = (b?.formato ?? []).filter((f) => f !== 'Cualquiera')
   return concretos.length === 1 ? `¿Jugamos un ${concretos[0]}?` : '¿Jugamos?'
 }
@@ -478,44 +482,26 @@ function elegir<T extends string>(a: readonly T[] | null | undefined, b: readonl
 }
 
 /**
- * Emparejamiento automático. La app conecta sola, sin mensajes:
- * - Si busco partido: me mete en una sala donde entro (solo o con mi grupo).
- *   Prefiere la sala a la que le faltan justo los que somos.
- * - Si tengo sala: me acerca gente para que la acepte. Primero un grupo del
- *   tamaño justo, después jugadores sueltos, después grupos más chicos.
- * Devuelve null si no encontró nada.
+ * Una sala con lugar me invita (demostración): elige la sala a la que le faltan justo
+ * los que somos, y si no, la de un amigo. Devuelve null si no hay ninguna.
  */
-function emparejar(s: Store, ahora: number): Cambio | null {
+function invitacionDeSala(s: Store, ahora: number): Cambio | null {
   const mia = miBusqueda(s)
-  if (!mia) return null
-  const libres = s.busquedas.filter((b) =>
-    b.estado === 'activa' && b.userId !== YO && !s.bloqueados.includes(b.userId) && compatibles(mia, b))
+  if (!mia || mia.modo !== 'jugador' || mia.liderId) return null
+  const somos = cuantosSon(mia)
   const amigo = (b: Busqueda) => Number(s.amigos.includes(b.userId))
-
-  if (mia.modo === 'jugador') {
-    if (mia.equipoListo || mia.ofertaHasta) return null
-    const somos = cuantosSon(mia)
-    const sala = libres
-      .filter((b) => b.modo === 'sala' && (b.faltan ?? 0) >= somos)
-      .sort((a, b) => Number(b.faltan === somos) - Number(a.faltan === somos) || amigo(b) - amigo(a))[0]
-    if (!sala) return null
-    return crearMatch(s, ahora, { sala, otros: [YO, ...(mia.grupo ?? [])], cancha: elegir<Cancha>(sala.cancha, mia.cancha), auto: true })
-  }
-
-  const faltan = mia.faltan ?? 0
-  if (faltan <= 0 || s.mensajes.some((m) => m.a === YO && m.estado === 'pendiente')) return null
-  const candidato = libres
-    .filter((b) => b.modo === 'jugador' && !mia.rechazados?.includes(b.userId) && prioridadParaSala(cuantosSon(b), faltan) >= 0)
-    .sort((a, b) => prioridadParaSala(cuantosSon(a), faltan) - prioridadParaSala(cuantosSon(b), faltan) || amigo(b) - amigo(a))[0]
-  if (!candidato) return null
-  const con = candidato.grupo ?? []
-  const nombres = enumerar(s, [candidato.userId, ...con])
-  const texto = con.length ? `Grupo de ${con.length + 1} para tu sala` : 'Jugador para tu sala'
-  const msg: Mensaje = { id: id('msg'), de: candidato.userId, a: YO, texto, at: ahora, estado: 'pendiente', auto: true, con }
+  const sala = s.busquedas
+    .filter((b) => b.estado === 'activa' && b.modo === 'sala' && b.userId !== YO && !s.bloqueados.includes(b.userId) && (b.faltan ?? 0) >= somos)
+    .filter((b) => !s.mensajes.some((m) => m.de === b.userId && m.a === YO && (m.estado === 'pendiente' || m.at >= mia.creadaAt)))
+    .sort((a, b) => Number(b.faltan === somos) - Number(a.faltan === somos) || amigo(b) - amigo(a))[0]
+  if (!sala) return null
+  const texto = textoInvitacion(sala)
+  const msg: Mensaje = { id: id('msg'), de: sala.userId, a: YO, texto, at: ahora, estado: 'pendiente' }
+  const titulo = `${s.usuarios[sala.userId]?.username ?? 'Una sala'} te invita a su sala`
   return {
     mensajes: [msg, ...s.mensajes],
-    notifs: conNotif(s, ahora, 'mensaje', `${nombres} ${con.length ? 'quieren' : 'quiere'} entrar a tu sala`, texto, msg.id),
-    toasts: conToast(s, { texto: `${nombres} ${con.length ? 'quieren' : 'quiere'} entrar a tu sala`, detalle: texto, mensajeId: msg.id }),
+    notifs: conNotif(s, ahora, 'mensaje', titulo, texto, msg.id),
+    toasts: conToast(s, { texto: titulo, detalle: texto, mensajeId: msg.id }),
   }
 }
 
@@ -557,8 +543,12 @@ function aplicarCola(s: Store, n: ColaLocal, primera: boolean): Cambio {
   const mia = n.busquedas.find((b) => b.userId === YO && b.estado === 'activa')
   const cancele = Date.now() - canceleAt < RECIEN
   const soyParte = (m: Match) => m.participantes.some((p) => p.userId === YO)
-  /** Partido nuevo en la sala de otro: me aceptaron o la app me conectó. */
-  const entreAUno = primera ? undefined : n.matches.find((m) => m.creadoPor !== YO && soyParte(m) && !s.matches.some((x) => x.id === m.id))
+  const tengoLugar = (m: Match | undefined) => !!m?.participantes.some((p) => p.userId === YO && !p.salioAt)
+  /**
+   * Entré a la sala de otro: acepté su invitación o me aceptaron a mí. Vale también
+   * cuando vuelvo a una sala de la que me había ido (el partido es el mismo de antes).
+   */
+  const entreAUno = primera ? undefined : n.matches.find((m) => m.creadoPor !== YO && tengoLugar(m) && !tengoLugar(s.matches.find((x) => x.id === m.id)))
 
   // Pedidos y mensajes que me llegaron y todavía no respondí.
   const pendientes = n.mensajes.filter((m) => m.a === YO && m.estado === 'pendiente')
@@ -567,9 +557,11 @@ function aplicarCola(s: Store, n: ColaLocal, primera: boolean): Cambio {
     if (s.mensajes.some((x) => x.id === m.id)) continue
     const quienes = [m.de, ...(m.con ?? [])]
     const varios = quienes.length > 1
+    // Si quien escribe tiene una sala, es una invitación a jugar ahí.
+    const deSala = n.busquedas.some((b) => b.userId === m.de && b.estado === 'activa' && b.modo === 'sala')
     const titulo = mia?.modo === 'sala'
       ? `${nombres(quienes)} ${varios ? 'quieren' : 'quiere'} entrar a tu sala`
-      : `${nombre(m.de)} te escribió`
+      : deSala ? `${nombre(m.de)} te invita a su sala` : `${nombre(m.de)} te escribió`
     const detalle = m.auto ? `La app ${varios ? 'los' : 'lo'} conectó con tu sala` : m.texto
     if (!st.notifs.some((x) => x.ref === m.id)) notif('mensaje', titulo, detalle, m.id)
     toast({ texto: titulo, detalle, mensajeId: m.id })
@@ -581,13 +573,15 @@ function aplicarCola(s: Store, n: ColaLocal, primera: boolean): Cambio {
       if (m.de !== YO || m.estado !== 'rechazado') continue
       const previo = s.mensajes.find((x) => x.id === m.id) ?? s.mensajes.find((x) => x.de === YO && x.a === m.a && x.estado === 'pendiente')
       if (previo?.estado !== 'pendiente') continue
+      // Se cayó solo (mi sala se llenó, por ejemplo): nadie me dijo que no.
+      if (m.dijoNo === false) continue
       // Si la que terminó fue mi búsqueda, mis mensajes se caen solos: no es un "no".
       const armeSala = antes?.modo === 'jugador' && mia?.modo === 'sala'
       if (cancele || entreAUno || armeSala || (antes && !mia) || (mia?.liderId && !antes?.liderId)) continue
       const sigue = n.busquedas.some((b) => b.userId === m.a && b.estado === 'activa')
       const titulo = sigue ? `${nombre(m.a)} no puede ahora` : `${nombre(m.a)} ya no está buscando`
       notif('respuesta', titulo, sigue ? 'Rechazó tu mensaje' : 'Tu mensaje quedó sin respuesta')
-      toast({ texto: titulo, detalle: 'Probá con otro jugador de la cola.' })
+      toast({ texto: titulo, detalle: 'Probá con otro jugador de la lista.' })
     }
 
     // Mi grupo: quién se sumó y quién se fue.
@@ -679,7 +673,7 @@ function aplicarCola(s: Store, n: ColaLocal, primera: boolean): Cambio {
       const titulo = b.modo === 'sala'
         ? `Tu amigo ${nombre(b.userId)} necesita ${b.faltan ?? 1} más`
         : `Tu amigo ${nombre(b.userId)} se puso disponible`
-      const detalle = b.modo === 'sala' ? `Sala "${b.nombreSala ?? ''}"` : `${(b.formato ?? []).join(', ')} · ${b.cancha.join(', ')}`
+      const detalle = b.modo === 'sala' ? `Sala "${b.nombreSala ?? ''}"` : `Está buscando partido · ${b.region.join(', ')}`
       notif(b.modo === 'sala' ? 'amigo_sala' : 'amigo_disponible', titulo, detalle, b.id)
       // Si ya estoy en un partido o en un grupo, no interrumpe: queda en Notificaciones.
       if (!entreAUno && !mia?.liderId) toast({ texto: titulo, detalle, to: '/perfil/amigos' })
@@ -938,7 +932,7 @@ export const useStore = create<Store>()((set, get) => {
       }
     }
 
-    // 3. Jugadores simulados y emparejamiento automático.
+    // 3. Jugadores simulados.
     const vencidos = get().programados.filter((p) => p.at <= ahora)
     if (vencidos.length === 0) {
       if (Object.keys(cambio).length) guardar(get())
@@ -947,27 +941,22 @@ export const useStore = create<Store>()((set, get) => {
     set({ programados: get().programados.filter((p) => p.at > ahora) })
     for (const p of vencidos) {
       const st = get()
-      if (p.tipo === 'emparejar') {
+      if (p.tipo === 'invitacion_sala') {
         const mia2 = miBusqueda(st)
         if (!mia2 || mia2.id !== p.busquedaId) continue
-        const c = emparejar(st, ahora)
+        const c = invitacionDeSala(st, ahora)
         if (c) set(c)
-        const sigue = miBusqueda(get())
-        // Mientras siga buscando (o a la sala le falten lugares), vuelve a probar.
-        if (sigue && sigue.id === p.busquedaId && (sigue.modo === 'jugador' || (sigue.faltan ?? 0) > 0)) {
-          set({ programados: conEmparejar(get().programados, sigue.id, ahora + (sigue.modo === 'sala' ? 12 : 20) * SEG) })
-        }
       } else if (p.tipo === 'respuesta_bot') {
         const msg = st.mensajes.find((m) => m.id === p.mensajeId)
         if (!msg || msg.estado !== 'pendiente') continue
         const bot = st.usuarios[msg.a]
         const acepta = !BOT.rechaza.includes(msg.a)
-        const mensajes = st.mensajes.map((m) => (m.id === msg.id ? { ...m, estado: acepta ? 'aceptado' as const : 'rechazado' as const } : m))
+        const mensajes = st.mensajes.map((m) => (m.id === msg.id ? { ...m, estado: acepta ? 'aceptado' as const : 'rechazado' as const, dijoNo: !acepta, rechazoAt: acepta ? null : ahora } : m))
         if (!acepta) {
           set({
             mensajes,
             notifs: conNotif(st, ahora, 'respuesta', `${bot.username} no puede ahora`, 'Rechazó tu mensaje'),
-            toasts: conToast(st, { texto: `${bot.username} no puede ahora`, detalle: 'Probá con otro jugador de la cola.' }),
+            toasts: conToast(st, { texto: `${bot.username} no puede ahora`, detalle: 'Probá con otro jugador de la lista.' }),
           })
           continue
         }
@@ -980,7 +969,7 @@ export const useStore = create<Store>()((set, get) => {
           // Una sala me aceptó: se genera el match, aunque no sea lo que yo buscaba.
           set(crearMatch(get(), ahora, { sala: suya, otros: [YO, ...(mia2?.grupo ?? [])], cancha: elegir<Cancha>(suya.cancha, mia2?.cancha) }))
         } else if (mia2?.modo === 'sala') {
-          // Un jugador (o su grupo) aceptó entrar a mi sala: ocupa su lugar sin pasar por el cartel de aceptar.
+          // Un jugador (o su grupo) aceptó mi invitación: ocupa su lugar en mi sala.
           const ids = [msg.a, ...(suya.grupo ?? [])]
           if (ids.length > (mia2.faltan ?? 0)) set({ toasts: conToast(get(), { texto: 'Ya no entran en tu sala', detalle: `Son ${ids.length} y te faltan ${mia2.faltan ?? 0}.` }) })
           else set(ocupar(get(), ahora, ids))
@@ -1233,13 +1222,24 @@ export const useStore = create<Store>()((set, get) => {
       estado: 'activa',
       avisar: null,
     }
-    // Una sala recibe gente enseguida. A quien busca partido la demo le da un rato
-    // para probar los mensajes antes de conectarlo sola con una sala.
-    const programados = conEmparejar(s.programados, b.id, ahora + (d.modo === 'sala' ? 8 : 45) * SEG)
-    if (d.modo === 'jugador') programados.push({ at: ahora + 15 * SEG, tipo: 'mensaje_entrante', busquedaId: b.id })
+    // En la demostración, a quien busca partido primero le escribe otro jugador y
+    // un rato después lo invita una sala. Quien abre una sala invita desde la lista.
+    const programados: Programado[] = d.modo === 'jugador'
+      ? [...s.programados,
+          { at: ahora + 15 * SEG, tipo: 'mensaje_entrante', busquedaId: b.id },
+          { at: ahora + 40 * SEG, tipo: 'invitacion_sala', busquedaId: b.id }]
+      : s.programados
     set({ busquedas: [b, ...s.busquedas], programados })
     guardar(get())
     return null
+  },
+
+  entrarALaCola: () => {
+    const region = get().perfil?.region ?? []
+    return get().crearBusqueda({
+      modo: 'jugador', formato: ['Cualquiera'], posicion: ['Polifuncional'], cancha: ['Cualquiera'],
+      region: region.length ? region : ['ARG'], duracion: '15min',
+    })
   },
 
   cancelarBusqueda: () => {
@@ -1269,18 +1269,6 @@ export const useStore = create<Store>()((set, get) => {
       mensajes: s.mensajes.map((m) => (m.estado === 'pendiente' ? { ...m, estado: 'rechazado' as const } : m)),
       toasts: s.toasts.filter((t) => !t.mensajeId),
     })
-    guardar(get())
-  },
-
-  responderAviso: (avisar) => {
-    const s = get()
-    const mia = miBusqueda(s)
-    if (!mia) return
-    set({ busquedas: s.busquedas.map((b) => (b.id === mia.id ? { ...b, avisar } : b)) })
-    if (REAL) {
-      void enServidor(() => cola.responderAviso(avisar))
-      return
-    }
     guardar(get())
   },
 
@@ -1324,7 +1312,6 @@ export const useStore = create<Store>()((set, get) => {
     // Los del grupo ya tienen su lugar. Si juegan entre ellos son rivales;
     // si van a buscar rival, son del equipo de quien creó la sala.
     if (grupo.length) set(ocupar(get(), ahora, grupo, entreNosotros ? 'B' : 'A'))
-    if (!entreNosotros && faltan > 0) set({ programados: conEmparejar(get().programados, mia.id, ahora + 8 * SEG) })
     guardar(get())
     return null
   },
@@ -1353,6 +1340,7 @@ export const useStore = create<Store>()((set, get) => {
       set({ toasts: conToast(s, { texto: 'No entran en tu sala', detalle: `Son ${cuantosSon(suya)} y te faltan ${mia.faltan ?? 0}.` }) })
       return
     }
+    if (mia?.modo === 'sala' && suya?.modo === 'jugador') texto = textoInvitacion(mia)
     const msg: Mensaje = { id: id('msg'), de: YO, a: aUserId, texto, at: ahora, estado: 'pendiente' }
     if (REAL) {
       // Se muestra como enviado en el momento; el servidor confirma o avisa el problema.
@@ -1373,7 +1361,7 @@ export const useStore = create<Store>()((set, get) => {
     const msg = s.mensajes.find((m) => m.id === mensajeId)
     if (!msg || msg.estado !== 'pendiente') return
     set({
-      mensajes: s.mensajes.map((m) => (m.id === mensajeId ? { ...m, estado: aceptar ? 'aceptado' as const : 'rechazado' as const } : m)),
+      mensajes: s.mensajes.map((m) => (m.id === mensajeId ? { ...m, estado: aceptar ? 'aceptado' as const : 'rechazado' as const, dijoNo: !aceptar, rechazoAt: aceptar ? null : ahora } : m)),
       toasts: s.toasts.filter((t) => t.mensajeId !== mensajeId),
     })
     if (REAL) {
@@ -1391,23 +1379,28 @@ export const useStore = create<Store>()((set, get) => {
         if (ids.length > (mia.faltan ?? 0)) set({ toasts: conToast(st, { texto: 'Ya no entran en tu sala', detalle: `Son ${ids.length} y te faltan ${mia.faltan ?? 0}.` }) })
         else set(ocupar(st, ahora, ids))
       } else {
-        // Rechazado: el lugar sigue libre y la app no me lo vuelve a acercar.
+        // Rechazado: el lugar sigue libre.
         set({ busquedas: st.busquedas.map((b) => (b.id === mia.id ? { ...b, rechazados: [...(b.rechazados ?? []), msg.de] } : b)) })
       }
-      const sigue = miBusqueda(get())
-      if (sigue && (sigue.faltan ?? 0) > 0) set({ programados: conEmparejar(get().programados, sigue.id, ahora + 10 * SEG) })
     } else if (aceptar) {
-      // Otro jugador me invitó: me sumo a su búsqueda y a su reloj.
-      set(agrupar(st, ahora, msg.de, 'otro'))
+      const suya = st.busquedas.find((b) => b.userId === msg.de && b.estado === 'activa')
+      const somos = [YO, ...(mia?.grupo ?? [])]
+      if (suya?.modo === 'sala') {
+        // Una sala me invitó: entro, con mi grupo si tengo. Ya me eligió, no hace falta que me acepte.
+        if (somos.length > (suya.faltan ?? 0)) set({ toasts: conToast(st, { texto: 'Esa sala ya se llenó', detalle: 'Seguís buscando.' }) })
+        else set(crearMatch(st, ahora, { sala: suya, otros: somos, cancha: elegir<Cancha>(suya.cancha, mia?.cancha) }))
+      } else {
+        // Otro jugador me invitó: me sumo a su búsqueda y a su reloj.
+        set(agrupar(st, ahora, msg.de, 'otro'))
+      }
     }
     guardar(get())
   },
 
-  emparejarAhora: () => {
+  simularInvitacion: () => {
     if (REAL) return
     const s = get()
-    const c = emparejar(s, s.ahora())
-    set(c ?? { toasts: conToast(s, { texto: 'Nada que encaje por ahora', detalle: 'La app sigue buscando.' }) })
+    set(invitacionDeSala(s, s.ahora()) ?? { toasts: conToast(s, { texto: 'No hay salas con lugar por ahora' }) })
     guardar(get())
   },
 
@@ -1512,7 +1505,6 @@ export const useStore = create<Store>()((set, get) => {
         ...b, estado: 'activa' as const, faltan, completaAt: null, creadaAt: b.creadaAt + pausa,
         matchId: sinPartido ? undefined : b.matchId,
       })),
-      programados: conEmparejar(s.programados, sala.id, ahora + 8 * SEG),
       toasts: conToast(s, { texto: `Se liberó el lugar de ${nombre}`, detalle: `Te ${faltan === 1 ? 'falta' : 'faltan'} ${faltan}. La sala vuelve a buscar.` }),
       irA: '/buscando',
     })
@@ -1824,7 +1816,7 @@ export const useStore = create<Store>()((set, get) => {
       } : {}),
     }))
     guardar(get())
-    // Con servidor el bloqueo vale en serio: no me lo acerca la app ni puede escribirme.
+    // Con servidor el bloqueo vale en serio: no puedo invitarlo ni puede escribirme.
     if (REAL && get().bloqueosEnServidor) {
       void (bloquear ? cola.bloquear(userId) : cola.desbloquear(userId)).then((error) => {
         if (error) set({ toasts: conToast(get(), { texto: error }) })
