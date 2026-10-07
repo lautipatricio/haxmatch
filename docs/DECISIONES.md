@@ -258,6 +258,18 @@ Cómo se probó: 379 comprobaciones del servidor (las de la cola se reescribiero
 
 Una revisión independiente del cambio no encontró problemas graves; se corrigieron cuatro detalles: "No puede" quedaba para toda la vida de la sala (ahora 2 minutos, como en el servidor), tocar "Quiero jugar" antes de que cargue la cola mostraba un error de más, el tope de mensajes a una misma persona, y el bloque de avisos que escondía su propio error. Queda anotado, sin corregir: si a un grupo que una sala invitó se le suma después alguien bloqueado por el dueño, la invitación no se cae sola (falla al aceptar, con un texto que deja ver que hay un bloqueo).
 
+## Perfil de otro jugador (7/10/2026)
+
+Pedido: al tocar el nombre de un jugador en la cola, ver su perfil con la cantidad de amistosos jugados y la opción de agregarlo como amigo.
+
+- Tocar a un jugador (foto, nombre o renglón de abajo) ya abría una ficha chica. Ahora es su **perfil**: foto grande, nombre, usuario de Discord, **amistosos jugados**, **nivel**, "Agregar a amigos" y "Reportar o bloquear". Se abre igual desde cualquier lista: la cola, "Buscan con vos", "En tu sala", "Te escribieron", Amigos y Match listo.
+- Los amistosos jugados son el mismo número que cada uno ve en su propio Perfil (los partidos que le cuentan).
+- El dato se pide al servidor recién al abrir el perfil, con una función nueva (`supabase/07_ficha.sql`). Sin ese paso, el perfil muestra solo el nivel.
+- Si hay un bloqueo entre los dos, para cualquiera de los lados, no se muestran los números.
+- La política de privacidad ahora dice que los demás ven el nivel y cuántos amistosos jugaste.
+
+Cómo se probó: 11 comprobaciones nuevas del servidor, el recorrido de la demostración y el ensayo con usuarios (una dueña de sala mira el perfil de un jugador antes de invitarlo y ve el amistoso que acaban de jugar).
+
 ## Decisiones que tomé al construir (revisar)
 
 1. **El match siempre es con una sala.** Dos jugadores sin sala ya no generan match: se juntan en una misma búsqueda. Quien creó la sala ve "Ya entró X a la sala" y el que se une ve "Ya entré a la sala".

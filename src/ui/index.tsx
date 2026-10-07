@@ -2,6 +2,7 @@ import { useEffect, useId, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { REAL } from '../config'
 import { YO, buscarMia, miRacha, misPuntos, nombreDe, useStore, usuarioDe, type Toast } from '../data/store'
+import { leerFicha } from '../data/servidor'
 import { progresoNivel } from '../domain/rules'
 import type { Usuario } from '../domain/types'
 
@@ -98,14 +99,25 @@ export function Persona({ user, children }: { user: Usuario; children: ReactNode
   )
 }
 
-/** Ficha de un jugador: quién es y qué puedo hacer con él. Se abre desde cualquier lista. */
+/**
+ * Perfil de otro jugador: quién es, cuántos amistosos jugó, su nivel y qué puedo hacer
+ * con él (agregarlo como amigo, reportarlo o bloquearlo). Se abre tocándolo en cualquier lista.
+ */
 export function FichaJugador() {
   const s = useStore()
   const nav = useNavigate()
   const [error, setError] = useState<string | null>(null)
   const [quitar, setQuitar] = useState(false)
+  /** Lo que se le pidió al servidor de este jugador. undefined: todavía no llegó. null: no se pudo saber. */
+  const [datos, setDatos] = useState<{ id: string; jugados: number; nivel: number | null } | null | undefined>(undefined)
   const id = s.ficha
-  useEffect(() => { setError(null); setQuitar(false) }, [id])
+  useEffect(() => {
+    setError(null); setQuitar(false); setDatos(undefined)
+    if (!id || !REAL) return
+    let vivo = true
+    void leerFicha(id).then((d) => { if (vivo) setDatos(d ? { id, ...d } : null) })
+    return () => { vivo = false }
+  }, [id])
   if (!id) return null
   const u = usuarioDe(s, id)
   const amigo = s.amigos.includes(id)
@@ -113,19 +125,40 @@ export function FichaJugador() {
   const recibida = s.solicitudes.includes(id)
   const cerrar = s.cerrarFicha
   const agregar = async () => setError(await s.pedirAmistad(id))
+  // Con servidor, los números son los que acaba de mandar; en la demostración, los de muestra.
+  const delServidor = datos && datos.id === id ? datos : null
+  const jugados = REAL ? delServidor?.jugados : u.jugados
+  const nivel = delServidor?.nivel ?? u.nivel
+  const cargando = REAL && datos === undefined
   return (
     <div className="scrim" style={{ zIndex: 40 }} onClick={(e) => { if (e.target === e.currentTarget) cerrar() }}>
-      <div className="sheet" role="dialog" aria-label={`Jugador ${u.username}`}>
-        <div className="row">
-          <Avatar user={u} />
+      <div className="sheet ficha" role="dialog" aria-label={`Perfil de ${u.username}`}>
+        <div className="row" style={{ gap: 14 }}>
+          <Avatar user={u} size="lg" />
           <div className="grow">
-            <div className="h cut">{u.username}</div>
+            <div className="strong cut" style={{ fontSize: 22, lineHeight: 1.15 }}>{u.username}</div>
             <div className="m cut">
               {u.discord ? `Discord: ${u.discord}` : 'Jugador de HaxMatch'}
               {amigo && ' · es tu amigo'}
             </div>
           </div>
         </div>
+        {(cargando || jugados !== undefined || nivel !== null) && (
+          <div className="stats" aria-busy={cargando}>
+            {(cargando || jugados !== undefined) && (
+              <div className="stat">
+                <div className="h num">{jugados ?? '…'}</div>
+                <div className="m">{jugados === 1 ? 'amistoso jugado' : 'amistosos jugados'}</div>
+              </div>
+            )}
+            {nivel !== null && (
+              <div className="stat">
+                <div className="h num">{nivel}</div>
+                <div className="m">nivel</div>
+              </div>
+            )}
+          </div>
+        )}
         {error && <div className="err" role="alert">{error}</div>}
         {amigo ? (
           quitar ? (

@@ -23,6 +23,8 @@ export interface Usuario {
   nivel: number | null
   color: string
   foto?: string | null
+  /** Amistosos jugados. Solo en la demostración: con servidor se pide al abrir su perfil. */
+  jugados?: number
 }
 
 export interface Busqueda {

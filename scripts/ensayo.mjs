@@ -236,6 +236,12 @@ try {
   await beto.inicio()
   await ana.abrirSala('sala dos', 2, ['GK', 'Big'])
   await beto.buscar()
+  // Antes de invitarlo, Ana toca su nombre y ve su perfil: jugó 1 amistoso (el de recién, con ella).
+  await ana.page.getByRole('button', { name: 'Ver a Beto' }).click()
+  await ana.ver('Discord: beto'); await ana.ver('amistoso jugado')
+  if ((await ana.page.locator('.ficha .stat .h').first().innerText()) !== '1') throw new Error('En el perfil de Beto tendría que figurar 1 amistoso jugado')
+  await ana.boton('Agregar a amigos').waitFor(); await ana.page.waitForTimeout(400); await ana.foto('perfil-de-otro')
+  await ana.boton('Cerrar').click()
   await ana.fila('Beto').getByRole('button', { name: 'Invitar' }).click()
   // La invitación dice qué sala es, qué posición busca y en qué cancha.
   await beto.ver('"sala dos" está necesitando un GK en la cancha Big. ¿Querés jugar?'); await beto.foto('invitacion-con-datos')
@@ -402,7 +408,9 @@ try {
   await lola.buscar()
   await mora.buscar()
   await mora.page.getByRole('button', { name: 'Ver a Lola' }).click()
-  await mora.ver('Discord: lola'); await mora.foto('ficha')
+  await mora.ver('Discord: lola'); await mora.ver('amistosos jugados')
+  if ((await mora.page.locator('.ficha .stat .h').first().innerText()) !== '0') throw new Error('Lola todavía no jugó ningún amistoso')
+  await mora.foto('ficha')
   await mora.boton('Agregar a amigos').click()
   await mora.boton('Solicitud enviada').waitFor()
   await mora.boton('Cerrar').click()

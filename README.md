@@ -14,7 +14,7 @@ Necesitás Node 20 o más nuevo.
 npm install
 npm run dev        # abre la app en http://localhost:5173, con el servidor real
 npm test           # tests de las reglas (puntos, niveles, validación)
-npm run test:sql   # prueba los SQL de supabase/ en una base local (379 comprobaciones)
+npm run test:sql   # prueba los SQL de supabase/ en una base local (390 comprobaciones)
 npm run test:push  # prueba el envío de notificaciones (worker/index.js)
 npm run test:tiktok  # prueba la vinculación con TikTok contra un TikTok de mentira (38 comprobaciones)
 npm run build      # versión para publicar, en dist/
@@ -105,6 +105,7 @@ Cómo funciona: la app le pide a la web (`/api/tiktok/entrar`) empezar una vincu
 | `supabase/04_clips.sql` | Clips: la cuenta de TikTok vinculada de cada usuario, la lista de sus videos, cuáles se muestran y las reacciones |
 | `supabase/05_puntos.sql` | Puntos, niveles y referidos: cada movimiento de puntos, el total de cada perfil, los disparadores que los dan y los topes. Al ejecutarlo reconstruye los puntos de lo que ya estaba guardado |
 | `supabase/06_cuenta.sql` | Borrar la cuenta desde la app, bloqueos guardados en el servidor y suspensión de cuentas (funciones `mod_`, solo desde el SQL Editor) |
+| `supabase/07_ficha.sql` | El perfil de otro jugador: cuántos amistosos jugó y su nivel (lo que la app muestra al tocarlo en la cola) |
 
 ### Moderación (reportes y suspensiones)
 
@@ -174,6 +175,7 @@ En la web publicada:
 - **Real:** ingreso con Discord, perfil y foto, cola, mensajes, grupos, salas, partidos, confirmaciones, reportes, amigos, notificaciones, clips (vinculación con TikTok, videos, reacciones) y los totales de amistosos jugados y asistencia.
 - **Real también** (con `supabase/05_puntos.sql`): puntos, nivel, racha, lista de referidos y el nivel de los demás jugadores. Sin ese paso, los puntos se siguen calculando en el celular.
 - **Real también** (con `supabase/06_cuenta.sql`): borrar la cuenta, bloqueos y suspensiones. Sin ese paso, bloquear solo oculta al jugador en ese dispositivo.
+- **Real también** (con `supabase/07_ficha.sql`): los amistosos jugados en el perfil de otro jugador. Sin ese paso, su perfil muestra solo el nivel.
 - **En el dispositivo:** la lista de notificaciones.
 - **De muestra:** mientras nadie haya vinculado un TikTok con videos de HaxBall, Clips muestra 6 videos inventados (no se reproducen) para que no quede vacío. Desaparecen cuando hay al menos un clip real.
 

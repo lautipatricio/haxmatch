@@ -8,15 +8,15 @@ const HORA = 60 * MIN
 export const YO = 'yo'
 
 export const USUARIOS: Record<string, Usuario> = {
-  u_mati: { id: 'u_mati', username: 'Mati_', nivel: 4, color: '#5B8C7A' },
-  u_tobi: { id: 'u_tobi', username: 'Tobi_GK', nivel: 6, color: '#8C7A5B' },
-  u_pibe: { id: 'u_pibe', username: 'Pibe9', nivel: 3, color: '#7A5B8C' },
-  u_nico: { id: 'u_nico', username: 'Nico', nivel: 5, color: '#5B6F8C' },
-  u_lucho: { id: 'u_lucho', username: 'Lucho', nivel: 5, color: '#8C5B62' },
-  u_marce: { id: 'u_marce', username: 'Marce10', nivel: 2, color: '#6F8C5B' },
-  u_cami: { id: 'u_cami', username: 'Cami_DC', nivel: 7, color: '#8C6A5B' },
-  u_rolo: { id: 'u_rolo', username: 'Rolo', nivel: 1, color: '#5B8C8A' },
-  u_fede: { id: 'u_fede', username: 'Fede_7', nivel: 3, color: '#8C825B' },
+  u_mati: { id: 'u_mati', username: 'Mati_', nivel: 4, color: '#5B8C7A', jugados: 41 },
+  u_tobi: { id: 'u_tobi', username: 'Tobi_GK', nivel: 6, color: '#8C7A5B', jugados: 96 },
+  u_pibe: { id: 'u_pibe', username: 'Pibe9', nivel: 3, color: '#7A5B8C', jugados: 23 },
+  u_nico: { id: 'u_nico', username: 'Nico', nivel: 5, color: '#5B6F8C', jugados: 64 },
+  u_lucho: { id: 'u_lucho', username: 'Lucho', nivel: 5, color: '#8C5B62', jugados: 58 },
+  u_marce: { id: 'u_marce', username: 'Marce10', nivel: 2, color: '#6F8C5B', jugados: 12 },
+  u_cami: { id: 'u_cami', username: 'Cami_DC', nivel: 7, color: '#8C6A5B', jugados: 131 },
+  u_rolo: { id: 'u_rolo', username: 'Rolo', nivel: 1, color: '#5B8C8A', jugados: 5 },
+  u_fede: { id: 'u_fede', username: 'Fede_7', nivel: 3, color: '#8C825B', jugados: 27 },
 }
 
 /** Códigos de referido de los usuarios de prueba, para probar el onboarding. */

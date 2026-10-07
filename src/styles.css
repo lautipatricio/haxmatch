@@ -331,6 +331,10 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
 .sheet .h:not(.sub) { font-size: 26px; margin-bottom: 2px; }
 .sheet .sub { margin-top: 4px; }
 .sheet .field { background: var(--bg); }
+/* Perfil de otro jugador: los números van separados de los botones. */
+.ficha .stats { margin: 8px 0 10px; }
+.ficha .stat .h { font-size: 34px; margin: 0; }
+.ficha .stats .stat:only-child { padding-left: 0; }
 
 /* ---------- Avisos ---------- */
 

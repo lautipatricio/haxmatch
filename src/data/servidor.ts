@@ -237,6 +237,21 @@ export async function leerSeguridad(): Promise<{ bloqueados: Usuario[]; suspensi
   }
 }
 
+/** La base todavía no sabe mostrar el perfil de otro (falta el paso 7): no se vuelve a preguntar. */
+let sinFicha = false
+
+/**
+ * Lo que se ve del perfil de otro jugador: cuántos amistosos jugó y su nivel.
+ * null si no se pudo saber (sin conexión, base sin actualizar, o hay un bloqueo entre los dos).
+ */
+export async function leerFicha(userId: string): Promise<{ jugados: number; nivel: number | null } | null> {
+  if (sinFicha) return null
+  const r = await rpc<{ jugados: number; nivel: number | null } | null>('ficha_jugador', { p_user: userId })
+  if (r.error === SIN_BASE) sinFicha = true
+  if (!r.data) return null
+  return { jugados: Number(r.data.jugados) || 0, nivel: r.data.nivel ?? null }
+}
+
 /** Cada acción devuelve el texto del problema, o null si salió bien. */
 const hacer = async (nombre: string, args: Record<string, unknown> = {}): Promise<string | null> =>
   (await rpc(nombre, args)).error ?? null

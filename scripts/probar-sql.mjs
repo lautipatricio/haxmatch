@@ -1160,5 +1160,33 @@ await invitar(ana, eva)
 ok((await mia(ana)).faltan === 0, 'y la sala puede invitar a otro jugador')
 await limpiar()
 
+// ========================== Perfil de otro jugador =========================
+
+titulo('El perfil de otro jugador: amistosos jugados y nivel')
+const ficha = (u, otro) => x.rpc(u, 'ficha_jugador', { p_user: otro.id })
+await limpiar()
+const antesDeEva = (await ficha(caro, eva)).jugados
+await jugarPartido(dani, eva)
+let fe = await ficha(caro, eva)
+const propio = await x.rpc(eva, 'estado_completo')
+ok(fe.jugados === antesDeEva + 1, 'cuando juega un amistoso, a los demás les figura uno más')
+ok(fe.jugados === Math.max(propio.resumen.jugados, propio.puntos.conteos.amistoso ?? 0), 'es el mismo número que ella ve en su propio perfil')
+ok(fe.nivel === Number((await x.admin('select public._nivel(puntos) as n from public.profiles where id = $1', [eva.id]))[0].n), 'y trae su nivel')
+ok(Object.keys(fe).sort().join() === 'id,jugados,nivel', 'no trae nada más que eso')
+const antesDeCaro = (await ficha(dani, caro)).jugados
+await sala(eva, 1); await jugador(caro); await invitar(eva, caro)
+ok((await ficha(dani, caro)).jugados === antesDeCaro && (await ficha(dani, eva)).jugados === fe.jugados, 'estar anotado en una sala, sin que el partido cuente, no suma')
+await limpiar()
+ok((await ficha(eva, eva)).jugados === fe.jugados, 'cada uno puede pedir el suyo')
+ok((await ficha(caro, { id: '00000000-0000-0000-0000-00000000dead' })) === null, 'de un usuario que no existe no devuelve nada')
+const sinRegistro = { id: '00000000-0000-0000-0000-0000000000f1', usuario: 'sinregistro' }
+await x.admin('insert into auth.users values ($1)', [sinRegistro.id]); await x.rpc(sinRegistro, 'mi_perfil')
+ok((await ficha(caro, sinRegistro)) === null, 'ni de uno que todavía no terminó su registro')
+await x.rpc(caro, 'bloquear', { p_user: eva.id })
+ok((await ficha(caro, eva)) === null && (await ficha(eva, caro)) === null, 'con un bloqueo de por medio, ninguno de los dos ve el perfil del otro')
+await x.rpc(caro, 'desbloquear', { p_user: eva.id })
+ok((await ficha(caro, eva))?.jugados === fe.jugados, 'al desbloquear se vuelve a ver')
+await falla('un visitante no puede ver perfiles', () => x.rpc(null, 'ficha_jugador', { p_user: eva.id }))
+
 console.log(fallas ? `\n${fallas} comprobaciones fallaron.` : '\nTodo bien.')
 process.exit(fallas ? 1 : 0)
