@@ -32,7 +32,7 @@ const elegirSonido = (si: boolean) => {
 }
 
 type AvisoTikTok = { 'x-tiktok-player'?: boolean; type?: string; value?: unknown }
-/** El reproductor de TikTok manda sus avisos como texto; se aceptan las dos formas. */
+/** Aviso del reproductor de TikTok. Los manda como objeto; por las dudas se acepta también como texto. */
 function leerAviso(dato: unknown): AvisoTikTok | null {
   if (typeof dato === 'string') {
     if (!dato.startsWith('{')) return null
@@ -138,7 +138,7 @@ function Reproductor({ id, titulo }: { id: string; titulo: string }) {
   const pedir = trabado && mudo && quiereSonido
 
   return (
-    <div className="reel__video">
+    <div className={`reel__video${directo ? ' reel__video--directo' : ''}`}>
       <iframe ref={marco} key={directo ? 'directo' : 'capa'} src={`${TIKTOK}/player/v1/${id}?${opciones(directo)}`} title={titulo || 'Video de TikTok'}
         allow="autoplay; encrypted-media; fullscreen" referrerPolicy="strict-origin-when-cross-origin" />
       {!directo && (
@@ -313,7 +313,6 @@ export function Clips() {
                     {i === activo
                       ? <Reproductor key={r.tiktokId} id={r.tiktokId} titulo={r.titulo} />
                       : <div className="reel__video reel__video--espera"><Portada src={r.portada} /><span><Icon name="play" size={40} /></span></div>}
-                    {/* Del lado derecho quedan los números de TikTok: lo de HaxMatch va a la izquierda. */}
                     <div className="reel__info reel__info--video">
                       <div className="row" style={{ gap: 8 }}>
                         <Avatar user={autor} nombre={nombreDe(s, r.userId)} foto={mio ? s.perfil?.foto : null} size="sm" />

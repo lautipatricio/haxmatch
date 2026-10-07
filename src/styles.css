@@ -407,8 +407,13 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
 .reel--video::before { display: none; }
 /* El video ocupa toda la pantalla; el degradé de abajo va por encima, para que se lea el texto. */
 .reel--video::after { z-index: 1; height: 38%; background: linear-gradient(transparent, rgba(0, 0, 0, .78)); }
-.reel__video { position: absolute; z-index: 1; inset: 0; }
-.reel__video iframe { width: 100%; height: 100%; border: 0; display: block; background: #000; }
+.reel__video { position: absolute; z-index: 1; inset: 0; overflow: hidden; }
+/* El reproductor de TikTok pone arriba su logo y el autor, y abajo a la derecha sus me gusta,
+   comentarios y compartir, y no deja sacarlos. Se lo hace más alto que la pantalla, parejo
+   hacia arriba y hacia abajo: esas dos franjas quedan afuera y el video sigue centrado. */
+.reel__video iframe { position: absolute; left: 0; top: -240px; width: 100%; height: calc(100% + 480px); border: 0; display: block; background: #000; }
+/* Con los controles de TikTok a la vista (cuando el video no obedece), va entero. */
+.reel__video--directo iframe { top: 0; height: 100%; }
 .reel__video--espera { display: grid; place-items: center; }
 .reel__video--espera .portada { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .reel__video--espera > span { position: relative; width: 76px; height: 76px; border-radius: 50%; background: rgba(14, 21, 18, .55); display: grid; place-items: center; padding-left: 4px; }
@@ -425,8 +430,7 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
 .feed--cartel .reel__sonido { top: calc(152px + var(--safe-top)); }
 /* La primera vez que hace falta un toque para el sonido, el botón va grande y al medio. */
 .reel__sonido--pedir, .feed--cartel .reel__sonido--pedir { top: 50%; left: 50%; right: auto; transform: translate(-50%, -50%); min-height: 52px; padding: 0 20px; font-size: 16px; }
-/* Del lado derecho del video TikTok muestra sus propios números: lo de HaxMatch va a la izquierda. */
-.reel__info--video { right: 84px; bottom: 26px; gap: 8px; text-shadow: 0 1px 3px rgba(0, 0, 0, .7); }
+.reel__info--video { right: var(--gutter); bottom: 26px; gap: 8px; text-shadow: 0 1px 3px rgba(0, 0, 0, .7); }
 .reel__info--video .titulo { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .reel__info--video .like { color: var(--fg); padding: 0 8px 0 0; }
 .reel__info--video .like[aria-pressed="true"] { color: var(--accent); }

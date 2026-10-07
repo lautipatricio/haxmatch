@@ -17,15 +17,15 @@ const servidor = await iniciarEnsayo(8787, { conWeb: true })
 
 /**
  * Reproductor de TikTok de mentira. Se porta como el de verdad (comprobado con el
- * real): manda sus avisos como texto, solo se pone en marcha si la dirección trae
- * autoplay=1, y arranca sin sonido. Tres formas de portarse con el sonido:
+ * real): solo se pone en marcha si la dirección trae autoplay=1, y arranca sin
+ * sonido. Tres formas de portarse con el sonido:
  * - "libre": deja activar el sonido siempre (computadora, Android).
  * - "iphone": en cada video frena el primer pedido de sonido (el que la app hace
  *   sola) y acepta los siguientes (los que nacen de un toque del usuario).
  * - "estricto": no deja nunca; solo sirven los controles del propio video.
  */
 const reproductor = (modo) => `<!doctype html><body style="margin:0;background:#123;color:#fff;font:16px sans-serif"><p id="e">quieto</p><p id="c"></p><script>
-  const decir = (type, value) => parent.postMessage(JSON.stringify({ type, value, 'x-tiktok-player': true }), '*')
+  const decir = (type, value) => parent.postMessage({ type, value, 'x-tiktok-player': true }, '*')
   const modo = ${JSON.stringify(modo)}
   let anda = false, mudo = true, pedidos = 0
   const frenado = () => modo === 'estricto' || (modo === 'iphone' && pedidos < 2)
@@ -419,6 +419,9 @@ try {
   if (!src.startsWith(`https://www.tiktok.com/player/v1/${golazo}?`)) throw new Error('El reproductor tiene que ser el de TikTok, con el número del video')
   if (!src.includes('autoplay=1')) throw new Error('El reproductor tiene que arrancar solo')
   await marco.getByText('sin controles').waitFor()
+  // El reproductor va más alto que la pantalla, parejo arriba y abajo: así quedan afuera el logo y los números de TikTok.
+  const sobra = await pato.page.evaluate(() => { const v = document.querySelector('.reel__video').getBoundingClientRect(); const f = document.querySelector('.reel__video iframe').getBoundingClientRect(); return [Math.round(v.top - f.top), Math.round(f.bottom - v.bottom)] })
+  if (sobra[0] < 200 || sobra[0] !== sobra[1]) throw new Error(`El reproductor tiene que sobresalir parejo arriba y abajo (sobresale ${sobra})`)
   await pato.boton('Pausar').click()
   await marco.getByText('pausado con sonido').waitFor()
   await pato.boton('Reproducir').click()
@@ -437,6 +440,7 @@ try {
   await marcoOlga.getByText('reproduciendo sin sonido').waitFor()
   await olga.page.locator('.reel__toque').waitFor({ state: 'detached' })
   await marcoOlga.getByText('con controles').waitFor()
+  if (await olga.page.evaluate(() => document.querySelector('.reel__video iframe').getBoundingClientRect().height !== document.querySelector('.reel__video').getBoundingClientRect().height)) throw new Error('Con los controles de TikTok a la vista, el reproductor va entero')
   await olga.page.goto(`${URL}/clips/mis-videos`)
   await pato.boton('Reaccionar').click()
   await pato.boton('Quitar reacción').waitFor()
