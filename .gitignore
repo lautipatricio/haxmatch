@@ -4,3 +4,4 @@ dist-demo
 .env
 .env.local
 .wrangler
+dist-prueba

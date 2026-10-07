@@ -12,6 +12,11 @@ import type {
   Notif, Posicion, Reel, Referido, Region, Reporte, TipoNotif, TipoPunto, Usuario,
 } from '../domain/types'
 import {
+  codigoPendiente, completarRegistro, guardarCodigoPendiente, ingresarConDiscord, miPerfil, quienInvita, quitarFoto,
+  salir, subirFoto, type FilaPerfil,
+} from './cuenta'
+import { REAL, supabase } from './supabase'
+import {
   BOT, CODIGOS, SEED_AMIGOS, SEED_EVENTOS, SEED_REFERIDOS, SEED_SOLICITUDES, USUARIOS, YO,
   seedBusquedas, seedMatches, seedMisVideos, seedNotifs, seedReels,
 } from './seed'
@@ -21,6 +26,10 @@ const DIA = 24 * 60 * 60 * SEG
 const CLAVE = 'haxmatch-demo-v7'
 
 export interface Perfil {
+  /** Id de la cuenta en el servidor. No existe en modo demostración. */
+  id?: string
+  /** Nick de quien lo invitó con su código. */
+  invitoNick?: string | null
   /** Usuario de Discord. */
   username: string
   /** Nombre que eligió para mostrar en la app. */
@@ -90,10 +99,12 @@ interface Acciones {
   limpiarIrA: () => void
 
   /** Con código de un amigo, primero lo valida. Devuelve el problema, o null si entró. */
-  entrarConDiscord: (codigoAmigo?: string) => string | null
-  completarOnboarding: (d: { nick: string; region: Region[] }) => string | null
+  entrarConDiscord: (codigoAmigo?: string) => Promise<string | null>
+  completarOnboarding: (d: { nick: string; region: Region[] }) => Promise<string | null>
+  /** Con servidor: mira si ya hay una sesión abierta y queda atento a los cambios. */
+  iniciarSesion: () => void
   /** Cambia la foto de perfil. null la quita. */
-  cambiarFoto: (foto: string | null) => void
+  cambiarFoto: (foto: string | null) => Promise<string | null>
   cerrarSesion: () => void
   reiniciar: () => void
   avanzarDia: () => void
@@ -137,6 +148,8 @@ interface Acciones {
 }
 
 interface Efimero {
+  /** Con servidor: todavía no se sabe si hay una sesión abierta. */
+  cargandoSesion: boolean
   toasts: Toast[]
   irA: string | null
 }
@@ -441,12 +454,34 @@ function emparejar(s: Store, ahora: number): Cambio | null {
 
 // ---------- Store ----------
 
-const inicial = leerGuardado() ?? datosIniciales(Date.now())
+const guardado = leerGuardado() ?? datosIniciales(Date.now())
+// Con servidor, el perfil no sale del dispositivo: se carga de la sesión.
+const inicial: Datos = REAL ? { ...guardado, perfil: null } : guardado
+
+function aPerfil(f: FilaPerfil): Perfil {
+  return {
+    id: f.id,
+    username: f.username,
+    nick: f.nick,
+    foto: f.foto_url,
+    region: f.region,
+    codigo: f.codigo,
+    referidoPor: f.referido_por,
+    onboarding: f.onboarding,
+    // Antes de terminar el registro, quién invitó sale del código que cargó en el ingreso.
+    invitoNick: f.invito ?? (f.onboarding ? null : codigoPendiente()?.nick ?? null),
+  }
+}
+
+/** Usuario de la sesión que ya se cargó, para no recargar el perfil con cada renovación. */
+let sesionCargada: string | null = null
+let escuchandoSesion = false
 
 export const useStore = create<Store>()((set, get) => ({
   ...inicial,
   toasts: [],
   irA: null,
+  cargandoSesion: REAL,
 
   ahora: () => Date.now() + get().offsetDias * DIA,
 
@@ -575,8 +610,49 @@ export const useStore = create<Store>()((set, get) => ({
 
   // ----- Sesión -----
 
-  entrarConDiscord: (codigoAmigo) => {
-    // El código de un amigo se valida antes de crear la cuenta.
+  iniciarSesion: () => {
+    if (!supabase || escuchandoSesion) return
+    escuchandoSesion = true
+    supabase.auth.onAuthStateChange((_evento, sesion) => {
+      const uid = sesion?.user.id ?? null
+      if (uid === sesionCargada && (uid === null ? !get().cargandoSesion : true)) return
+      sesionCargada = uid
+      if (!uid) {
+        set({ perfil: null, cargandoSesion: false })
+        return
+      }
+      // Se difiere: dentro de este aviso no se puede volver a llamar a Supabase.
+      setTimeout(async () => {
+        const r = await miPerfil()
+        if (sesionCargada !== uid) return
+        if (!r.perfil) {
+          sesionCargada = null
+          set({ perfil: null, cargandoSesion: false, toasts: conToast(get(), { texto: 'No pudimos cargar tu perfil', detalle: r.error }) })
+          return
+        }
+        set({ perfil: aPerfil(r.perfil), cargandoSesion: false })
+        get().tick()
+        guardar(get())
+      }, 0)
+    })
+  },
+
+  entrarConDiscord: async (codigoAmigo) => {
+    if (REAL) {
+      // El código de un amigo se valida antes de ir a Discord y se aplica al terminar el registro.
+      if (codigoAmigo !== undefined) {
+        const c = codigoAmigo.trim().toUpperCase()
+        if (!c) return 'Escribí el código de tu amigo.'
+        const r = await quienInvita(c)
+        if (r.error) return r.error
+        if (!r.nick) return 'No encontramos ese código. Revisalo e intentá de nuevo.'
+        guardarCodigoPendiente({ codigo: c, nick: r.nick })
+      } else {
+        guardarCodigoPendiente(null)
+      }
+      return ingresarConDiscord()
+    }
+    // Modo demostración: el código se valida contra los usuarios de prueba.
     let referidoPor: string | null = null
     if (codigoAmigo !== undefined) {
       const c = codigoAmigo.trim().toUpperCase()
@@ -591,33 +667,56 @@ export const useStore = create<Store>()((set, get) => ({
     return null
   },
 
-  completarOnboarding: ({ nick, region }) => {
+  completarOnboarding: async ({ nick, region }) => {
     const s = get()
     if (!s.perfil) return 'Primero entrá con Discord.'
     // Sin nick, se usa el usuario de Discord.
-    const elegido = nick.trim() || s.perfil.username
+    const elegido = nick.trim() || s.perfil.username.slice(0, 20)
     if (elegido.length < 2 || elegido.length > 20) return 'El nick tiene que tener entre 2 y 20 caracteres.'
-    set({ perfil: { ...s.perfil, nick: elegido, region, onboarding: true } })
+    if (REAL) {
+      const r = await completarRegistro(elegido, region, codigoPendiente()?.codigo)
+      if (!r.perfil) return r.error ?? 'No pudimos guardar tu registro. Intentá de nuevo.'
+      guardarCodigoPendiente(null)
+      set({ perfil: aPerfil(r.perfil) })
+    } else {
+      set({ perfil: { ...s.perfil, nick: elegido, region, onboarding: true } })
+    }
     get().tick()
     guardar(get())
     return null
   },
 
-  cambiarFoto: (foto) => {
+  cambiarFoto: async (foto) => {
     const s = get()
-    if (!s.perfil) return
-    set({ perfil: { ...s.perfil, foto } })
+    if (!s.perfil) return 'Primero entrá con Discord.'
+    let guardada = foto
+    if (REAL) {
+      if (!s.perfil.id) return 'Primero entrá con Discord.'
+      if (foto) {
+        const r = await subirFoto(s.perfil.id, foto)
+        if (!r.url) return r.error ?? 'No pudimos subir la foto. Intentá de nuevo.'
+        guardada = r.url
+      } else {
+        const error = await quitarFoto(s.perfil.id)
+        if (error) return error
+      }
+    }
+    const actual = get().perfil
+    if (actual) set({ perfil: { ...actual, foto: guardada } })
     guardar(get())
+    return null
   },
 
   cerrarSesion: () => {
     get().cancelarBusqueda()
     set({ perfil: null, toasts: [] })
     guardar(get())
+    if (REAL) void salir()
   },
 
   reiniciar: () => {
-    set({ ...datosIniciales(Date.now()), toasts: [], irA: null })
+    // Con servidor solo se reinician los datos de prueba: la cuenta sigue abierta.
+    set({ ...datosIniciales(Date.now()), perfil: REAL ? get().perfil : null, toasts: [], irA: null })
     guardar(get())
   },
 

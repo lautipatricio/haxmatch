@@ -44,11 +44,16 @@ function SinConexion() {
 
 export function App() {
   const tick = useStore((s) => s.tick)
+  const iniciarSesion = useStore((s) => s.iniciarSesion)
+  const cargandoSesion = useStore((s) => s.cargandoSesion)
   const irA = useStore((s) => s.irA)
   const limpiarIrA = useStore((s) => s.limpiarIrA)
   const perfil = useStore((s) => s.perfil)
   const nav = useNavigate()
   const { pathname } = useLocation()
+
+  // Con servidor: recupera la sesión abierta (o la que vuelve de Discord).
+  useEffect(() => { iniciarSesion() }, [iniciarSesion])
 
   // Reloj de la app: vence búsquedas, registra la conexión del día y mueve a los jugadores simulados.
   useEffect(() => {
@@ -63,6 +68,18 @@ export function App() {
     if (irA !== pathname) nav(irA)
     limpiarIrA()
   }, [irA, pathname, nav, limpiarIrA])
+
+  if (cargandoSesion) {
+    return (
+      <div className="app">
+        <div className="hero" style={{ gap: 14 }} role="status">
+          <h1 className="h logo">Hax<br /><span>Match</span></h1>
+          <div className="m">Cargando tu cuenta…</div>
+        </div>
+        <Toasts />
+      </div>
+    )
+  }
 
   return (
     <div className="app">

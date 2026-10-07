@@ -1,5 +1,6 @@
-// Recorrido de humo: abre la app compilada, pasa por los flujos principales
-// y guarda capturas a 390 x 844. Uso: npm run build && npx vite preview & node scripts/recorrido.mjs [carpeta]
+// Recorrido de humo: abre la app en modo demostración (sin servidor), pasa por los
+// flujos principales y guarda capturas a 390 x 844.
+// Uso: npm run probar   (en otra terminal)   y después   node scripts/recorrido.mjs [carpeta]
 import { chromium } from 'playwright'
 
 const URL = process.env.APP_URL ?? 'http://localhost:4173'

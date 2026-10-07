@@ -108,10 +108,19 @@ export function Perfil() {
   const [errorFoto, setErrorFoto] = useState<string | null>(null)
   /** Foto recién elegida de la galería, a la espera de que la encuadre. */
   const [porAjustar, setPorAjustar] = useState<FotoElegida | null>(null)
-  const terminarAjuste = (foto?: string) => {
-    if (foto) s.cambiarFoto(foto)
+  const [guardandoFoto, setGuardandoFoto] = useState(false)
+  const terminarAjuste = async (foto?: string) => {
     if (porAjustar) soltarFoto(porAjustar)
     setPorAjustar(null)
+    if (!foto) return
+    setGuardandoFoto(true)
+    setErrorFoto(await s.cambiarFoto(foto))
+    setGuardandoFoto(false)
+  }
+  const quitarFoto = async () => {
+    setGuardandoFoto(true)
+    setErrorFoto(await s.cambiarFoto(null))
+    setGuardandoFoto(false)
   }
 
   const mios = s.matches.filter((m) => m.participantes.some((p) => p.userId === YO))
@@ -148,10 +157,10 @@ export function Perfil() {
           </div>
           <div className="row">
             <div className="m grow">
-              {s.perfil?.foto ? 'Tocá tu foto para cambiarla.' : 'Tocá el círculo para elegir una foto de tu galería.'}
+              {guardandoFoto ? 'Guardando la foto…' : s.perfil?.foto ? 'Tocá tu foto para cambiarla.' : 'Tocá el círculo para elegir una foto de tu galería.'}
             </div>
             {s.perfil?.foto && (
-              <button className="btn btn--ghost" style={{ flex: 'none' }} onClick={() => { s.cambiarFoto(null); setErrorFoto(null) }}>Quitar foto</button>
+              <button className="btn btn--ghost" style={{ flex: 'none' }} disabled={guardandoFoto} onClick={() => void quitarFoto()}>Quitar foto</button>
             )}
           </div>
           {errorFoto && <div className="err" role="alert">{errorFoto}</div>}
@@ -217,7 +226,7 @@ export function Perfil() {
         </div>
       </div>
       <TabBar on="perfil" />
-      {porAjustar && <Recortador foto={porAjustar} onGuardar={terminarAjuste} onCancelar={() => terminarAjuste()} />}
+      {porAjustar && <Recortador foto={porAjustar} onGuardar={(f) => void terminarAjuste(f)} onCancelar={() => void terminarAjuste()} />}
     </div>
   )
 }

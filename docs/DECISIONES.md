@@ -78,6 +78,16 @@ Qué decidí yo en esta ronda:
 - En esta versión de prueba se guarda en el dispositivo. Con backend va a Supabase Storage.
 - Pendiente para publicar: las fotos son contenido de los usuarios, así que el reporte de jugadores tiene que cubrir "foto inapropiada" y el equipo tiene que poder quitarlas (lo pide la App Store).
 
+## Cuenta real (6/10/2026)
+
+- El ingreso con Discord, el perfil y la foto pasan a guardarse en Supabase. El resto de la app sigue con datos de prueba en cada dispositivo hasta las próximas etapas.
+- El perfil se crea solo la primera vez que alguien entra, con su usuario de Discord y un código de referido propio (HX + 4 caracteres).
+- El nick sugerido es el nombre visible de Discord. El usuario de Discord se guarda aparte, para que después lo puedan agregar como amigo.
+- El código de un amigo se valida antes de ir a Discord y queda anotado al terminar el registro. Solo vale para cuentas nuevas, no se puede usar el propio y después no se puede cambiar.
+- Un código empieza a valer cuando su dueño terminó el registro.
+- Todos los usuarios que entraron pueden ver el nick, la región, la foto y el usuario de Discord de los demás. Quién invitó a quién no es visible.
+- Las fotos van a una carpeta pública, una por usuario. Solo JPEG, hasta 1 MB.
+
 ## Cerrar sesión (6/10/2026)
 
 - Pide confirmación antes de cerrar.
