@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { YO, buscarMia, nombreDe, useStore } from '../data/store'
+import { YO, buscarMia, enSala, nombreDe, useStore, usuarioDe } from '../data/store'
 import { DIAS_PENDIENTE } from '../domain/rules'
 import { Avatar, Empty, Head, Icon, Sheet, copiar } from '../ui'
 
@@ -18,17 +18,21 @@ function MiSalaCompleta({ matchId }: { matchId: string }) {
   const s = useStore()
   const m = s.matches.find((x) => x.id === matchId)
   if (!m) return <Navigate to="/" replace />
-  const otros = m.participantes.filter((p) => p.userId !== YO)
+  const otros = enSala(m)
   const contado = m.contadoAt !== null
   const puntos = s.eventos.find((e) => e.tipo === 'amistoso' && e.referencia === m.id)?.puntos ?? 0
+  // Completa: entraron todos. Si no, es una sala que cerré yo antes de llenarla.
+  const todos = otros.length > 0 && otros.every((p) => !!p.entroAt)
   return (
     <div className="screen">
-      <Head title={contado ? 'Amistoso confirmado' : 'Match listo'} />
+      <Head title={contado ? 'Amistoso confirmado' : todos ? 'Match listo' : 'Sala cerrada'} />
       <div className="scroll">
         <div className="pad" style={{ gap: 12 }}>
           <div className="check"><Icon name="check" size={48} stroke={3} /></div>
-          <div className="h center" style={{ fontSize: 26 }}>Tu sala está completa</div>
-          <div className="m center">Sala "{m.nombreSala}" · ya entraron todos. La búsqueda terminó.</div>
+          <div className="h center" style={{ fontSize: 26 }}>{todos ? 'Tu sala está completa' : 'Tu sala ya no busca'}</div>
+          <div className="m center">
+            Sala "{m.nombreSala}" · {todos ? 'ya entraron todos. La búsqueda terminó.' : 'la búsqueda terminó.'}
+          </div>
 
           <div className={`card card--col${contado ? ' card--accent' : ''}`} role="status">
             {contado ? (
@@ -46,26 +50,30 @@ function MiSalaCompleta({ matchId }: { matchId: string }) {
 
           <h2 className="h sub">En tu sala</h2>
           {otros.map((p) => {
-            const u = s.usuarios[p.userId]
+            const u = usuarioDe(s, p.userId)
             return (
               <div key={p.userId} className="card card--row">
                 <Avatar user={u} size="sm" />
                 <div className="grow">
                   <div className="strong cut">{u.username}</div>
-                  <div className="m cut">{p.confirmadoAt ? 'Adentro · confirmó' : 'Adentro'}</div>
+                  <div className="m cut">{p.entroAt ? (p.confirmadoAt ? 'Adentro · confirmó' : 'Adentro') : 'No llegó a entrar'}</div>
                 </div>
-                <button className="btn btn--sec" aria-label={`${u.username} se salió`} onClick={() => s.marcarSalio(p.userId, m.id)}>Se salió</button>
+                {p.entroAt ? (
+                  <button className="btn btn--sec" aria-label={`${u.username} se salió`} onClick={() => s.marcarSalio(p.userId, m.id)}>Se salió</button>
+                ) : (
+                  <button className="btn btn--sec" aria-label={`${u.username} no vino`} onClick={() => s.marcarSalio(p.userId, m.id)}>No vino</button>
+                )}
               </div>
             )
           })}
-          <div className="m">Si alguno se va, tocá “Se salió”: se libera su lugar y la sala vuelve a buscar.</div>
+          {todos && <div className="m">Si alguno se va, tocá “Se salió”: se libera su lugar y la sala vuelve a buscar.</div>}
 
           <Link className="btn btn--lg" to="/">Volver al inicio</Link>
           <div className="chips" style={{ alignItems: 'center' }}>
             <span className="m">Reportar a</span>
             {otros.map((p) => (
               <Link key={p.userId} className="chip" to={`/reportar/${p.userId}`} style={{ display: 'grid', placeItems: 'center', textDecoration: 'none' }}>
-                {s.usuarios[p.userId].username}
+                {usuarioDe(s, p.userId).username}
               </Link>
             ))}
           </div>
@@ -100,9 +108,10 @@ export function MatchListo() {
 
   const yo = m.participantes.find((p) => p.userId === YO)
   const creador = nombreDe(s, m.creadoPor)
-  const conmigo = m.participantes.filter((p) => p.userId !== YO && p.userId !== m.creadoPor)
-  const confirme = !!yo?.confirmadoAt
+  const conmigo = enSala(m, m.creadoPor).filter((p) => p.userId !== YO)
   const contado = m.contadoAt !== null
+  // Si el partido ya me cuenta (el dueño marcó que entré y confirmó alguien más), no hace falta que confirme.
+  const confirme = !!yo?.confirmadoAt || contado
   const puntos = s.eventos.find((e) => e.tipo === 'amistoso' && e.referencia === m.id)?.puntos ?? 0
   const titulo = m.formato && m.formato !== 'Cualquiera' ? `${m.formato} con ${creador}` : `Sala de ${creador}`
 
@@ -131,7 +140,7 @@ export function MatchListo() {
 
           {conmigo.length > 0 && (
             <div className="card">
-              <Avatar user={s.usuarios[conmigo[0].userId]} />
+              <Avatar user={usuarioDe(s, conmigo[0].userId)} />
               <div className="grow">
                 <div className="strong">{conmigo.length > 1 ? 'Entran con vos' : 'Entra con vos'}</div>
                 <div className="m">{enumerar(conmigo.map((p) => nombreDe(s, p.userId)))}</div>

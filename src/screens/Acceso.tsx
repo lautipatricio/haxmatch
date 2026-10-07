@@ -56,7 +56,7 @@ export function Ingresar() {
           </button>
           <p className="m center" style={{ margin: 0 }}>
             {REAL
-              ? 'Versión de prueba: tu cuenta es real, pero los demás jugadores todavía son inventados.'
+              ? 'Versión de prueba: la cuenta, la cola y los partidos son reales. Los clips todavía son de muestra.'
               : 'Versión de prueba: el ingreso está simulado y los demás jugadores son inventados.'}
           </p>
         </div>

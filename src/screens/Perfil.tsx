@@ -1,6 +1,6 @@
 import { useEffect, useId, useState, type ChangeEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { PREVIEW } from '../config'
+import { PREVIEW, REAL } from '../config'
 import { cargarFoto, soltarFoto, type FotoElegida } from '../data/foto'
 import { YO, buscarMia, rivalesDe, useStore } from '../data/store'
 import { DIAS_PENDIENTE, diasParaVencer, esPendiente, nivelDe, totalPuntos } from '../domain/rules'
@@ -127,8 +127,11 @@ export function Perfil() {
   const jugados = mios.filter((m) => m.contadoAt !== null)
   const perdidos = mios.filter((m) => m.contadoAt === null && (m.descartado || !esPendiente(m, YO, ahora)) &&
     !m.participantes.find((p) => p.userId === YO)?.confirmadoAt)
-  const anotados = jugados.length + perdidos.length
-  const asistencia = anotados === 0 ? '—' : `${Math.round((jugados.length / anotados) * 100)}%`
+  // Con servidor, los totales vienen de toda la historia y no solo de los últimos días.
+  const cuantosJugados = REAL && s.resumen ? s.resumen.jugados : jugados.length
+  const cuantosPerdidos = REAL && s.resumen ? s.resumen.perdidos : perdidos.length
+  const anotados = cuantosJugados + cuantosPerdidos
+  const asistencia = anotados === 0 ? '—' : `${Math.round((cuantosJugados / anotados) * 100)}%`
 
   const veces = new Map<string, number>()
   for (const m of jugados) for (const p of m.participantes) if (p.userId !== YO) veces.set(p.userId, (veces.get(p.userId) ?? 0) + 1)
@@ -192,7 +195,7 @@ export function Perfil() {
           </div>
 
           <div className="row" style={{ alignItems: 'stretch' }}>
-            <div className="card stat"><div className="h num">{jugados.length}</div><div className="m">amistosos jugados</div></div>
+            <div className="card stat"><div className="h num">{cuantosJugados}</div><div className="m">amistosos jugados</div></div>
             <div className="card stat"><div className="h num">{asistencia}</div><div className="m">asistencia a partidos anotados</div></div>
           </div>
 
@@ -202,7 +205,7 @@ export function Perfil() {
             <div className="grow">
               <div className="strong">Con quién más jugaste</div>
               <div className="m">
-                {masJugado ? `${s.usuarios[masJugado[0]].username} · ${masJugado[1]} ${masJugado[1] === 1 ? 'amistoso' : 'amistosos'}` : 'Todavía no jugaste amistosos'}
+                {masJugado ? `${s.usuarios[masJugado[0]]?.username ?? 'Jugador'} · ${masJugado[1]} ${masJugado[1] === 1 ? 'amistoso' : 'amistosos'}${REAL ? ' esta semana' : ''}` : 'Todavía no jugaste amistosos'}
               </div>
             </div>
           </div>
@@ -216,12 +219,14 @@ export function Perfil() {
 
           <Instalar />
 
-          <div className="demo">
-            <div className="h">Herramientas de prueba</div>
-            <div className="m">Hoy en la demo: {fecha}. Avanzá un día para probar la racha y los topes diarios.</div>
-            <button className="btn btn--sec" onClick={s.avanzarDia}>Avanzar un día</button>
-            <button className="btn btn--sec" onClick={() => { s.reiniciar(); nav('/ingresar') }}>Reiniciar datos de prueba</button>
-          </div>
+          {!REAL && (
+            <div className="demo">
+              <div className="h">Herramientas de prueba</div>
+              <div className="m">Hoy en la demo: {fecha}. Avanzá un día para probar la racha y los topes diarios.</div>
+              <button className="btn btn--sec" onClick={s.avanzarDia}>Avanzar un día</button>
+              <button className="btn btn--sec" onClick={() => { s.reiniciar(); nav('/ingresar') }}>Reiniciar datos de prueba</button>
+            </div>
+          )}
           <CerrarSesion />
         </div>
       </div>

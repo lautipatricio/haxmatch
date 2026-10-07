@@ -15,10 +15,14 @@ export const FALTAN = [1, 2, 3, 4, 5, 6, 7] as const
 
 export interface Usuario {
   id: string
+  /** Nombre que se muestra en la app. */
   username: string
-  /** Solo para los demás jugadores. El nivel propio se calcula de los eventos de puntos. */
-  nivel: number
+  /** Usuario de Discord, cuando se conoce. */
+  discord?: string
+  /** Nivel de los demás jugadores. null mientras los niveles no se guarden en el servidor. */
+  nivel: number | null
   color: string
+  foto?: string | null
 }
 
 export interface Busqueda {
@@ -42,6 +46,8 @@ export interface Busqueda {
   estado: 'activa' | 'agrupada' | 'cancelada' | 'vencida' | 'match'
   /** Jugadores que aceptaron sumarse a esta búsqueda. */
   grupo?: string[]
+  /** Me sumé a la búsqueda de este jugador: es quien la maneja. */
+  liderId?: string
   /** Jugador: el grupo ya es un equipo completo y falta que quien lo armó cree la sala. */
   equipoListo?: boolean
   /** Jugador: se cumplió el tiempo y se le ofreció renovar. Si no responde antes de esta hora, vence. */
@@ -62,6 +68,8 @@ export interface Participante {
   confirmadoAt: number | null
   /** El dueño de la sala marcó "Ya entró". */
   entroAt?: number | null
+  /** El dueño marcó "Se salió" cuando el partido ya contaba: dejó el lugar, pero el partido le queda. */
+  salioAt?: number | null
 }
 
 export interface Match {

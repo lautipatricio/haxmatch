@@ -1,6 +1,8 @@
-// Estado de la app en modo demostración: todo vive en memoria (y en el navegador)
-// y los demás jugadores están simulados. Las acciones tienen la misma forma que
-// van a tener contra Supabase, así las pantallas no cambian al conectar el backend.
+// Estado de la app. Hay dos formas de funcionar y las pantallas no notan la diferencia:
+// - Con servidor: la cuenta, la cola, los grupos, las salas y los partidos son
+//   reales. La app pide el estado al servidor y cada acción llama a una función suya.
+// - Demostración: todo vive en el dispositivo y los demás jugadores están simulados.
+// Los puntos, los clips, los amigos y los referidos todavía se guardan en el dispositivo.
 import { create } from 'zustand'
 import {
   AMISTOSOS_REFERIDO, MINUTOS_DISPONIBLE, MINUTOS_OFERTA, bonusRacha, compatibles, conectoHoy, equipoCompleto,
@@ -9,13 +11,15 @@ import {
 } from '../domain/rules'
 import type {
   Busqueda, Cancha, Duracion, EventoPuntos, Formato, Match, Mensaje, Modo, MotivoReporte,
-  Notif, Posicion, Reel, Referido, Region, Reporte, TipoNotif, TipoPunto, Usuario,
+  Notif, Participante, Posicion, Reel, Referido, Region, Reporte, TipoNotif, TipoPunto, Usuario,
 } from '../domain/types'
 import {
-  codigoPendiente, completarRegistro, guardarCodigoPendiente, ingresarConDiscord, miPerfil, quienInvita, quitarFoto,
-  salir, subirFoto, type FilaPerfil,
+  codigoPendiente, completarRegistro, escucharSesion, guardarCodigoPendiente, ingresarConDiscord, miPerfil, quienInvita,
+  quitarFoto, salir, subirFoto, type FilaPerfil,
 } from './cuenta'
-import { REAL, supabase } from './supabase'
+import { GRACIA_MS, aLocal, cola, leerCola, type ColaLocal, type Resumen } from './servidor'
+import { REAL } from './supabase'
+import { alCambiar } from './transporte'
 import {
   BOT, CODIGOS, SEED_AMIGOS, SEED_EVENTOS, SEED_REFERIDOS, SEED_SOLICITUDES, USUARIOS, YO,
   seedBusquedas, seedMatches, seedMisVideos, seedNotifs, seedReels,
@@ -23,7 +27,7 @@ import {
 
 const SEG = 1000
 const DIA = 24 * 60 * 60 * SEG
-const CLAVE = 'haxmatch-demo-v7'
+const CLAVE = 'haxmatch-demo-v8'
 
 export interface Perfil {
   /** Id de la cuenta en el servidor. No existe en modo demostración. */
@@ -62,6 +66,10 @@ export interface Toast {
 
 interface Datos {
   perfil: Perfil | null
+  /** Con servidor: de qué cuenta son los datos guardados en este dispositivo. */
+  cuentaId: string | null
+  /** Con servidor: totales del perfil. */
+  resumen: Resumen | null
   offsetDias: number
   usuarios: Record<string, Usuario>
   amigos: string[]
@@ -109,13 +117,18 @@ interface Acciones {
   reiniciar: () => void
   avanzarDia: () => void
 
-  crearBusqueda: (d: NuevaBusqueda) => string | null
+  /** Con servidor: vuelve a pedir el estado de la cola. */
+  refrescar: () => Promise<void>
+  /** Con servidor: mantiene la cola al día mientras la app está abierta. Devuelve cómo cortar. */
+  conectarCola: () => () => void
+
+  crearBusqueda: (d: NuevaBusqueda) => Promise<string | null>
   cancelarBusqueda: () => void
   responderAviso: (avisar: boolean) => void
   /** Cartel de los 15 minutos: 15 minutos más. */
   renovarBusqueda: () => void
   /** El grupo arma su sala: para buscar rival, para seguir buscando gente o para jugar entre ellos. */
-  convertirEnSala: (d: { nombreSala: string; faltan: number; entreNosotros?: boolean }) => string | null
+  convertirEnSala: (d: { nombreSala: string; faltan: number; entreNosotros?: boolean }) => Promise<string | null>
 
   enviarMensaje: (aUserId: string) => void
   responderMensaje: (mensajeId: string, aceptar: boolean) => void
@@ -140,7 +153,7 @@ interface Acciones {
   enviarSolicitud: (username: string) => { ok: boolean; texto: string }
   responderSolicitud: (userId: string, aceptar: boolean) => void
 
-  reportar: (d: { reportado: string; motivo: MotivoReporte; detalle: string }) => void
+  reportar: (d: { reportado: string; motivo: MotivoReporte; detalle: string }) => Promise<string | null>
   alternarBloqueo: (userId: string) => void
 
   marcarLeidas: () => void
@@ -150,6 +163,12 @@ interface Acciones {
 interface Efimero {
   /** Con servidor: todavía no se sabe si hay una sesión abierta. */
   cargandoSesion: boolean
+  /** Ya llegó el primer estado de la cola (en demostración, siempre). */
+  colaLista: boolean
+  /** No se pudo leer la cola: texto del problema. */
+  errorCola: string | null
+  /** Diferencia entre el reloj del servidor y el del dispositivo. */
+  desfaseMs: number
   toasts: Toast[]
   irA: string | null
 }
@@ -162,28 +181,32 @@ const id = (p: string) => `${p}_${Date.now().toString(36)}${(contador++).toStrin
 function datosIniciales(ahora: number): Datos {
   return {
     perfil: null,
+    cuentaId: null,
+    resumen: null,
     offsetDias: 0,
+    // Los usuarios de muestra quedan solo como autores de los clips de muestra.
     usuarios: USUARIOS,
-    amigos: SEED_AMIGOS,
-    solicitudes: SEED_SOLICITUDES,
+    // Con servidor no hay jugadores inventados: la cola arranca vacía y la llena el servidor.
+    amigos: REAL ? [] : SEED_AMIGOS,
+    solicitudes: REAL ? [] : SEED_SOLICITUDES,
     solicitudesEnviadas: [],
     bloqueados: [],
-    busquedas: seedBusquedas(ahora),
-    matches: seedMatches(ahora),
+    busquedas: REAL ? [] : seedBusquedas(ahora),
+    matches: REAL ? [] : seedMatches(ahora),
     mensajes: [],
     eventos: SEED_EVENTOS,
     reels: seedReels(ahora),
     misReacciones: [],
     tiktok: false,
-    notifs: seedNotifs(ahora),
-    referidos: SEED_REFERIDOS,
+    notifs: REAL ? [] : seedNotifs(ahora),
+    referidos: REAL ? [] : SEED_REFERIDOS,
     reportes: [],
     programados: [],
   }
 }
 
 const CAMPOS: Array<keyof Datos> = [
-  'perfil', 'offsetDias', 'usuarios', 'amigos', 'solicitudes', 'solicitudesEnviadas', 'bloqueados',
+  'perfil', 'cuentaId', 'resumen', 'offsetDias', 'usuarios', 'amigos', 'solicitudes', 'solicitudesEnviadas', 'bloqueados',
   'busquedas', 'matches', 'mensajes', 'eventos', 'reels', 'misReacciones', 'tiktok', 'notifs',
   'referidos', 'reportes', 'programados',
 ]
@@ -236,6 +259,11 @@ function sumar(
 
 function miBusqueda(s: Datos): Busqueda | undefined {
   return s.busquedas.find((b) => b.userId === YO && b.estado === 'activa')
+}
+
+/** Los que ocupan un lugar en una sala, sin contar al dueño ni a los que ya se fueron. */
+export function enSala(m: Match | undefined, dueno: string = YO): Participante[] {
+  return (m?.participantes ?? []).filter((p) => p.userId !== dueno && !p.salioAt)
 }
 
 /** Cuántos jugadores van juntos en una búsqueda. */
@@ -452,11 +480,187 @@ function emparejar(s: Store, ahora: number): Cambio | null {
   }
 }
 
+// ---------- Cola real: del estado del servidor a los avisos de la app ----------
+
+/** Momento en que cancelé o cerré mi búsqueda, para no avisar que "venció". */
+let canceleAt = 0
+/** Momento en que acepté un pedido, para no avisarme lo que acabo de hacer. */
+let acepteAt = 0
+/** Todavía no se aplicó ningún estado desde que se abrió la sesión. */
+let primeraCola = true
+// Un estado pedido antes de terminar una acción puede venir viejo: se descarta y se vuelve a pedir.
+let epoca = 0
+let enCurso = 0
+let enVuelo: Promise<void> | null = null
+let otraVez = false
+
+const RECIEN = 15 * SEG
+
+/**
+ * Compara el estado que llega del servidor con el que había y arma los avisos:
+ * mensajes nuevos, gente que se suma, matches, búsquedas que terminan y puntos.
+ */
+function aplicarCola(s: Store, n: ColaLocal, primera: boolean): Cambio {
+  const ahora = Date.now() + n.desfaseMs
+  const usuarios = { ...s.usuarios, ...n.usuarios }
+  let st: Store = { ...s, usuarios }
+  let irA: string | null = null
+  const nombre = (u: string) => usuarios[u]?.username ?? 'Jugador'
+  const nombres = (ids: string[]) => enumerar(st, ids)
+  const notif = (tipo: TipoNotif, titulo: string, detalle: string, ref?: string) => {
+    st = { ...st, notifs: conNotif(st, ahora, tipo, titulo, detalle, ref) }
+  }
+  const toast = (t: Omit<Toast, 'id'>) => {
+    st = { ...st, toasts: conToast(st, t) }
+  }
+
+  const antes = miBusqueda(s)
+  const mia = n.busquedas.find((b) => b.userId === YO && b.estado === 'activa')
+  const cancele = Date.now() - canceleAt < RECIEN
+  const soyParte = (m: Match) => m.participantes.some((p) => p.userId === YO)
+  /** Partido nuevo en la sala de otro: me aceptaron o la app me conectó. */
+  const entreAUno = primera ? undefined : n.matches.find((m) => m.creadoPor !== YO && soyParte(m) && !s.matches.some((x) => x.id === m.id))
+
+  // Pedidos y mensajes que me llegaron y todavía no respondí.
+  const pendientes = n.mensajes.filter((m) => m.a === YO && m.estado === 'pendiente')
+  st = { ...st, toasts: st.toasts.filter((t) => !t.mensajeId || pendientes.some((m) => m.id === t.mensajeId)) }
+  for (const m of pendientes) {
+    if (s.mensajes.some((x) => x.id === m.id)) continue
+    const quienes = [m.de, ...(m.con ?? [])]
+    const varios = quienes.length > 1
+    const titulo = mia?.modo === 'sala'
+      ? `${nombres(quienes)} ${varios ? 'quieren' : 'quiere'} entrar a tu sala`
+      : `${nombre(m.de)} te escribió`
+    const detalle = m.auto ? `La app ${varios ? 'los' : 'lo'} conectó con tu sala` : m.texto
+    if (!st.notifs.some((x) => x.ref === m.id)) notif('mensaje', titulo, detalle, m.id)
+    toast({ texto: titulo, detalle, mensajeId: m.id })
+  }
+
+  if (!primera) {
+    // Respuestas a lo que mandé yo. Si acepta, se nota por lo que pasa después (grupo, sala o match).
+    for (const m of n.mensajes) {
+      if (m.de !== YO || m.estado !== 'rechazado') continue
+      const previo = s.mensajes.find((x) => x.id === m.id) ?? s.mensajes.find((x) => x.de === YO && x.a === m.a && x.estado === 'pendiente')
+      if (previo?.estado !== 'pendiente') continue
+      // Si la que terminó fue mi búsqueda, mis mensajes se caen solos: no es un "no".
+      const armeSala = antes?.modo === 'jugador' && mia?.modo === 'sala'
+      if (cancele || entreAUno || armeSala || (antes && !mia) || (mia?.liderId && !antes?.liderId)) continue
+      const sigue = n.busquedas.some((b) => b.userId === m.a && b.estado === 'activa')
+      const titulo = sigue ? `${nombre(m.a)} no puede ahora` : `${nombre(m.a)} ya no está buscando`
+      notif('respuesta', titulo, sigue ? 'Rechazó tu mensaje' : 'Tu mensaje quedó sin respuesta')
+      toast({ texto: titulo, detalle: 'Probá con otro jugador de la cola.' })
+    }
+
+    // Mi grupo: quién se sumó y quién se fue.
+    if (mia && antes && mia.modo === 'jugador' && antes.modo === 'jugador' && (antes.liderId ?? null) === (mia.liderId ?? null)) {
+      const g0 = antes.grupo ?? []
+      const g1 = mia.grupo ?? []
+      const sumados = g1.filter((u) => !g0.includes(u))
+      const idos = g0.filter((u) => !g1.includes(u))
+      if (sumados.length) {
+        const titulo = `${nombres(sumados)} ${sumados.length > 1 ? 'se sumaron' : 'se sumó'} ${mia.liderId ? 'al grupo' : 'a tu búsqueda'}`
+        notif('respuesta', titulo, 'Siguen buscando juntos')
+        toast({ texto: titulo, detalle: 'Siguen buscando juntos, con el mismo reloj.' })
+      }
+      if (idos.length) toast({ texto: `${nombres(idos)} ${idos.length > 1 ? 'salieron' : 'salió'} del grupo` })
+    }
+    if (mia?.liderId && antes?.liderId !== mia.liderId) {
+      const titulo = `Te sumaste a la búsqueda de ${nombre(mia.liderId)}`
+      notif('respuesta', titulo, 'Siguen buscando juntos')
+      toast({ texto: titulo, detalle: 'Siguen buscando juntos, con el mismo reloj.' })
+      irA = '/buscando'
+    }
+    if (mia && !mia.liderId && antes?.liderId) {
+      toast({ texto: `${nombre(antes.liderId)} dejó de buscar`, detalle: 'Seguís buscando por tu cuenta, con el reloj en cero.' })
+    }
+
+    // Entré a la sala de otro.
+    if (entreAUno) {
+      notif('match', `Match listo con ${nombre(entreAUno.creadoPor)}`, 'Entrá a la sala y confirmá', entreAUno.id)
+      irA = `/match/${entreAUno.id}`
+    }
+
+    // Mi sala: quién ocupó un lugar.
+    for (const m of n.matches) {
+      if (m.creadoPor !== YO || antes?.modo !== 'sala') continue
+      const estaban = enSala(s.matches.find((x) => x.id === m.id))
+      const entran = enSala(m).filter((p) => !estaban.some((q) => q.userId === p.userId)).map((p) => p.userId)
+      if (!entran.length) continue
+      const titulo = `${nombres(entran)} ${entran.length > 1 ? 'van' : 'va'} a entrar a tu sala`
+      const detalle = mia?.faltan ? `Te ${mia.faltan === 1 ? 'falta' : 'faltan'} ${mia.faltan}` : 'Sala completa'
+      notif('respuesta', titulo, detalle)
+      // Si lo acabo de aceptar yo, no hace falta avisarme.
+      if (Date.now() - acepteAt > RECIEN) toast({ texto: titulo, detalle, to: '/buscando' })
+    }
+
+    // El dueño liberó mi lugar. Si el partido ya me contaba, me queda; si no, desaparece.
+    const miLugar = (m: Match | undefined) => m?.participantes.find((p) => p.userId === YO)
+    for (const m of s.matches) {
+      const tenia = miLugar(m)
+      if (m.creadoPor === YO || !tenia || tenia.salioAt || ahora - m.createdAt > DIA) continue
+      const ahoraTengo = miLugar(n.matches.find((x) => x.id === m.id))
+      if (ahoraTengo && !ahoraTengo.salioAt) continue
+      toast({
+        texto: `Ya no estás en la sala de ${nombre(m.creadoPor)}`,
+        detalle: ahoraTengo ? 'Liberaron tu lugar. El partido te queda anotado.' : 'Liberaron tu lugar o la sala se cerró.',
+      })
+    }
+
+    // Mi búsqueda terminó.
+    if (antes && !mia && !entreAUno && !cancele) {
+      const suMatch = antes.matchId ? n.matches.find((m) => m.id === antes.matchId) : undefined
+      const todosAdentro = !!suMatch && enSala(suMatch).every((p) => !!p.entroAt)
+      if (antes.modo === 'sala' && suMatch && todosAdentro && (antes.faltan ?? 0) === 0) {
+        // Sala completa y todos adentro: queda armado el match.
+        notif('match', 'Match listo: tu sala está completa', 'Ya entraron todos', suMatch.id)
+        irA = `/match/${suMatch.id}`
+      } else if (antes.modo === 'sala') {
+        toast({ texto: 'Tu sala dejó de buscar', detalle: 'La app estuvo mucho tiempo cerrada o sin conexión.' })
+      } else {
+        const porTiempo = antes.expiraAt !== null && antes.expiraAt <= ahora && !antes.liderId
+        toast({ texto: 'Tu búsqueda venció', detalle: porTiempo ? 'Pasaron los 15 minutos y no la renovaste.' : 'La app estuvo mucho tiempo cerrada o sin conexión.' })
+      }
+    }
+  }
+
+  // Partidos que ya cuentan y todavía no sumaron puntos en este dispositivo.
+  const porSumar = n.matches
+    .filter((m) => m.contadoAt !== null && soyParte(m) && !st.eventos.some((e) => e.tipo === 'amistoso' && e.referencia === m.id))
+    .sort((a, b) => (a.contadoAt ?? 0) - (b.contadoAt ?? 0))
+  for (const m of porSumar) {
+    const cuando = m.contadoAt ?? ahora
+    const rival = rivalDe(m, YO)
+    const puntos = puntosAmistoso(st.eventos, YO, rival, cuando)
+    st = { ...st, ...sumar(st, cuando, 'amistoso', puntos, m.id, rival) }
+    if (!primera) {
+      toast(puntos > 0
+        ? { texto: `Amistoso confirmado · +${puntos} puntos` }
+        : { texto: 'Amistoso confirmado', detalle: 'Hoy ya llegaste al tope de puntos por amistosos.' })
+    }
+  }
+
+  return {
+    usuarios,
+    busquedas: n.busquedas,
+    mensajes: n.mensajes,
+    matches: n.matches,
+    resumen: n.resumen,
+    desfaseMs: n.desfaseMs,
+    eventos: st.eventos,
+    notifs: st.notifs.slice(0, 50),
+    toasts: st.toasts,
+    colaLista: true,
+    errorCola: null,
+    ...(irA ? { irA } : {}),
+  }
+}
+
 // ---------- Store ----------
 
 const guardado = leerGuardado() ?? datosIniciales(Date.now())
-// Con servidor, el perfil no sale del dispositivo: se carga de la sesión.
-const inicial: Datos = REAL ? { ...guardado, perfil: null } : guardado
+// Con servidor, el perfil no sale del dispositivo (se carga de la sesión) y la
+// cola tampoco: se pide de nuevo al abrir la app.
+const inicial: Datos = REAL ? { ...guardado, perfil: null, busquedas: [], mensajes: [], programados: [], offsetDias: 0 } : guardado
 
 function aPerfil(f: FilaPerfil): Perfil {
   return {
@@ -477,13 +681,101 @@ function aPerfil(f: FilaPerfil): Perfil {
 let sesionCargada: string | null = null
 let escuchandoSesion = false
 
-export const useStore = create<Store>()((set, get) => ({
+export const useStore = create<Store>()((set, get) => {
+  /**
+   * Hace una acción en el servidor y después vuelve a pedir el estado.
+   * Devuelve el problema, o null si salió bien. Salvo que se pida silencio, lo muestra.
+   */
+  const enServidor = async (accion: () => Promise<string | null>, silencio = false): Promise<string | null> => {
+    epoca++
+    enCurso++
+    let error: string | null = null
+    try {
+      error = await accion()
+    } finally {
+      enCurso--
+      epoca++
+    }
+    if (error && !silencio) set({ toasts: conToast(get(), { texto: error }) })
+    await get().refrescar()
+    return error
+  }
+
+  return {
   ...inicial,
   toasts: [],
   irA: null,
   cargandoSesion: REAL,
+  colaLista: !REAL,
+  errorCola: null,
+  desfaseMs: 0,
 
-  ahora: () => Date.now() + get().offsetDias * DIA,
+  ahora: () => Date.now() + get().offsetDias * DIA + get().desfaseMs,
+
+  refrescar: () => {
+    const cuenta = get().perfil
+    const miId = cuenta?.id
+    if (!REAL || !miId || !cuenta?.onboarding) return Promise.resolve()
+    // Si ya hay un pedido en camino, se espera ese y se repite al terminar.
+    if (enVuelo) {
+      otraVez = true
+      return enVuelo
+    }
+    const pedir = async () => {
+      let intentos = 0
+      do {
+        otraVez = false
+        const e = epoca
+        const r = await leerCola()
+        if (get().perfil?.id !== miId) return
+        if (!r.estado) {
+          set({ errorCola: r.error ?? 'No pudimos conectar con el servidor.' })
+          return
+        }
+        // Mientras hay una acción en curso, este estado puede ser viejo: al terminar se vuelve a pedir.
+        if (enCurso > 0) return
+        if (e !== epoca) {
+          otraVez = true
+          continue
+        }
+        set(aplicarCola(get(), aLocal(r.estado, miId), primeraCola))
+        primeraCola = false
+        guardar(get())
+      } while (otraVez && ++intentos < 5)
+    }
+    enVuelo = pedir().finally(() => { enVuelo = null })
+    return enVuelo
+  },
+
+  conectarCola: () => {
+    if (!REAL) return () => {}
+    let espera: ReturnType<typeof setTimeout> | null = null
+    // Varios cambios seguidos se atienden con un solo pedido.
+    const pronto = () => {
+      if (espera) return
+      espera = setTimeout(() => {
+        espera = null
+        void get().refrescar()
+      }, 150)
+    }
+    const dejarDeEscuchar = alCambiar(pronto)
+    // Aunque no llegue ningún aviso, se pregunta cada tanto. También sirve de
+    // señal de vida: el servidor saca de la cola a quien deja de aparecer.
+    const cada = setInterval(() => void get().refrescar(), 8 * SEG)
+    const alVolver = () => {
+      if (document.visibilityState === 'visible') void get().refrescar()
+    }
+    document.addEventListener('visibilitychange', alVolver)
+    window.addEventListener('online', alVolver)
+    void get().refrescar()
+    return () => {
+      dejarDeEscuchar()
+      clearInterval(cada)
+      if (espera) clearTimeout(espera)
+      document.removeEventListener('visibilitychange', alVolver)
+      window.removeEventListener('online', alVolver)
+    }
+  },
 
   tick: () => {
     const s = get()
@@ -496,7 +788,13 @@ export const useStore = create<Store>()((set, get) => ({
 
     // 1. Se cumple el tiempo de la búsqueda: primero se ofrece renovar, y si nadie responde, vence.
     const mia = miBusqueda(s)
-    if (mia && mia.expiraAt !== null && mia.expiraAt <= ahora) {
+    if (REAL) {
+      // Con servidor, el que vence la búsqueda es el servidor. Acá solo se muestra el cartel a tiempo.
+      if (mia && mia.modo === 'jugador' && !mia.liderId && mia.expiraAt !== null && mia.expiraAt <= ahora && !mia.ofertaHasta) {
+        const hasta = mia.expiraAt + GRACIA_MS
+        aplicar({ busquedas: s.busquedas.map((b) => (b.id === mia.id ? { ...b, ofertaHasta: hasta } : b)) })
+      }
+    } else if (mia && mia.expiraAt !== null && mia.expiraAt <= ahora) {
       if (!mia.ofertaHasta) {
         aplicar({ busquedas: s.busquedas.map((b) => (b.id === mia.id ? { ...b, ofertaHasta: ahora + MINUTOS_OFERTA * 60 * SEG } : b)) })
       } else if (mia.ofertaHasta <= ahora) {
@@ -611,14 +909,14 @@ export const useStore = create<Store>()((set, get) => ({
   // ----- Sesión -----
 
   iniciarSesion: () => {
-    if (!supabase || escuchandoSesion) return
+    if (!REAL || escuchandoSesion) return
     escuchandoSesion = true
-    supabase.auth.onAuthStateChange((_evento, sesion) => {
-      const uid = sesion?.user.id ?? null
+    escucharSesion((uid) => {
       if (uid === sesionCargada && (uid === null ? !get().cargandoSesion : true)) return
       sesionCargada = uid
+      primeraCola = true
       if (!uid) {
-        set({ perfil: null, cargandoSesion: false })
+        set({ perfil: null, cargandoSesion: false, busquedas: [], mensajes: [], colaLista: false, errorCola: null })
         return
       }
       // Se difiere: dentro de este aviso no se puede volver a llamar a Supabase.
@@ -630,7 +928,12 @@ export const useStore = create<Store>()((set, get) => ({
           set({ perfil: null, cargandoSesion: false, toasts: conToast(get(), { texto: 'No pudimos cargar tu perfil', detalle: r.error }) })
           return
         }
-        set({ perfil: aPerfil(r.perfil), cargandoSesion: false })
+        // Si en este dispositivo había datos de otra cuenta, se empieza de cero.
+        const deOtra = get().cuentaId !== r.perfil.id
+        set({
+          ...(deOtra ? datosIniciales(Date.now()) : {}),
+          perfil: aPerfil(r.perfil), cuentaId: r.perfil.id, cargandoSesion: false,
+        })
         get().tick()
         guardar(get())
       }, 0)
@@ -708,10 +1011,21 @@ export const useStore = create<Store>()((set, get) => ({
   },
 
   cerrarSesion: () => {
+    if (REAL) {
+      const buscaba = !!miBusqueda(get())
+      canceleAt = Date.now()
+      set({ perfil: null, toasts: [], busquedas: [], mensajes: [], colaLista: false })
+      guardar(get())
+      // La búsqueda se cancela antes de salir: después ya no hay sesión para pedirlo.
+      void (async () => {
+        if (buscaba) await cola.cancelar()
+        await salir()
+      })()
+      return
+    }
     get().cancelarBusqueda()
     set({ perfil: null, toasts: [] })
     guardar(get())
-    if (REAL) void salir()
   },
 
   reiniciar: () => {
@@ -721,6 +1035,8 @@ export const useStore = create<Store>()((set, get) => ({
   },
 
   avanzarDia: () => {
+    // Con servidor el reloj es el del servidor: no se puede adelantar.
+    if (REAL) return
     set((s) => ({ offsetDias: s.offsetDias + 1 }))
     get().tick()
     guardar(get())
@@ -728,11 +1044,15 @@ export const useStore = create<Store>()((set, get) => ({
 
   // ----- Disponibilidad -----
 
-  crearBusqueda: (d) => {
+  crearBusqueda: async (d) => {
     const s = get()
     const ahora = s.ahora()
     if (miBusqueda(s)) return 'Ya tenés una búsqueda activa. Cancelala para empezar otra.'
     if (d.modo === 'sala' && !d.nombreSala?.trim()) return 'Escribí el nombre de la sala.'
+    if (REAL) {
+      canceleAt = 0
+      return enServidor(() => cola.crearBusqueda({ ...d, nombreSala: d.nombreSala?.trim() }), true)
+    }
     const b: Busqueda = {
       id: id('b'),
       userId: YO,
@@ -761,6 +1081,17 @@ export const useStore = create<Store>()((set, get) => ({
     const s = get()
     const mia = miBusqueda(s)
     if (!mia) return
+    if (REAL) {
+      canceleAt = Date.now()
+      // Se saca ya de la pantalla; el servidor decide qué pasa con el grupo o con la sala.
+      set({
+        busquedas: s.busquedas.filter((b) => b.id !== mia.id),
+        mensajes: s.mensajes.map((m) => (m.estado === 'pendiente' ? { ...m, estado: 'rechazado' as const } : m)),
+        toasts: s.toasts.filter((t) => !t.mensajeId),
+      })
+      void enServidor(() => cola.cancelar())
+      return
+    }
     const match = s.matches.find((m) => m.id === mia.matchId)
     const conGente = !!match && match.participantes.some((p) => p.userId !== YO)
     set({
@@ -781,6 +1112,10 @@ export const useStore = create<Store>()((set, get) => ({
     const mia = miBusqueda(s)
     if (!mia) return
     set({ busquedas: s.busquedas.map((b) => (b.id === mia.id ? { ...b, avisar } : b)) })
+    if (REAL) {
+      void enServidor(() => cola.responderAviso(avisar))
+      return
+    }
     guardar(get())
   },
 
@@ -789,22 +1124,31 @@ export const useStore = create<Store>()((set, get) => ({
     const ahora = s.ahora()
     const mia = miBusqueda(s)
     if (!mia) return
+    const renovada = s.busquedas.map((b) => (b.id !== mia.id ? b : {
+      ...b, creadaAt: ahora, expiraAt: ahora + MINUTOS_DISPONIBLE * 60 * SEG, ofertaHasta: null,
+    }))
+    if (REAL) {
+      set({ busquedas: renovada })
+      void enServidor(() => cola.renovar()).then((error) => {
+        if (!error) set({ toasts: conToast(get(), { texto: 'Búsqueda renovada', detalle: '15 minutos más.' }) })
+      })
+      return
+    }
     set({
-      busquedas: s.busquedas.map((b) => (b.id !== mia.id ? b : {
-        ...b, creadaAt: ahora, expiraAt: ahora + MINUTOS_DISPONIBLE * 60 * SEG, ofertaHasta: null,
-      })),
+      busquedas: renovada,
       toasts: conToast(s, { texto: 'Búsqueda renovada', detalle: '15 minutos más.' }),
     })
     guardar(get())
   },
 
-  convertirEnSala: ({ nombreSala, faltan, entreNosotros }) => {
+  convertirEnSala: async ({ nombreSala, faltan, entreNosotros }) => {
     const s = get()
     const ahora = s.ahora()
     const mia = miBusqueda(s)
     const nombre = nombreSala.trim()
     if (!mia || mia.modo !== 'jugador') return 'No estás buscando partido.'
     if (!nombre) return 'Escribí el nombre de la sala.'
+    if (REAL) return enServidor(() => cola.convertirEnSala(nombre, faltan, !!entreNosotros), true)
     const grupo = mia.grupo ?? []
     set({
       busquedas: s.busquedas.map((b) => (b.id !== mia.id ? b : {
@@ -827,6 +1171,10 @@ export const useStore = create<Store>()((set, get) => ({
     const ahora = s.ahora()
     if (s.mensajes.some((m) => m.de === YO && m.a === aUserId && m.estado === 'pendiente')) return
     const mia = miBusqueda(s)
+    if (mia?.liderId) {
+      set({ toasts: conToast(s, { texto: `Solo ${s.usuarios[mia.liderId]?.username ?? 'quien armó el grupo'} puede escribirles a otros` }) })
+      return
+    }
     const suya = s.busquedas.find((b) => b.userId === aUserId && b.estado === 'activa')
     let texto = textoInvitacion(mia)
     if (suya?.modo === 'sala') {
@@ -841,6 +1189,12 @@ export const useStore = create<Store>()((set, get) => ({
       return
     }
     const msg: Mensaje = { id: id('msg'), de: YO, a: aUserId, texto, at: ahora, estado: 'pendiente' }
+    if (REAL) {
+      // Se muestra como enviado en el momento; el servidor confirma o avisa el problema.
+      set({ mensajes: [msg, ...s.mensajes] })
+      void enServidor(() => cola.enviarMensaje(aUserId))
+      return
+    }
     set({
       mensajes: [msg, ...s.mensajes],
       programados: [...s.programados, { at: ahora + 4 * SEG, tipo: 'respuesta_bot', mensajeId: msg.id }],
@@ -857,6 +1211,11 @@ export const useStore = create<Store>()((set, get) => ({
       mensajes: s.mensajes.map((m) => (m.id === mensajeId ? { ...m, estado: aceptar ? 'aceptado' as const : 'rechazado' as const } : m)),
       toasts: s.toasts.filter((t) => t.mensajeId !== mensajeId),
     })
+    if (REAL) {
+      if (aceptar) acepteAt = Date.now()
+      void enServidor(() => cola.responderMensaje(mensajeId, aceptar))
+      return
+    }
     const st = get()
     const mia = miBusqueda(st)
     if (mia?.modo === 'sala') {
@@ -880,6 +1239,7 @@ export const useStore = create<Store>()((set, get) => ({
   },
 
   emparejarAhora: () => {
+    if (REAL) return
     const s = get()
     const c = emparejar(s, s.ahora())
     set(c ?? { toasts: conToast(s, { texto: 'Nada que encaje por ahora', detalle: 'La app sigue buscando.' }) })
@@ -887,6 +1247,7 @@ export const useStore = create<Store>()((set, get) => ({
   },
 
   simularQuinceMinutos: () => {
+    if (REAL) return
     const s = get()
     const ahora = s.ahora()
     const mia = miBusqueda(s)
@@ -914,6 +1275,11 @@ export const useStore = create<Store>()((set, get) => ({
         return p
       }),
     }))
+    if (REAL) {
+      set({ matches })
+      void enServidor(() => cola.marcarEntro(userId))
+      return
+    }
     set({
       ...evaluarMatch(s, ahora, matches, match.id),
       programados: BOT.noConfirma.includes(userId)
@@ -940,6 +1306,22 @@ export const useStore = create<Store>()((set, get) => ({
     const activa = miBusqueda(s)
     const match = s.matches.find((m) => m.id === (matchId ?? activa?.matchId) && m.creadoPor === YO)
     if (!match) return
+    if (REAL) {
+      const quien = s.usuarios[userId]?.username ?? 'el jugador'
+      void enServidor(() => cola.marcarSalio(userId, match.id)).then((error) => {
+        if (error) return
+        const st = get()
+        const sala = miBusqueda(st)
+        // La sala vuelve a buscar, salvo que ya tenga otra búsqueda en marcha.
+        if (sala?.modo === 'sala' && (!sala.matchId || sala.matchId === match.id)) {
+          const n = sala.faltan ?? 1
+          set({ toasts: conToast(st, { texto: `Se liberó el lugar de ${quien}`, detalle: `Te ${n === 1 ? 'falta' : 'faltan'} ${n}. La sala vuelve a buscar.` }), irA: '/buscando' })
+        } else {
+          set({ toasts: conToast(st, { texto: `Se liberó el lugar de ${quien}`, detalle: 'No se reabre la sala porque ya tenés otra búsqueda.' }) })
+        }
+      })
+      return
+    }
     // La sala de ese partido: la que está abierta, o la que se cerró al completarse.
     const sala = s.busquedas.find((b) => b.userId === YO && b.matchId === match.id)
     const quedan = match.participantes.filter((p) => p.userId !== userId)
@@ -983,6 +1365,12 @@ export const useStore = create<Store>()((set, get) => ({
       ...x,
       participantes: x.participantes.map((p) => (p.userId === YO && p.confirmadoAt === null ? { ...p, confirmadoAt: ahora } : p)),
     }))
+    if (REAL) {
+      // Los puntos se suman cuando el servidor dice que el partido cuenta.
+      set({ matches })
+      void enServidor(() => cola.confirmar(matchId))
+      return
+    }
     const faltan = m.participantes.filter((p) => p.userId !== YO && p.confirmadoAt === null && !BOT.noConfirma.includes(p.userId))
     set({
       ...evaluarMatch(s, ahora, matches, matchId),
@@ -996,6 +1384,10 @@ export const useStore = create<Store>()((set, get) => ({
 
   descartarMatch: (matchId) => {
     set((s) => ({ matches: s.matches.map((m) => (m.id === matchId ? { ...m, descartado: true } : m)) }))
+    if (REAL) {
+      void enServidor(() => cola.descartar(matchId))
+      return
+    }
     guardar(get())
   },
 
@@ -1058,6 +1450,7 @@ export const useStore = create<Store>()((set, get) => ({
   // ----- Amigos -----
 
   enviarSolicitud: (username) => {
+    if (REAL) return { ok: false, texto: 'Agregar amigos llega en la próxima actualización.' }
     const s = get()
     const buscado = username.trim().replace(/^@/, '').toLowerCase()
     if (!buscado) return { ok: false, texto: 'Escribí un usuario de Discord.' }
@@ -1088,13 +1481,18 @@ export const useStore = create<Store>()((set, get) => ({
 
   // ----- Moderación -----
 
-  reportar: ({ reportado, motivo, detalle }) => {
+  reportar: async ({ reportado, motivo, detalle }) => {
+    if (REAL) {
+      const error = await cola.reportar(reportado, motivo, detalle.trim())
+      if (error) return error
+    }
     const s = get()
     set({
       reportes: [...s.reportes, { id: id('rep'), reportado, motivo, detalle: detalle.trim(), at: s.ahora() }],
       toasts: conToast(s, { texto: 'Reporte enviado', detalle: 'Lo revisa el equipo.' }),
     })
     guardar(get())
+    return null
   },
 
   alternarBloqueo: (userId) => {
@@ -1137,7 +1535,8 @@ export const useStore = create<Store>()((set, get) => ({
     }
     guardar(get())
   },
-}))
+  }
+})
 
 // ---------- Lecturas derivadas ----------
 
@@ -1193,6 +1592,16 @@ export function feed(s: Store): Reel[] {
   return s.reels
     .filter((r) => r.visible && r.hashtags.some((h) => h === 'haxball' || h === 'haxmatch') && !s.bloqueados.includes(r.userId))
     .sort((a, b) => b.publicadoAt - a.publicadoAt)
+}
+
+/** Datos de un usuario para mostrar. Si todavía no llegaron, devuelve uno genérico. */
+export function usuarioDe(s: Store, userId: string): Usuario {
+  return s.usuarios[userId] ?? { id: userId, username: 'Jugador', nivel: null, color: '#5B6F8C' }
+}
+
+/** "Nivel 4 · " para anteponer a un detalle. Vacío mientras el nivel de los demás no se conozca. */
+export function nivelTexto(u: Usuario | undefined): string {
+  return u && u.nivel !== null ? `Nivel ${u.nivel} · ` : ''
 }
 
 export function nombreDe(s: Store, userId: string): string {

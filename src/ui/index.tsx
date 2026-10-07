@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { buscarMia, useStore, type Toast } from '../data/store'
+import { YO, buscarMia, nombreDe, useStore, type Toast } from '../data/store'
 import type { Usuario } from '../domain/types'
 
 // ---------- Tiempo ----------
@@ -64,9 +64,10 @@ export function Icon({ name, size = 22, stroke = 2, fill }: { name: IconName; si
 
 export function Avatar({ user, nombre, size, foto }: { user?: Usuario; nombre?: string; size?: 'sm' | 'lg'; foto?: string | null }) {
   const n = user?.username ?? nombre ?? '?'
+  const imagen = foto ?? user?.foto
   return (
     <div className={`av${size ? ` av--${size}` : ''}`} style={user ? { background: user.color } : undefined} aria-hidden="true">
-      {foto ? <img src={foto} alt="" /> : n.replace(/[^a-zA-Z0-9]/g, '').slice(0, 1)}
+      {imagen ? <img src={imagen} alt="" /> : n.replace(/[^a-zA-Z0-9]/g, '').slice(0, 1) || '?'}
     </div>
   )
 }
@@ -201,6 +202,25 @@ export function BannerBusqueda({ detalle }: { detalle?: string }) {
   )
 }
 
+/** Aviso de un match recién armado en la sala de otro, para volver a encontrarlo desde el Inicio. */
+export function BannerMatch() {
+  const s = useStore()
+  const ahora = useAhora()
+  const DOS_HORAS = 2 * 60 * 60 * 1000
+  const m = s.matches.find((x) => x.creadoPor !== YO && !x.descartado && ahora - x.createdAt < DOS_HORAS &&
+    x.participantes.some((p) => p.userId === YO && p.confirmadoAt === null))
+  if (!m) return null
+  return (
+    <div className="banner" role="status">
+      <Link to={`/match/${m.id}`} className="grow">
+        <div className="strong">Tenés un match con {nombreDe(s, m.creadoPor)}</div>
+        <div style={{ fontSize: 13 }}>Entrá a la sala y avisá cuando estés adentro</div>
+      </Link>
+      <Link className="btn" to={`/match/${m.id}`}>Abrir</Link>
+    </div>
+  )
+}
+
 export function Empty({ title, text, children }: { title: string; text: string; children?: ReactNode }) {
   return (
     <div className="empty">
@@ -242,10 +262,10 @@ function ToastItem({ t }: { t: Toast }) {
 
 export function Toasts() {
   const todos = useStore((s) => s.toasts)
-  const enMiSala = useStore((s) => buscarMia(s)?.modo === 'sala')
+  const buscando = useStore((s) => !!buscarMia(s))
   const { pathname } = useLocation()
-  // En la pantalla de mi sala, los pedidos para entrar se muestran como cartel.
-  const toasts = pathname === '/buscando' && enMiSala ? todos.filter((t) => !t.mensajeId) : todos
+  // En la pantalla de búsqueda, lo que me escriben ya se ve ahí (cartel o lista "Te escribieron").
+  const toasts = pathname === '/buscando' && buscando ? todos.filter((t) => !t.mensajeId) : todos
   if (toasts.length === 0) return null
   return <div className="toasts">{toasts.map((t) => <ToastItem key={t.id} t={t} />)}</div>
 }

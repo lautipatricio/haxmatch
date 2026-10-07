@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { APP_URL } from '../config'
+import { APP_URL, REAL } from '../config'
 import { YO, useStore } from '../data/store'
 import { AMISTOSOS_REFERIDO, PUNTOS } from '../domain/rules'
 import { Avatar, Head, Icon, TabBar, copiar } from '../ui'
@@ -61,7 +61,13 @@ export function Referir() {
           </div>
 
           <h2 className="h sub">Tus referidos</h2>
-          {s.referidos.length === 0 && <div className="m">Todavía no referiste a nadie.</div>}
+          {s.referidos.length === 0 && (
+            <div className="m">
+              {REAL
+                ? 'Quien entre con tu código queda anotado como referido tuyo. La lista y los puntos se van a ver acá en una próxima actualización.'
+                : 'Todavía no referiste a nadie.'}
+            </div>
+          )}
           {s.referidos.map((r) => (
             <div key={r.userId} className="card card--row">
               <Avatar user={s.usuarios[r.userId]} size="sm" />

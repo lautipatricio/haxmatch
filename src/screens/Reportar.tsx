@@ -10,6 +10,15 @@ export function Reportar() {
   const nav = useNavigate()
   const [motivo, setMotivo] = useState<MotivoReporte>('No apareció')
   const [detalle, setDetalle] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [ocupado, setOcupado] = useState(false)
+  const enviar = async () => {
+    setOcupado(true)
+    const e = await s.reportar({ reportado: userId, motivo, detalle })
+    setOcupado(false)
+    setError(e)
+    if (!e) nav(-1)
+  }
   const nombre = nombreDe(s, userId)
   const bloqueado = s.bloqueados.includes(userId)
 
@@ -23,6 +32,7 @@ export function Reportar() {
           <textarea id="detalle-reporte" className="field" value={detalle} maxLength={300} placeholder="Contanos qué pasó"
             onChange={(e) => setDetalle(e.target.value)} />
           <div className="m">Los reportes los revisa el equipo. Varios reportes frenan la subida de nivel.</div>
+          {error && <div className="err" role="alert">{error}</div>}
           <div className="card">
             <div className="grow">
               <div className="strong">Bloquear a {nombre}</div>
@@ -34,7 +44,7 @@ export function Reportar() {
         </div>
       </div>
       <div className="foot" style={{ paddingBottom: 24 }}>
-        <button className="btn btn--lg" onClick={() => { s.reportar({ reportado: userId, motivo, detalle }); nav(-1) }}>Enviar reporte</button>
+        <button className="btn btn--lg" disabled={ocupado} onClick={() => void enviar()}>{ocupado ? 'Enviando…' : 'Enviar reporte'}</button>
         <button className="btn btn--sec" onClick={() => nav(-1)}>Cancelar</button>
       </div>
     </div>

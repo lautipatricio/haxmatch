@@ -48,12 +48,17 @@ export function App() {
   const cargandoSesion = useStore((s) => s.cargandoSesion)
   const irA = useStore((s) => s.irA)
   const limpiarIrA = useStore((s) => s.limpiarIrA)
+  const conectarCola = useStore((s) => s.conectarCola)
   const perfil = useStore((s) => s.perfil)
+  const registrado = !!perfil?.onboarding
   const nav = useNavigate()
   const { pathname } = useLocation()
 
   // Con servidor: recupera la sesión abierta (o la que vuelve de Discord).
   useEffect(() => { iniciarSesion() }, [iniciarSesion])
+
+  // Con servidor: mientras haya una cuenta abierta, la cola se mantiene al día.
+  useEffect(() => (registrado ? conectarCola() : undefined), [registrado, conectarCola])
 
   // Reloj de la app: vence búsquedas, registra la conexión del día y mueve a los jugadores simulados.
   useEffect(() => {
@@ -84,7 +89,7 @@ export function App() {
   return (
     <div className="app">
       <Routes>
-        <Route path="/ingresar" element={perfil?.onboarding ? <Navigate to="/" replace /> : <Ingresar />} />
+        <Route path="/ingresar" element={perfil ? <Navigate to={perfil.onboarding ? '/' : '/bienvenida'} replace /> : <Ingresar />} />
         <Route path="/bienvenida" element={!perfil ? <Navigate to="/ingresar" replace /> : perfil.onboarding ? <Navigate to="/" replace /> : <Onboarding />} />
         <Route element={<ConSesion />}>
           <Route path="/" element={<Inicio />} />

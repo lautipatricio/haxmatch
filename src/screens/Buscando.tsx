@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { REAL } from '../config'
 import {
-  YO, buscarMia, cuantosSon, encajaJusto, jugadoresBuscando, miSala, salasBuscando, useStore,
+  YO, buscarMia, cuantosSon, encajaJusto, enSala, jugadoresBuscando, miSala, nivelTexto, salasBuscando, useStore, usuarioDe,
 } from '../data/store'
 import { jugadoresPorEquipo } from '../domain/rules'
 import { FALTAN, type Busqueda } from '../domain/types'
@@ -10,6 +11,7 @@ import { Avatar, Chips, Empty, Sheet, TabBar, mmss, useAhora } from '../ui'
 const lista = (v: readonly string[] | null) => (v ?? []).join(', ')
 const faltan = (n: number | undefined) => `falta${n === 1 ? '' : 'n'} ${n ?? 1}`
 const enumerar = (n: string[]) => (n.length <= 1 ? n[0] ?? '' : `${n.slice(0, -1).join(', ')} y ${n[n.length - 1]}`)
+const MIN = 60 * 1000
 
 export function resumenBusqueda(b: Busqueda): string {
   if (b.modo === 'sala') return `${faltan(b.faltan)} · ${lista(b.cancha)} · sala "${b.nombreSala}"`
@@ -20,9 +22,12 @@ export function resumenBusqueda(b: Busqueda): string {
 /** Fila de un jugador, un grupo o una sala, con el botón para mandarle un mensaje. */
 export function FilaDisponible({ b, detalle }: { b: Busqueda; detalle?: string }) {
   const s = useStore()
-  const u = s.usuarios[b.userId]
+  const ahora = useAhora()
+  const u = usuarioDe(s, b.userId)
   const mia = buscarMia(s)
-  const enviado = s.mensajes.find((m) => m.de === YO && m.a === b.userId)
+  // Lo que le mandé en esta búsqueda. Un "no" de una búsqueda anterior no cuenta.
+  const desde = mia?.creadaAt ?? ahora - 10 * MIN
+  const enviado = s.mensajes.find((m) => m.de === YO && m.a === b.userId && (m.estado === 'pendiente' || m.at >= desde))
   const somos = cuantosSon(mia)
   const son = cuantosSon(b)
   // No entran: mi grupo no cabe en esa sala, o ese grupo no cabe en la mía.
@@ -30,6 +35,8 @@ export function FilaDisponible({ b, detalle }: { b: Busqueda; detalle?: string }
     ? somos > (b.faltan ?? 0)
     : mia?.modo === 'sala' && son > (mia.faltan ?? 0)
   const motivo = b.modo === 'sala' ? `Le ${faltan(b.faltan)} y ustedes son ${somos}` : `Son ${son} y te ${faltan(mia?.faltan)}`
+  // Sumado al grupo de otro: los mensajes los manda quien lo armó.
+  const sumado = !!mia?.liderId
   return (
     <div className="card card--row">
       <Avatar user={u} size="sm" />
@@ -40,14 +47,14 @@ export function FilaDisponible({ b, detalle }: { b: Busqueda; detalle?: string }
           {/* Solo se marca cuando hay un grupo de por medio: con un jugador suelto no dice nada. */}
           {encajaJusto(s, b) && Math.max(somos, son) > 1 && <span className="tag">JUSTO</span>}
         </div>
-        <div className="m cut">{noEntran ? motivo : detalle ?? `Nivel ${u.nivel} · ${resumenBusqueda(b)}`}</div>
+        <div className="m cut">{noEntran ? motivo : detalle ?? `${nivelTexto(u)}${resumenBusqueda(b)}`}</div>
       </div>
       {enviado?.estado === 'pendiente' ? (
         <button className="btn btn--sec" disabled>Enviado</button>
       ) : enviado?.estado === 'rechazado' ? (
         <button className="btn btn--sec" disabled>No puede</button>
       ) : (
-        <button className="btn btn--sec" disabled={noEntran} onClick={() => s.enviarMensaje(b.userId)}>Mensaje</button>
+        <button className="btn btn--sec" disabled={noEntran || sumado} onClick={() => s.enviarMensaje(b.userId)}>Mensaje</button>
       )}
     </div>
   )
@@ -63,14 +70,21 @@ function Vacio({ titulo, texto }: { titulo: string; texto: string }) {
 }
 
 /** El grupo ya es un equipo completo: quien lo armó crea la sala y pasan a buscar rival. */
-function CartelEquipoCompleto({ mia }: { mia: Busqueda }) {
+function CartelEquipoCompleto({ mia, onDespues }: { mia: Busqueda; onDespues: () => void }) {
   const convertir = useStore((s) => s.convertirEnSala)
   const [nombre, setNombre] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [ocupado, setOcupado] = useState(false)
   const n = jugadoresPorEquipo(mia.formato) ?? 1
   const somos = cuantosSon(mia)
   // En 1v1 ya están los dos: no falta nadie. En el resto falta el equipo rival.
   const rival = n === 1 ? 0 : n
+  const crear = async () => {
+    setOcupado(true)
+    const e = await convertir({ nombreSala: nombre, faltan: rival, entreNosotros: rival === 0 })
+    setOcupado(false)
+    setError(e)
+  }
   return (
     <Sheet title="Equipo completo">
       <div>
@@ -81,9 +95,10 @@ function CartelEquipoCompleto({ mia }: { mia: Busqueda }) {
       <input id="sala-equipo" className="field" value={nombre} maxLength={40} autoComplete="off" placeholder="Como figura en HaxBall"
         onChange={(e) => { setNombre(e.target.value); setError(null) }} />
       {error && <div className="err" role="alert">{error}</div>}
-      <button className="btn" onClick={() => setError(convertir({ nombreSala: nombre, faltan: rival, entreNosotros: rival === 0 }))}>
+      <button className="btn" disabled={ocupado} onClick={() => void crear()}>
         {rival > 0 ? 'Crear sala y buscar rival' : 'Crear sala'}
       </button>
+      <button className="btn btn--ghost" onClick={onDespues}>Ahora no, seguir buscando una sala</button>
     </Sheet>
   )
 }
@@ -98,7 +113,14 @@ function CartelQuinceMinutos({ mia }: { mia: Busqueda }) {
   const [nombre, setNombre] = useState('')
   const [cuantos, setCuantos] = useState<number>(Math.min(7, Math.max(1, n ? n * 2 - somos : 1)))
   const [error, setError] = useState<string | null>(null)
+  const [ocupado, setOcupado] = useState(false)
   const entre = somos === 2 ? 'Jugar un 1v1 entre nosotros' : somos === 3 ? 'Jugar un 1v1v1 entre nosotros' : 'Jugar entre nosotros'
+  const crear = async () => {
+    setOcupado(true)
+    const e = await s.convertirEnSala({ nombreSala: nombre, faltan: cuantos, entreNosotros: paso === 'entre' })
+    setOcupado(false)
+    setError(e)
+  }
 
   if (paso === 'opciones') {
     return (
@@ -124,9 +146,7 @@ function CartelQuinceMinutos({ mia }: { mia: Busqueda }) {
         onChange={(e) => { setNombre(e.target.value); setError(null) }} />
       {paso === 'sala' && <Chips label="Cuántos faltan" options={FALTAN} value={cuantos} onChange={setCuantos} />}
       {error && <div className="err" role="alert">{error}</div>}
-      <button className="btn" onClick={() => setError(s.convertirEnSala({ nombreSala: nombre, faltan: cuantos, entreNosotros: paso === 'entre' }))}>
-        Crear sala
-      </button>
+      <button className="btn" disabled={ocupado} onClick={() => void crear()}>Crear sala</button>
       <button className="btn btn--sec" onClick={() => setPaso('opciones')}>Volver</button>
     </Sheet>
   )
@@ -135,27 +155,40 @@ function CartelQuinceMinutos({ mia }: { mia: Busqueda }) {
 /** Jugadores que ya tienen lugar en mi sala: primero "Ya entró", después "Se salió". */
 function EnMiSala({ onEntro }: { onEntro: (uid: string) => void }) {
   const s = useStore()
-  const match = miSala(s)
-  const otros = match?.participantes.filter((p) => p.userId !== YO) ?? []
+  const otros = enSala(miSala(s))
   if (otros.length === 0) return null
   return (
     <>
       <h2 className="h sub">En tu sala</h2>
       {otros.map((p) => {
-        const u = s.usuarios[p.userId]
+        const u = usuarioDe(s, p.userId)
         const adentro = !!p.entroAt
-        return (
-          <div key={p.userId} className={`card card--row${adentro ? '' : ' card--accent'}`}>
-            <Avatar user={u} size="sm" />
-            <div className="grow">
-              <div className="strong cut">{u.username}</div>
-              <div className="m cut">{adentro ? (p.confirmadoAt ? 'Adentro · confirmó' : 'Adentro') : 'Aceptado · todavía no entró'}</div>
-            </div>
-            {adentro ? (
+        if (adentro) {
+          return (
+            <div key={p.userId} className="card card--row">
+              <Avatar user={u} size="sm" />
+              <div className="grow">
+                <div className="strong cut">{u.username}</div>
+                <div className="m cut">{p.confirmadoAt ? 'Adentro · confirmó' : 'Adentro'}</div>
+              </div>
               <button className="btn btn--sec" aria-label={`${u.username} se salió`} onClick={() => s.marcarSalio(p.userId)}>Se salió</button>
-            ) : (
-              <button className="btn" aria-label={`Ya entró ${u.username} a la sala`} onClick={() => onEntro(p.userId)}>Ya entró</button>
-            )}
+            </div>
+          )
+        }
+        // Todavía no entró: o confirma que entró, o libera el lugar si no va a venir.
+        return (
+          <div key={p.userId} className="card card--col card--accent" style={{ gap: 10 }}>
+            <div className="row">
+              <Avatar user={u} size="sm" />
+              <div className="grow">
+                <div className="strong cut">{u.username}</div>
+                <div className="m cut">Aceptado · todavía no entró</div>
+              </div>
+            </div>
+            <div className="row">
+              <button className="btn grow" aria-label={`Ya entró ${u.username} a la sala`} onClick={() => onEntro(p.userId)}>Ya entró</button>
+              <button className="btn btn--sec grow" aria-label={`${u.username} no vino`} onClick={() => s.marcarSalio(p.userId)}>No vino</button>
+            </div>
           </div>
         )
       })}
@@ -163,7 +196,7 @@ function EnMiSala({ onEntro }: { onEntro: (uid: string) => void }) {
         <span className="m">Reportar a</span>
         {otros.map((p) => (
           <Link key={p.userId} className="chip" to={`/reportar/${p.userId}`} style={{ display: 'grid', placeItems: 'center', textDecoration: 'none' }}>
-            {s.usuarios[p.userId].username}
+            {usuarioDe(s, p.userId).username}
           </Link>
         ))}
       </div>
@@ -176,20 +209,38 @@ export function Buscando() {
   const mia = buscarMia(s)
   const ahora = useAhora()
   const nav = useNavigate()
-  const [cargando, setCargando] = useState(true)
+  const [espera, setEspera] = useState(true)
   /** Jugadores aceptados cuyo cartel "Ya entró" se pospuso con "Todavía no". */
   const [pospuestos, setPospuestos] = useState<string[]>([])
+  /** El cartel de "Equipo completo" se puede dejar para después, para seguir mirando la cola. */
+  const [equipoDespues, setEquipoDespues] = useState(false)
   useEffect(() => {
-    const t = setTimeout(() => setCargando(false), 600)
+    const t = setTimeout(() => setEspera(false), 600)
     return () => clearTimeout(t)
   }, [])
+  const cargando = espera || !s.colaLista
+  // Si alguien pospuesto deja la sala y después vuelve, su cartel aparece de nuevo.
+  const enMiSala = enSala(miSala(s)).map((p) => p.userId).join(',')
+  useEffect(() => {
+    setPospuestos((p) => (p.every((u) => enMiSala.split(',').includes(u)) ? p : p.filter((u) => enMiSala.split(',').includes(u))))
+  }, [enMiSala])
 
   if (!mia) {
     return (
       <div className="screen">
-        <Empty title="No estás buscando" text="Tu búsqueda terminó o venció. Podés empezar otra cuando quieras.">
-          <Link className="btn" to="/">Volver al inicio</Link>
-        </Empty>
+        {s.colaLista ? (
+          <Empty title="No estás buscando" text="Tu búsqueda terminó o venció. Podés empezar otra cuando quieras.">
+            <Link className="btn" to="/">Volver al inicio</Link>
+          </Empty>
+        ) : s.errorCola ? (
+          <Empty title="Sin conexión con el servidor" text={s.errorCola}>
+            <button className="btn" onClick={() => void s.refrescar()}>Reintentar</button>
+          </Empty>
+        ) : (
+          <div className="pad" style={{ paddingTop: 'calc(20px + var(--safe-top))' }} role="status" aria-label="Cargando">
+            <div className="skeleton" /><div className="skeleton" />
+          </div>
+        )}
         <TabBar on="inicio" />
       </div>
     )
@@ -199,23 +250,28 @@ export function Buscando() {
   const jugadores = jugadoresBuscando(s)
   const salas = salasBuscando(s)
   const grupo = mia.grupo ?? []
+  /** Me sumé a la búsqueda de otro: la maneja quien armó el grupo. */
+  const lider = mia.liderId ? usuarioDe(s, mia.liderId) : null
   const completa = sala && (mia.faltan ?? 0) === 0
   const match = miSala(s)
-  const conGente = !!match && match.participantes.some((p) => p.userId !== YO)
+  const conGente = enSala(match).length > 0
   const datos = sala
     ? `${completa ? 'Completa' : faltan(mia.faltan).replace('f', 'F')} · ${lista(mia.region)} · Cancha: ${lista(mia.cancha)}`
     : `${lista(mia.formato)} · ${lista(mia.region)} · Cancha: ${lista(mia.cancha)}`
   const esqueleto = <><div className="skeleton" /><div className="skeleton" /></>
+  const vencida = mia.expiraAt !== null && mia.expiraAt <= ahora
 
-  // Carteles de mi sala: primero aceptar o rechazar, después "Ya entró".
-  const pedido = sala ? s.mensajes.find((m) => m.a === YO && m.estado === 'pendiente') : undefined
+  // Lo que me llegó y todavía no respondí. En mi sala se muestra como cartel; si busco partido, como lista.
+  const recibidos = s.mensajes.filter((m) => m.a === YO && m.estado === 'pendiente')
+  const pedido = sala ? recibidos[0] : undefined
   const quienes = pedido ? [pedido.de, ...(pedido.con ?? [])] : []
-  const porEntrar = match?.participantes.find((p) => p.userId !== YO && !p.entroAt && !pospuestos.includes(p.userId))
-  const nombre = (uid: string) => s.usuarios[uid]?.username ?? 'El jugador'
+  const porEntrar = enSala(match).find((p) => !p.entroAt && !pospuestos.includes(p.userId))
+  const nombre = (uid: string) => usuarioDe(s, uid).username
 
   let cartel: JSX.Element | null = null
   if (pedido) {
     const varios = quienes.length > 1
+    const conNivel = quienes.filter((u) => usuarioDe(s, u).nivel !== null)
     cartel = (
       <Sheet title={`¿Aceptás a ${enumerar(quienes.map(nombre))}?`}>
         <div>
@@ -224,7 +280,7 @@ export function Buscando() {
             : `Te ${varios ? 'escribieron' : 'escribió'}: ${pedido.texto}`}
           {' '}Si {varios ? 'los' : 'lo'} aceptás, {varios ? `ocupan ${quienes.length} lugares` : 'ocupa un lugar'} y la sala sigue buscando al resto.
         </div>
-        <div className="m">{quienes.map((u) => `${nombre(u)} · Nivel ${s.usuarios[u]?.nivel ?? 0}`).join(' · ')}</div>
+        {conNivel.length > 0 && <div className="m">{conNivel.map((u) => `${nombre(u)} · Nivel ${usuarioDe(s, u).nivel}`).join(' · ')}</div>}
         <button className="btn" onClick={() => s.responderMensaje(pedido.id, true)}>Aceptar</button>
         <button className="btn btn--sec" onClick={() => s.responderMensaje(pedido.id, false)}>Rechazar</button>
       </Sheet>
@@ -237,10 +293,11 @@ export function Buscando() {
         <div className="m">Si después se va, tocá “Se salió” y se libera su lugar.</div>
         <button className="btn" onClick={() => s.marcarEntro(porEntrar.userId)}>Ya entró {n} a la sala</button>
         <button className="btn btn--sec" onClick={() => setPospuestos((p) => [...p, porEntrar.userId])}>Todavía no</button>
+        <button className="btn btn--ghost" onClick={() => s.marcarSalio(porEntrar.userId)}>No va a venir: liberar su lugar</button>
       </Sheet>
     )
-  } else if (mia.equipoListo) {
-    cartel = <CartelEquipoCompleto mia={mia} />
+  } else if (mia.equipoListo && !equipoDespues) {
+    cartel = <CartelEquipoCompleto mia={mia} onDespues={() => setEquipoDespues(true)} />
   } else if (mia.ofertaHasta) {
     cartel = <CartelQuinceMinutos mia={mia} />
   } else if (mia.avisar === null) {
@@ -269,26 +326,61 @@ export function Buscando() {
           </div>
           <div className="m center num">
             {completa ? 'Ya no se busca a nadie. Cuando entren todos, queda armado el match.'
+              : lider && vencida ? `Pasaron los 15 minutos. ${lider.username} decide cómo siguen.`
               : mia.expiraAt ? `Vence en ${mmss(mia.expiraAt - ahora)}` : sala ? 'Sigue buscando hasta completarse' : 'Activa hasta conseguir partido'}
           </div>
+
+          {!sala && recibidos.length > 0 && (
+            <>
+              <h2 className="h sub sub--accent">Te escribieron</h2>
+              {recibidos.map((m) => {
+                const u = usuarioDe(s, m.de)
+                const con = m.con ?? []
+                return (
+                  <div key={m.id} className="card card--row card--accent">
+                    <Avatar user={u} size="sm" />
+                    <div className="grow">
+                      <div className="strong cut">{u.username}{con.length > 0 && ` +${con.length}`}</div>
+                      <div className="m cut">{m.texto}</div>
+                    </div>
+                    <div className="acts">
+                      <button className="btn" aria-label={`Aceptar a ${u.username}`} onClick={() => s.responderMensaje(m.id, true)}>Aceptar</button>
+                      <button className="btn btn--sec" aria-label={`Rechazar a ${u.username}`} onClick={() => s.responderMensaje(m.id, false)}>No</button>
+                    </div>
+                  </div>
+                )
+              })}
+              <div className="m">Si aceptás a un jugador, te sumás a su búsqueda. Si aceptás una sala, entrás a jugar.</div>
+            </>
+          )}
 
           {sala && <EnMiSala onEntro={s.marcarEntro} />}
 
           {grupo.length > 0 && (
             <>
               <h2 className="h sub">Buscan con vos</h2>
-              {grupo.map((uid) => (
-                <div key={uid} className="card card--row card--accent">
-                  <Avatar user={s.usuarios[uid]} size="sm" />
-                  <div className="grow">
-                    <div className="strong cut">
-                      {s.usuarios[uid].username}
-                      {s.amigos.includes(uid) && <span className="tag">AMIGO</span>}
+              {grupo.map((uid) => {
+                const u = usuarioDe(s, uid)
+                return (
+                  <div key={uid} className="card card--row card--accent">
+                    <Avatar user={u} size="sm" />
+                    <div className="grow">
+                      <div className="strong cut">
+                        {u.username}
+                        {s.amigos.includes(uid) && <span className="tag">AMIGO</span>}
+                      </div>
+                      <div className="m cut">
+                        {nivelTexto(u)}{uid === mia.liderId ? 'armó el grupo y maneja la búsqueda' : 'mismo reloj y misma búsqueda'}
+                      </div>
                     </div>
-                    <div className="m cut">Nivel {s.usuarios[uid].nivel} · mismo reloj y misma búsqueda</div>
                   </div>
+                )
+              })}
+              {lider && (
+                <div className="m">
+                  Te sumaste a la búsqueda de {lider.username}. Los mensajes a otros jugadores y a las salas los manda {lider.username}.
                 </div>
-              ))}
+              )}
             </>
           )}
 
@@ -296,15 +388,17 @@ export function Buscando() {
             <>
               <h2 className="h sub">Jugadores buscando partidos</h2>
               {cargando ? esqueleto : jugadores.length === 0 ? (
-                <Vacio titulo="Nadie más buscando ahora" texto="Te avisamos cuando alguien responda." />
+                <Vacio titulo="Nadie más buscando ahora" texto="Cuando alguien se ponga a buscar aparece acá." />
               ) : (
                 jugadores.map((b) => <FilaDisponible key={b.id} b={b} />)
               )}
-              <div className="m">
-                {sala
-                  ? 'La app te acerca sola a los que encajan, primero un grupo que sea justo los que te faltan. También podés escribirles vos.'
-                  : 'Si un jugador acepta tu mensaje, se suma a tu búsqueda y siguen buscando juntos.'}
-              </div>
+              {!lider && (
+                <div className="m">
+                  {sala
+                    ? 'La app te acerca sola a los que encajan, primero un grupo que sea justo los que te faltan. También podés escribirles vos.'
+                    : 'Si un jugador acepta tu mensaje, se suma a tu búsqueda y siguen buscando juntos.'}
+                </div>
+              )}
             </>
           )}
 
@@ -317,17 +411,18 @@ export function Buscando() {
                 salas.map((b) => <FilaDisponible key={b.id} b={b} />)
               )}
               <div className="m">
-                La app te conecta sola con una sala donde {grupo.length ? 'entren todos' : 'entres'}. Si le escribís a una y te acepta, se genera el match aunque no sea lo que buscabas.
+                La app te conecta sola con una sala donde {grupo.length ? 'entren todos' : 'entres'}.
+                {!lider && ' Si le escribís a una y te acepta, se genera el match aunque no sea lo que buscabas.'}
               </div>
             </>
           )}
 
           <button className="btn btn--danger btn--block" style={{ marginTop: 8 }}
             onClick={() => { s.cancelarBusqueda(); nav('/') }}>
-            {conGente ? 'Cerrar sala' : 'Cancelar búsqueda'}
+            {conGente ? 'Cerrar sala' : lider ? 'Salir del grupo' : 'Cancelar búsqueda'}
           </button>
 
-          {!completa && (
+          {!completa && !REAL && (
             <div className="demo">
               <div className="h">Herramientas de prueba</div>
               <button className="btn btn--sec" onClick={s.emparejarAhora}>

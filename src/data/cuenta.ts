@@ -1,7 +1,8 @@
-// Cuenta real: ingreso con Discord, perfil y foto guardados en Supabase.
+// Cuenta real: ingreso con Discord, perfil y foto guardados en el servidor.
 // Todas las funciones devuelven el texto del problema para mostrarle al usuario.
 import type { Region } from '../domain/types'
-import { supabase } from './supabase'
+import { ENSAYO, supabase } from './supabase'
+import { problema, rpc, usuarioDeEnsayo } from './transporte'
 
 /** Perfil tal como lo devuelve el servidor (función mi_perfil). */
 export interface FilaPerfil {
@@ -18,15 +19,6 @@ export interface FilaPerfil {
 }
 
 const SIN_CONEXION = 'No pudimos conectar con el servidor. Revisá tu internet e intentá de nuevo.'
-const SIN_BASE = 'Falta configurar la base de datos de HaxMatch.'
-
-function problema(error: { message?: string; code?: string } | null): string {
-  if (!error) return SIN_CONEXION
-  // La función todavía no existe en la base: falta ejecutar el SQL.
-  if (error.code === 'PGRST202' || error.code === '42883') return SIN_BASE
-  if (/fetch|network|load failed/i.test(error.message ?? '')) return SIN_CONEXION
-  return error.message || SIN_CONEXION
-}
 
 // ---- Código de un amigo: se valida antes de ir a Discord y se usa al terminar el registro ----
 
@@ -52,16 +44,34 @@ export function guardarCodigoPendiente(d: { codigo: string; nick: string } | nul
 
 /** Nick del dueño del código, o null si el código no existe. */
 export async function quienInvita(codigo: string): Promise<{ nick: string | null; error?: string }> {
-  if (!supabase) return { nick: null, error: SIN_CONEXION }
-  const { data, error } = await supabase.rpc('quien_invita', { p_codigo: codigo })
-  if (error) return { nick: null, error: problema(error) }
-  return { nick: typeof data === 'string' ? data : null }
+  const r = await rpc<string | null>('quien_invita', { p_codigo: codigo })
+  if (r.error) return { nick: null, error: r.error }
+  return { nick: typeof r.data === 'string' ? r.data : null }
 }
 
 // ---- Sesión ----
 
+const CLAVE_ENSAYO = 'haxmatch-ensayo-entro'
+const oyentes: Array<(uid: string | null) => void> = []
+const entroEnEnsayo = () => { try { return sessionStorage.getItem(CLAVE_ENSAYO) === '1' } catch { return false } }
+
+/** Avisa quién tiene la sesión abierta (o null), al empezar y cada vez que cambia. */
+export function escucharSesion(aviso: (uid: string | null) => void) {
+  if (ENSAYO) {
+    oyentes.push(aviso)
+    aviso(entroEnEnsayo() ? usuarioDeEnsayo() : null)
+    return
+  }
+  supabase?.auth.onAuthStateChange((_evento, sesion) => aviso(sesion?.user.id ?? null))
+}
+
 /** Manda al usuario a Discord. Si todo va bien, la página se va y vuelve ya con la sesión iniciada. */
 export async function ingresarConDiscord(): Promise<string | null> {
+  if (ENSAYO) {
+    try { sessionStorage.setItem(CLAVE_ENSAYO, '1') } catch { /* sigue en memoria */ }
+    oyentes.forEach((o) => o(usuarioDeEnsayo()))
+    return null
+  }
   if (!supabase) return SIN_CONEXION
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'discord',
@@ -71,23 +81,27 @@ export async function ingresarConDiscord(): Promise<string | null> {
 }
 
 export async function salir(): Promise<void> {
-  await supabase?.auth.signOut()
+  if (ENSAYO) {
+    try { sessionStorage.removeItem(CLAVE_ENSAYO) } catch { /* nada que limpiar */ }
+    oyentes.forEach((o) => o(null))
+    return
+  }
+  if (!supabase) return
+  const { error } = await supabase.auth.signOut()
+  // Sin conexión no se puede avisar al servidor: al menos se cierra en este dispositivo.
+  if (error) await supabase.auth.signOut({ scope: 'local' })
 }
 
 // ---- Perfil ----
 
 export async function miPerfil(): Promise<{ perfil?: FilaPerfil; error?: string }> {
-  if (!supabase) return { error: SIN_CONEXION }
-  const { data, error } = await supabase.rpc('mi_perfil')
-  if (error || !data) return { error: problema(error) }
-  return { perfil: data as FilaPerfil }
+  const r = await rpc<FilaPerfil>('mi_perfil')
+  return r.data ? { perfil: r.data } : { error: r.error ?? SIN_CONEXION }
 }
 
 export async function completarRegistro(nick: string, region: Region[], codigo?: string): Promise<{ perfil?: FilaPerfil; error?: string }> {
-  if (!supabase) return { error: SIN_CONEXION }
-  const { data, error } = await supabase.rpc('completar_registro', { p_nick: nick, p_region: region, p_codigo: codigo ?? null })
-  if (error || !data) return { error: problema(error) }
-  return { perfil: data as FilaPerfil }
+  const r = await rpc<FilaPerfil>('completar_registro', { p_nick: nick, p_region: region, p_codigo: codigo ?? null })
+  return r.data ? { perfil: r.data } : { error: r.error ?? SIN_CONEXION }
 }
 
 // ---- Foto de perfil ----
@@ -96,6 +110,8 @@ const CARPETA = 'avatares'
 
 /** Sube la foto (JPEG ya recortado) y la deja como foto del perfil. Devuelve su dirección pública. */
 export async function subirFoto(uid: string, dataUrl: string): Promise<{ url?: string; error?: string }> {
+  // El servidor de ensayo no guarda archivos: la foto queda en el dispositivo.
+  if (ENSAYO) return { url: dataUrl }
   if (!supabase) return { error: SIN_CONEXION }
   try {
     const archivo = await (await fetch(dataUrl)).blob()
@@ -113,6 +129,7 @@ export async function subirFoto(uid: string, dataUrl: string): Promise<{ url?: s
 }
 
 export async function quitarFoto(uid: string): Promise<string | null> {
+  if (ENSAYO) return null
   if (!supabase) return SIN_CONEXION
   const { error } = await supabase.from('profiles').update({ foto_url: null }).eq('id', uid)
   if (error) return problema(error)

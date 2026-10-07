@@ -5,3 +5,7 @@ dist-demo
 .env.local
 .wrangler
 dist-prueba
+dist-ensayo
+capturas
+capturas-ensayo
+falla-produccion-*.png

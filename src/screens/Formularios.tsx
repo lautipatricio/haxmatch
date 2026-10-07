@@ -21,11 +21,14 @@ export function FormJugador() {
   const [region, setRegion] = useState<Region[]>(perfil?.region ?? ['ARG'])
   const [duracion, setDuracion] = useState<Duracion>('15min')
   const [error, setError] = useState<string | null>(null)
+  const [ocupado, setOcupado] = useState(false)
 
   if (mia) return <Navigate to="/buscando" replace />
 
-  const buscar = () => {
-    const e = crear({ modo: 'jugador', formato, posicion, cancha, region, duracion })
+  const buscar = async () => {
+    setOcupado(true)
+    const e = await crear({ modo: 'jugador', formato, posicion, cancha, region, duracion })
+    setOcupado(false)
     setError(e)
     if (!e) nav('/buscando')
   }
@@ -45,7 +48,7 @@ export function FormJugador() {
         </div>
       </div>
       <div className="foot">
-        <button className="btn btn--lg btn--block" onClick={buscar}>Buscar amistoso</button>
+        <button className="btn btn--lg btn--block" disabled={ocupado} onClick={() => void buscar()}>{ocupado ? 'Un momento…' : 'Buscar amistoso'}</button>
       </div>
       <TabBar on="inicio" />
     </div>
@@ -63,11 +66,14 @@ export function FormSala() {
   const [cancha, setCancha] = useState<Cancha[]>(['Cualquiera'])
   const [region, setRegion] = useState<Region[]>(perfil?.region ?? ['ARG'])
   const [error, setError] = useState<string | null>(null)
+  const [ocupado, setOcupado] = useState(false)
 
   if (mia) return <Navigate to="/buscando" replace />
 
-  const buscar = () => {
-    const e = crear({ modo: 'sala', formato: null, posicion, cancha, region, duracion: 'match', nombreSala, faltan })
+  const buscar = async () => {
+    setOcupado(true)
+    const e = await crear({ modo: 'sala', formato: null, posicion, cancha, region, duracion: 'match', nombreSala, faltan })
+    setOcupado(false)
     setError(e)
     if (!e) nav('/buscando')
   }
@@ -90,7 +96,7 @@ export function FormSala() {
         </div>
       </div>
       <div className="foot">
-        <button className="btn btn--lg btn--block" onClick={buscar}>Buscar jugador</button>
+        <button className="btn btn--lg btn--block" disabled={ocupado} onClick={() => void buscar()}>{ocupado ? 'Un momento…' : 'Buscar jugador'}</button>
       </div>
       <TabBar on="inicio" />
     </div>

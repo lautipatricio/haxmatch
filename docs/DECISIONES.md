@@ -93,6 +93,41 @@ Qué decidí yo en esta ronda:
 - Pide confirmación antes de cerrar.
 - En el Inicio el botón es angosto y va centrado. Antes ocupaba todo el ancho, justo donde en las otras pantallas está la pestaña "Inicio": al tocarla dos veces seguidas, el segundo toque cerraba la sesión.
 
+## Cola real entre usuarios (6/10/2026)
+
+La cola, los mensajes, los grupos, las salas y los partidos pasan al servidor. Los jugadores inventados desaparecen de la web publicada. Decisiones que tomé al pasarlo a usuarios de verdad:
+
+- **Las reglas las aplica el servidor,** no la app: una sola búsqueda activa, cupos de la sala, quién puede aceptar a quién y cuándo cuenta un partido. Desde la app no se pueden tocar los datos directamente.
+- **Emparejamiento automático:** a cada sala con lugares libres la app le acerca un jugador o un grupo para que el dueño acepte o rechace (primero el grupo que es justo los que faltan, después jugadores sueltos, después grupos más chicos). Corre cada vez que alguien busca, cancela, acepta o rechaza.
+- **El jugador no ve ese pedido.** Cuando la app lo acerca a una sala, solo se entera el dueño. Si lo aceptan, le aparece "Match listo". Si lo rechazan, sigue buscando y no se entera.
+- **Un mismo jugador puede quedar propuesto a varias salas a la vez.** Entra a la primera que lo acepta y los otros pedidos se caen. Así nadie queda trabado esperando a un dueño que no contesta.
+- **Un equipo completo también le sirve a una sala.** Si tres buscan 3v3 y hay una sala a la que le faltan justo 3, la app se los acerca. El cartel "Equipo completo" sigue apareciendo para crear la sala propia, y ahora tiene "Ahora no, seguir buscando una sala".
+- **Los pedidos se mantienen al día.** Si quien escribió a una sala suma gente a su grupo, el pedido se actualiza ("¿Entramos 2 a tu sala?"). Si ya no entran todos, o alguna de las dos partes dejó de buscar, se cae solo. Así ninguna sala queda trabada con un pedido viejo.
+- **Hay que estar buscando para escribir.** Sin una búsqueda propia no se le puede mandar mensaje a nadie. Y hasta 10 mensajes sin responder a la vez.
+- **Nadie ocupa dos lugares en la misma sala.** Si alguien que ya entró vuelve a buscar, la app no se lo acerca de nuevo a esa sala.
+- **En un grupo, los mensajes los manda quien lo armó.** Los que se sumaron ven la cola pero no pueden escribirle a nadie, y su botón dice "Salir del grupo".
+- **Si quien armó el grupo deja de buscar,** los demás vuelven a la cola cada uno por su cuenta, con 15 minutos nuevos.
+- **Lo que me escriben mientras busco partido** aparece arriba de la pantalla de búsqueda, en "Te escribieron", con Aceptar y No. Antes era solo un aviso de 20 segundos.
+- **Después de un "no", hay que esperar 2 minutos** para volver a escribirle a la misma persona.
+- **Sin señales de vida por 10 minutos, la búsqueda sale de la cola.** La app avisa que sigue ahí cada 8 segundos mientras está abierta. Con el celular bloqueado o la app en segundo plano eso se corta, así que una búsqueda "Hasta match" también se cae si la app queda cerrada 10 minutos. Se va a poder aflojar cuando haya notificaciones push.
+- **Cartel de los 15 minutos:** hay 2 minutos para responderlo. Pasado eso, la búsqueda vence. Lo ve solo quien armó el grupo; a los demás les dice que esa persona decide cómo siguen.
+- **Aviso en el Inicio** cuando tenés un match en la sala de otro y todavía no tocaste "Ya entré a la sala" (durante 2 horas), para volver a encontrarlo.
+- **A cada uno el partido le cuenta cuando entró o confirmó.** El partido es válido cuando confirma uno de cada lado, pero a alguien que solo fue aceptado (y ni entró ni confirmó) no le suma. Le cuenta cuando el dueño marca "Ya entró" o cuando él toca "Ya entré a la sala". Si el dueño ya marcó que entró y el partido ya es válido, no hace falta que toque nada.
+- **"No vino":** al que fue aceptado y nunca entró, el dueño lo puede sacar para liberar el lugar (antes solo se podía con "Se salió", después de "Ya entró"). Está en el cartel "X va a entrar" y en la lista "En tu sala".
+- **"Se salió" o "No vino" antes de que el partido cuente:** al jugador le aparece "Ya no estás en la sala de X" y no le queda nada. **Después de que contó:** deja el lugar, pero el partido le queda anotado.
+- **Una sala completa se puede reabrir con "Se salió" durante 6 horas.** Una sala que cerró su dueño (o que venció) no se reabre.
+- **Un partido se puede confirmar hasta 7 días después.**
+- **Reportes:** se guardan en el servidor (hasta 10 por día por usuario) y se leen desde Supabase. Bloquear sigue siendo por dispositivo: oculta al jugador en mis listas, pero la app todavía puede acercármelo a mi sala.
+- **Puntos y nivel siguen en el dispositivo.** El servidor dice qué partidos cuentan y el celular suma los puntos con los topes. Por eso el nivel no se ve desde otro celular, y el de los demás jugadores no se muestra. Pasa al servidor en la etapa de puntos.
+- **"Amistosos jugados" y "asistencia"** salen del servidor, con toda la historia. "Con quién más jugaste" mira solo la última semana, hasta la etapa de puntos.
+- **Amigos:** la pantalla avisa que llegan en la próxima actualización. Los referidos quedan anotados (quién invitó a quién), pero la lista y sus puntos todavía no se muestran.
+- **Fotos de los demás:** del servidor solo viaja la versión de la foto, y la dirección la arma la app con la carpeta de cada usuario. Así nadie puede hacer que los demás carguen una imagen de otro sitio.
+- **Los cambios en la cola se hacen de a uno** en el servidor, para que dos personas que tocan al mismo tiempo no se pisen (dos salas aceptando al mismo jugador, por ejemplo).
+- **Si un pedido al servidor tarda más de 15 segundos,** la app lo corta y avisa, en lugar de quedarse esperando.
+- **Datos de otra cuenta en el mismo celular:** si entra una cuenta distinta, los datos guardados en el dispositivo se reinician.
+
+Cómo se probó: 141 comprobaciones de las reglas sobre una copia local de la base, un ensayo automático con 11 usuarios simultáneos en la app (salas, pedidos, grupos, equipo completo, 15 minutos, "No vino", reportes, cierre de sesión), un ensayo de la versión que se publica, y una revisión independiente del servidor y de la app buscando formas de romperlo (encontró 11 problemas, todos corregidos o anotados abajo). Lo que no se pudo probar desde acá, porque necesita el Supabase real: el ingreso con Discord junto con la cola, los avisos en tiempo real (si fallan, la app igual se actualiza sola cada 8 segundos) y dos personas tocando exactamente al mismo tiempo.
+
 ## Decisiones que tomé al construir (revisar)
 
 1. **El match siempre es con una sala.** Dos jugadores sin sala ya no generan match: se juntan en una misma búsqueda. Quien creó la sala ve "Ya entró X a la sala" y el que se une ve "Ya entré a la sala".
@@ -110,7 +145,13 @@ Qué decidí yo en esta ronda:
 
 ## Puntos abiertos
 
-- **Grupo armado por otro jugador que se completa.** Si me sumo al grupo de otro y ese grupo completa el equipo, la sala la tiene que crear él. En la demo no está simulado.
+- **Dos personas que aceptan a la vez.** Está resuelto en el servidor (los cambios van de a uno), pero no se pudo ensayar con dos pedidos realmente simultáneos.
+- **El dueño acepta y el jugador entra sin que le pregunten.** Es lo que se pidió ("automático"), pero con gente real puede pasar que el jugador ya no esté mirando. Si no entra, el dueño usa "No vino".
+- **Cancelar sin conexión:** la búsqueda desaparece de la pantalla y vuelve al reconectar, con un aviso genérico.
+- **Carga:** cada cambio hace que todas las apps abiertas vuelvan a pedir el estado. Alcanza para empezar; con muchos usuarios a la vez hay que afinarlo.
+- **¿10 minutos sin señales es poco?** Con la app en segundo plano la búsqueda se cae. Revisar cuando haya notificaciones push.
+- **Bloqueos en el servidor,** para que la app no acerque a mi sala a alguien que bloqueé.
+- **Moderación:** hoy los reportes solo se guardan. Falta definir quién los revisa y qué pasa con el reportado. Las fotos de perfil tampoco se moderan todavía.
 - **¿"Se salió" tiene que avisarle al jugador o afectar su asistencia?** Hoy solo libera el lugar.
 - **"Equipo al que más enfrentaste" y resultados G/P:** la app no registra equipos ni resultados, así que esa tarjeta no tiene de dónde sacar datos. Hoy dice "Todavía sin datos". Hay que definir si se agregan equipos o se cambia la tarjeta.
 - **Cómo se arman los equipos de un 2v2, 3v3 o 4v4** dentro de la app (hoy un match son dos personas).

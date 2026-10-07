@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
-import { useStore } from '../data/store'
+import { REAL } from '../config'
+import { nivelTexto, useStore } from '../data/store'
 import { Avatar, Head, Icon, TabBar, hace, useAhora } from '../ui'
 import { FilaDisponible, resumenBusqueda } from './Buscando'
 
@@ -25,11 +26,18 @@ export function Amigos() {
       <Head title="Amigos" back="/perfil" />
       <div className="scroll">
         <div className="pad">
-          <form className="row" onSubmit={agregar}>
-            <input id="buscar-amigo" className="field grow" value={usuario} placeholder="Usuario de Discord" aria-label="Usuario de Discord"
-              autoComplete="off" autoCapitalize="none" onChange={(e) => { setUsuario(e.target.value); setAviso(null) }} />
-            <button className="btn" type="submit" style={{ minHeight: 48 }}>Agregar</button>
-          </form>
+          {REAL ? (
+            <div className="card card--col">
+              <div className="strong">Los amigos llegan en la próxima actualización</div>
+              <div className="m">Vas a poder agregarlos por su usuario de Discord y recibir un aviso cuando se pongan a buscar partido.</div>
+            </div>
+          ) : (
+            <form className="row" onSubmit={agregar}>
+              <input id="buscar-amigo" className="field grow" value={usuario} placeholder="Usuario de Discord" aria-label="Usuario de Discord"
+                autoComplete="off" autoCapitalize="none" onChange={(e) => { setUsuario(e.target.value); setAviso(null) }} />
+              <button className="btn" type="submit" style={{ minHeight: 48 }}>Agregar</button>
+            </form>
+          )}
           {aviso && <div className={aviso.ok ? 'ok' : 'err'} role="status">{aviso.texto}</div>}
 
           {s.solicitudes.length > 0 && (
@@ -58,13 +66,13 @@ export function Amigos() {
           ) : (
             disponibles.map((b) => (
               <FilaDisponible key={b.id} b={b}
-                detalle={`Nivel ${s.usuarios[b.userId].nivel} · ${resumenBusqueda(b)} · ${hace(ahora - b.creadaAt)}`} />
+                detalle={`${nivelTexto(s.usuarios[b.userId])}${resumenBusqueda(b)} · ${hace(ahora - b.creadaAt)}`} />
             ))
           )}
 
           <h2 className="h sub">Tus amigos</h2>
           {resto.length === 0 && s.solicitudesEnviadas.length === 0 && (
-            <div className="m">Agregá amigos por su usuario de Discord. Solo te avisamos sobre ellos.</div>
+            <div className="m">{REAL ? 'Todavía no tenés amigos agregados.' : 'Agregá amigos por su usuario de Discord. Solo te avisamos sobre ellos.'}</div>
           )}
           {resto.map((id) => (
             <div key={id} className="card card--row">
