@@ -15,16 +15,33 @@ mkdirSync(dir, { recursive: true })
 // conWeb: además de la base, la parte de servidor de la web, con un TikTok de mentira.
 const servidor = await iniciarEnsayo(8787, { conWeb: true })
 
-/** Reproductor de TikTok de mentira: avisa que está listo y obedece "play" y "pause". */
-const REPRODUCTOR = `<!doctype html><body style="margin:0;background:#123;color:#fff;font:16px sans-serif"><p id="e">pausado</p><script>
-  const decir = (type, value) => parent.postMessage({ 'x-tiktok-player': true, type, value }, '*')
-  addEventListener('message', (e) => {
-    const d = e.data
-    if (!d || d['x-tiktok-player'] !== true) return
-    if (d.type === 'play') { document.getElementById('e').textContent = 'reproduciendo'; decir('onStateChange', 1) }
-    if (d.type === 'pause') { document.getElementById('e').textContent = 'pausado'; decir('onStateChange', 2) }
-  })
-  decir('onPlayerReady')
+/**
+ * Reproductor de TikTok de mentira. Se porta como el de verdad (comprobado con el
+ * real): manda sus avisos como texto, solo se pone en marcha si la dirección trae
+ * autoplay=1, y arranca sin sonido. "estricto" imita a los celulares que frenan
+ * el video cuando se le pide sonido sin que el usuario toque el video mismo.
+ */
+const reproductor = (estricto) => `<!doctype html><body style="margin:0;background:#123;color:#fff;font:16px sans-serif"><p id="e">quieto</p><script>
+  const decir = (type, value) => parent.postMessage(JSON.stringify({ type, value, 'x-tiktok-player': true }), '*')
+  let anda = false, mudo = true
+  const pintar = () => { document.getElementById('e').textContent = (anda ? 'reproduciendo' : 'pausado') + (mudo ? ' sin sonido' : ' con sonido') }
+  if (new URLSearchParams(location.search).get('autoplay') === '1') {
+    addEventListener('message', (e) => {
+      const d = e.data
+      if (!d || d['x-tiktok-player'] !== true) return
+      if (d.type === 'play') { anda = true; decir('onStateChange', 1) }
+      if (d.type === 'pause') { anda = false; decir('onStateChange', 2) }
+      if (d.type === 'mute') { mudo = true; decir('onMute', true) }
+      if (d.type === 'unMute') {
+        mudo = false; decir('onMute', false)
+        if (${estricto}) { anda = false; decir('onStateChange', 2) }
+      }
+      pintar()
+    })
+    parent.postMessage('[tea-sdk]ready', '*')
+    decir('onPlayerReady'); decir('onMute', true); decir('onStateChange', 3)
+    anda = true; decir('onStateChange', 1); pintar()
+  }
 </script></body>`
 
 const saltar = (destino) => `<!doctype html><script>location.replace(${JSON.stringify(destino)})</script>`
@@ -58,7 +75,7 @@ async function conectar(ctx, nombre) {
     vuelta.searchParams.set('state', ida.searchParams.get('state'))
     await ruta.fulfill({ status: 200, contentType: 'text/html', body: saltar(vuelta.toString()) })
   })
-  await ctx.route('https://www.tiktok.com/player/v1/**', (ruta) => ruta.fulfill({ status: 200, contentType: 'text/html', body: REPRODUCTOR }))
+  await ctx.route('https://www.tiktok.com/player/v1/**', (ruta) => ruta.fulfill({ status: 200, contentType: 'text/html', body: reproductor(nombre === 'olga') }))
 }
 const web = spawn('npx', ['vite', 'preview', '--outDir', 'dist-ensayo', '--port', String(PUERTO_APP), '--strictPort'], { stdio: 'ignore' })
 const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {})
@@ -383,13 +400,30 @@ try {
   await pato.page.goto(`${URL}/clips`)
   await pato.ver('Golazo de media cancha #haxball #golazo'); await pato.ver('@Olga')
   await pato.noVer('Asado del domingo'); await pato.noVer('Clip de muestra')
+  // Arranca solo y, como este navegador lo permite, con sonido.
   const marco = pato.page.frameLocator('.reel__video iframe')
-  await marco.getByText('pausado').waitFor()
-  if (!(await pato.page.locator('.reel__video iframe').getAttribute('src')).startsWith(`https://www.tiktok.com/player/v1/${golazo}?`)) throw new Error('El reproductor tiene que ser el de TikTok, con el número del video')
-  await pato.boton('Reproducir').click()
-  await marco.getByText('reproduciendo').waitFor()
+  await marco.getByText('reproduciendo con sonido').waitFor()
+  const src = await pato.page.locator('.reel__video iframe').getAttribute('src')
+  if (!src.startsWith(`https://www.tiktok.com/player/v1/${golazo}?`)) throw new Error('El reproductor tiene que ser el de TikTok, con el número del video')
+  if (!src.includes('autoplay=1')) throw new Error('El reproductor tiene que arrancar solo')
   await pato.boton('Pausar').click()
-  await marco.getByText('pausado').waitFor(); await pato.foto('clip-real')
+  await marco.getByText('pausado con sonido').waitFor()
+  await pato.boton('Reproducir').click()
+  await marco.getByText('reproduciendo con sonido').waitFor()
+  await pato.boton('Silenciar').click()
+  await marco.getByText('reproduciendo sin sonido').waitFor()
+  await pato.boton('Activar el sonido').click()
+  await marco.getByText('reproduciendo con sonido').waitFor(); await pato.foto('clip-real')
+  // En un celular que no deja activar el sonido solo: el clip sigue andando sin sonido
+  // y ofrece activarlo. Si ni tocando se puede, quedan los controles del propio video.
+  await olga.page.goto(`${URL}/clips`)
+  const marcoOlga = olga.page.frameLocator('.reel__video iframe')
+  await marcoOlga.getByText('reproduciendo sin sonido').waitFor()
+  await olga.ver('Activar sonido'); await olga.foto('clip-sin-sonido')
+  await olga.boton('Activar el sonido').click()
+  await marcoOlga.getByText('reproduciendo sin sonido').waitFor()
+  await olga.page.locator('.reel__toque').waitFor({ state: 'detached' })
+  await olga.page.goto(`${URL}/clips/mis-videos`)
   await pato.boton('Reaccionar').click()
   await pato.boton('Quitar reacción').waitFor()
   await pato.page.reload()

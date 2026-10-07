@@ -35,7 +35,7 @@ export function hace(ms: number): string {
 
 // ---------- Íconos (trazo, como en los mockups) ----------
 
-type IconName = 'inicio' | 'clips' | 'perfil' | 'campana' | 'atras' | 'check' | 'play' | 'x' | 'corazon' | 'copiar' | 'reloj' | 'camara'
+type IconName = 'inicio' | 'clips' | 'perfil' | 'campana' | 'atras' | 'check' | 'play' | 'x' | 'corazon' | 'copiar' | 'reloj' | 'camara' | 'sonido' | 'mudo'
 
 const PATHS: Record<IconName, ReactNode> = {
   inicio: <path d="M3 11l9-8 9 8v10H3z" />,
@@ -45,6 +45,8 @@ const PATHS: Record<IconName, ReactNode> = {
   atras: <path d="M15 5l-7 7 7 7" />,
   check: <path d="M5 12l5 5 9-10" />,
   play: <path d="M8 5l11 7-11 7z" fill="currentColor" stroke="none" />,
+  sonido: <><path d="M4 9v6h4l5 4V5L8 9z" /><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" /></>,
+  mudo: <><path d="M4 9v6h4l5 4V5L8 9z" /><path d="M17 9.5l5 5M22 9.5l-5 5" /></>,
   x: <path d="M6 6l12 12M18 6L6 18" />,
   corazon: <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />,
   copiar: <><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V6a2 2 0 0 1 2-2h9" /></>,

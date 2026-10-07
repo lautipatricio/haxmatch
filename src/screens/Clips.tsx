@@ -10,69 +10,99 @@ import { Avatar, BannerBusqueda, Empty, Head, Icon, Sheet, TabBar, hace, useAhor
 
 const TIKTOK = 'https://www.tiktok.com'
 // Reproductor de TikTok sin sus textos ni videos relacionados: eso lo muestra HaxMatch.
-const OPCIONES = 'controls=1&progress_bar=1&play_button=1&volume_control=1&fullscreen_button=0&timestamp=0&loop=1&autoplay=0&music_info=0&description=0&rel=0&native_context_menu=0&closed_caption=0'
+// Va con autoplay=1: sin eso el reproductor de TikTok no se pone en marcha (ni avisa
+// que está listo, ni obedece) hasta que alguien toca el video mismo.
+const OPCIONES = 'controls=1&progress_bar=1&play_button=1&volume_control=1&fullscreen_button=0&timestamp=0&loop=1&autoplay=1&music_info=0&description=0&rel=0&native_context_menu=0&closed_caption=0'
+
+/** ¿Los clips van con sonido? Vale mientras la app está abierta; cambia cuando el usuario silencia o activa. */
+let quiereSonido = true
+
+type AvisoTikTok = { 'x-tiktok-player'?: boolean; type?: string; value?: unknown }
+/** El reproductor de TikTok manda sus avisos como texto; se aceptan las dos formas. */
+function leerAviso(dato: unknown): AvisoTikTok | null {
+  if (typeof dato === 'string') {
+    if (!dato.startsWith('{')) return null
+    try { return JSON.parse(dato) as AvisoTikTok } catch { return null }
+  }
+  return dato && typeof dato === 'object' ? dato as AvisoTikTok : null
+}
 
 /**
- * Video de TikTok, reproducido desde TikTok (no se copia). Encima va una capa
- * que recibe los toques: así se puede deslizar al clip siguiente, cosa que
- * sobre el reproductor solo no se podría. Un toque reproduce o pausa.
+ * Video de TikTok, reproducido desde TikTok (no se copia). Arranca solo cuando
+ * el clip queda en pantalla. Los navegadores solo dejan arrancar sin sonido,
+ * así que al arrancar se pide el sonido; si el celular no lo permite, el video
+ * sigue sin sonido y queda el botón para activarlo.
+ * Encima va una capa que recibe los toques: así se puede deslizar al clip
+ * siguiente, cosa que sobre el reproductor solo no se podría.
  */
-function Reproductor({ id, titulo, activo }: { id: string; titulo: string; activo: boolean }) {
+function Reproductor({ id, titulo }: { id: string; titulo: string }) {
   const marco = useRef<HTMLIFrameElement>(null)
   const [listo, setListo] = useState(false)
-  const [andando, setAndando] = useState(false)
-  /** Si el reproductor no obedece (algunos celulares exigen tocar el video mismo), se saca la capa. */
+  const [arranco, setArranco] = useState(false)
+  const [pausado, setPausado] = useState(false)
+  const [mudo, setMudo] = useState(true)
+  /** Si el reproductor no obedece, se saca la capa y se usan los controles de TikTok. */
   const [directo, setDirecto] = useState(false)
-  /** Espera para ver si el reproductor obedeció el "play". */
-  const espera = useRef<number | null>(null)
-  const noEsperar = () => {
-    if (espera.current !== null) window.clearTimeout(espera.current)
-    espera.current = null
-  }
-
-  const mandar = (type: 'play' | 'pause') =>
-    marco.current?.contentWindow?.postMessage({ 'x-tiktok-player': true, type }, TIKTOK)
+  const r = useRef({ listo: false, mudo: true, pausaMia: false, pedido: 0, conToque: false, probado: false })
 
   useEffect(() => {
+    const mandar = (type: string) => marco.current?.contentWindow?.postMessage({ 'x-tiktok-player': true, type }, TIKTOK)
     const oir = (e: MessageEvent) => {
       if (e.origin !== TIKTOK || e.source !== marco.current?.contentWindow) return
-      const d = e.data as { 'x-tiktok-player'?: boolean; type?: string; value?: unknown } | null
+      const d = leerAviso(e.data)
       if (!d || d['x-tiktok-player'] !== true) return
-      if (d.type === 'onPlayerReady') setListo(true)
-      if (d.type === 'onStateChange') {
-        const anda = d.value === 1 || d.value === 3
-        setAndando(anda)
-        // Obedeció: no hace falta el plan B.
-        if (anda) noEsperar()
+      const x = r.current
+      if (d.type === 'onPlayerReady' || d.type === 'onStateChange') { x.listo = true; setListo(true) }
+      if (d.type === 'onMute') { x.mudo = d.value === true; setMudo(x.mudo) }
+      // No pudo arrancar solo (o falló): que se pueda tocar el video mismo.
+      if (d.type === 'onPlayerError') setDirecto(true)
+      if (d.type === 'onStateChange' && d.value === 1) {
+        setArranco(true); setPausado(false)
+        x.pausaMia = false
+        // Arrancó sin sonido: se pide una vez.
+        if (quiereSonido && x.mudo && !x.probado) { x.probado = true; x.pedido = Date.now(); mandar('unMute') }
+      }
+      if (d.type === 'onStateChange' && d.value === 2) {
+        if (x.pausaMia) setPausado(true)
+        else if (Date.now() - x.pedido < 1500) {
+          // Se frenó al pedirle sonido: el celular no lo permite. Sigue sin sonido.
+          x.pedido = 0
+          mandar('mute'); mandar('play')
+          // Ni tocando el botón: que use el control de sonido del propio video.
+          if (x.conToque) setDirecto(true)
+        }
       }
     }
+    // Si se va a otra app o pestaña, el clip no sigue sonando.
+    const alOcultar = () => {
+      if (document.visibilityState === 'hidden') { r.current.pausaMia = true; mandar('pause') }
+    }
     window.addEventListener('message', oir)
+    document.addEventListener('visibilitychange', alOcultar)
+    // Si en un rato el reproductor no dio señales, se deja tocar el video mismo.
+    const t = window.setTimeout(() => { if (!r.current.listo) setDirecto(true) }, 10000)
     return () => {
       window.removeEventListener('message', oir)
-      noEsperar()
+      document.removeEventListener('visibilitychange', alOcultar)
+      window.clearTimeout(t)
     }
   }, [])
 
-  // Al pasar a otro clip, este se pausa.
-  useEffect(() => {
-    if (!activo) {
-      noEsperar()
-      mandar('pause')
-      setAndando(false)
-    }
-  }, [activo])
-
+  const mandar = (type: string) => marco.current?.contentWindow?.postMessage({ 'x-tiktok-player': true, type }, TIKTOK)
   const tocar = () => {
-    noEsperar()
-    if (andando) {
-      mandar('pause')
-      return
-    }
-    // Hasta que el reproductor no avisa que está listo, no hay a quién pedirle nada.
     if (!listo) return
-    mandar('play')
-    // Si en un momento no arrancó, el celular exige tocar el video mismo: se saca la capa.
-    espera.current = window.setTimeout(() => setDirecto(true), 2000)
+    if (pausado) { r.current.pausaMia = false; mandar('play') }
+    else { r.current.pausaMia = true; mandar('pause') }
+  }
+  const sonido = () => {
+    if (mudo) {
+      quiereSonido = true
+      r.current.conToque = true; r.current.probado = true; r.current.pedido = Date.now()
+      mandar('unMute')
+    } else {
+      quiereSonido = false
+      mandar('mute')
+    }
   }
 
   return (
@@ -80,10 +110,19 @@ function Reproductor({ id, titulo, activo }: { id: string; titulo: string; activ
       <iframe ref={marco} src={`${TIKTOK}/player/v1/${id}?${OPCIONES}`} title={titulo || 'Video de TikTok'}
         allow="autoplay; encrypted-media; fullscreen" referrerPolicy="strict-origin-when-cross-origin" />
       {!directo && (
-        <button type="button" className="reel__toque" aria-label={andando ? 'Pausar' : 'Reproducir'} onClick={tocar}>
-          {!andando && <span><Icon name="play" size={40} /></span>}
-          {!listo && <span className="m">Cargando el video de TikTok…</span>}
-        </button>
+        <>
+          <button type="button" className="reel__toque" aria-label={pausado ? 'Reproducir' : 'Pausar'} onClick={tocar}>
+            {pausado && <span><Icon name="play" size={40} /></span>}
+            {!arranco && <span className="m">Cargando el video de TikTok…</span>}
+          </button>
+          {arranco && (
+            <button type="button" className={`reel__sonido${mudo && quiereSonido ? ' reel__sonido--pedir' : ''}`}
+              aria-label={mudo ? 'Activar el sonido' : 'Silenciar'} onClick={sonido}>
+              <Icon name={mudo ? 'mudo' : 'sonido'} size={20} />
+              {mudo && quiereSonido && <span>Activar sonido</span>}
+            </button>
+          )}
+        </>
       )}
     </div>
   )
@@ -116,7 +155,7 @@ export function Clips() {
     return () => clearInterval(t)
   }, [cargar])
 
-  // Cuál es el clip que está en pantalla: solo ese (y sus vecinos) cargan el reproductor.
+  // Cuál es el clip que está en pantalla: solo ese carga el reproductor, y arranca solo.
   useEffect(() => {
     const caja = lista.current
     if (!caja) return
@@ -171,7 +210,9 @@ export function Clips() {
                 aria-label={`${r.titulo}, de ${nombreDe(s, r.userId)}`}>
                 {r.tiktokId ? (
                   // Solo el clip en pantalla y sus vecinos cargan el reproductor.
-                  Math.abs(i - activo) <= 1 && <Reproductor id={r.tiktokId} titulo={r.titulo} activo={i === activo} />
+                  i === activo
+                    ? <Reproductor key={r.tiktokId} id={r.tiktokId} titulo={r.titulo} />
+                    : <div className="reel__play"><span><Icon name="play" size={40} /></span></div>
                 ) : (
                   <div className="reel__play">
                     <span><Icon name="play" size={40} /></span>
