@@ -26,6 +26,10 @@ const json = (cuerpo, estado = 200, extra = {}) => new Response(JSON.stringify(c
   status: estado, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...extra },
 })
 
+// Las claves, sin espacios ni saltos de línea que se hayan colado al pegarlas.
+const llave = (env) => String(env.TIKTOK_CLIENT_KEY ?? "").trim()
+const secreto = (env) => String(env.TIKTOK_CLIENT_SECRET ?? "").trim()
+
 export const tiktokConfigurado = (env) =>
   !!(env.TIKTOK_CLIENT_KEY && env.TIKTOK_CLIENT_SECRET && env.PUSH_SECRETO && env.SUPABASE_URL && env.SUPABASE_KEY)
 
@@ -85,7 +89,7 @@ async function renovar(env, refreshToken) {
   let r
   try {
     r = await formulario('/v2/oauth/token/', {
-      client_key: env.TIKTOK_CLIENT_KEY, client_secret: env.TIKTOK_CLIENT_SECRET,
+      client_key: llave(env), client_secret: secreto(env),
       grant_type: 'refresh_token', refresh_token: refreshToken,
     })
   } catch {
@@ -99,7 +103,7 @@ async function renovar(env, refreshToken) {
 async function anular(env, accessToken) {
   try {
     const r = await formulario('/v2/oauth/revoke/', {
-      client_key: env.TIKTOK_CLIENT_KEY, client_secret: env.TIKTOK_CLIENT_SECRET, token: accessToken,
+      client_key: llave(env), client_secret: secreto(env), token: accessToken,
     })
     return r.ok && !r.dato.error
   } catch {
@@ -169,7 +173,7 @@ export async function entrar(request, env) {
   const inicio = await base(env, 'tiktok_empezar', { p_user: usuario })
   if (!inicio.ok || typeof inicio.dato !== 'string') return json({ error: 'No pudimos empezar la vinculación. Probá de nuevo.' }, 502)
   const destino = new URL(AUTORIZAR)
-  destino.searchParams.set('client_key', env.TIKTOK_CLIENT_KEY)
+  destino.searchParams.set('client_key', llave(env))
   destino.searchParams.set('response_type', 'code')
   destino.searchParams.set('scope', PERMISOS)
   destino.searchParams.set('redirect_uri', `${origin}/api/tiktok/volver`)
@@ -201,7 +205,7 @@ export async function volver(request, env) {
 
   try {
     const r = await formulario('/v2/oauth/token/', {
-      client_key: env.TIKTOK_CLIENT_KEY, client_secret: env.TIKTOK_CLIENT_SECRET,
+      client_key: llave(env), client_secret: secreto(env),
       code, grant_type: 'authorization_code', redirect_uri: `${url.origin}/api/tiktok/volver`,
     })
     const t = r.dato
