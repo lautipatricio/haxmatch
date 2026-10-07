@@ -40,10 +40,10 @@ Si quedó agregado algún otro producto (Share Kit, Content Posting API, Webhook
 
 ## 3. La explicación (se pega en "App review")
 
-El campo acepta hasta 1000 caracteres; este texto tiene 1005.
+El campo acepta hasta 1000 caracteres; este texto tiene 981.
 
 ```
-HaxMatch (https://haxmatch.lauti.workers.dev) is a free web app for the HaxBall gaming community: players sign in with Discord, find friendly matches and watch community clips. The site is in Spanish.
+HaxMatch (https://haxmatch.lauti.workers.dev) is a free web app for the HaxBall gaming community: players sign in with Discord, find friendly matches and watch community clips.
 
 Login Kit: lets a signed-in user link their own TikTok account (Clips > Mis videos > Vincular TikTok). Sign-in to HaxMatch itself uses Discord.
 
