@@ -14,7 +14,7 @@ Necesitás Node 20 o más nuevo.
 npm install
 npm run dev        # abre la app en http://localhost:5173, con el servidor real
 npm test           # tests de las reglas (puntos, niveles, validación)
-npm run test:sql   # prueba los SQL de supabase/ en una base local (298 comprobaciones)
+npm run test:sql   # prueba los SQL de supabase/ en una base local (368 comprobaciones)
 npm run test:push  # prueba el envío de notificaciones (worker/index.js)
 npm run test:tiktok  # prueba la vinculación con TikTok contra un TikTok de mentira (38 comprobaciones)
 npm run build      # versión para publicar, en dist/
@@ -104,6 +104,22 @@ Cómo funciona: la app le pide a la web (`/api/tiktok/entrar`) empezar una vincu
 | `supabase/03_amigos_avisos.sql` | Amigos (solicitudes, aceptar, quitar), las suscripciones de cada celular a los avisos, y los disparadores que deciden qué se avisa y a quién |
 | `supabase/04_clips.sql` | Clips: la cuenta de TikTok vinculada de cada usuario, la lista de sus videos, cuáles se muestran y las reacciones |
 | `supabase/05_puntos.sql` | Puntos, niveles y referidos: cada movimiento de puntos, el total de cada perfil, los disparadores que los dan y los topes. Al ejecutarlo reconstruye los puntos de lo que ya estaba guardado |
+| `supabase/06_cuenta.sql` | Borrar la cuenta desde la app, bloqueos guardados en el servidor y suspensión de cuentas (funciones `mod_`, solo desde el SQL Editor) |
+
+### Moderación (reportes y suspensiones)
+
+Se hace desde Supabase > SQL Editor, pegando una línea y dándole Run. La app no puede llamar a estas funciones.
+
+| Para | Línea |
+|---|---|
+| Ver a quiénes reportaron en los últimos 30 días | `select * from public.mod_reportes();` |
+| Ver el detalle de los reportes de alguien | `select * from public.mod_detalle('usuario');` |
+| Suspender 7 días (0 = sin fecha de fin) | `select public.mod_suspender('usuario', 7, 'Insultos en una sala');` |
+| Levantar la suspensión | `select public.mod_levantar('usuario');` |
+
+`usuario` es el usuario de Discord, tal como figura en `mod_reportes()`. Una cuenta suspendida no puede buscar partido, abrir sala, escribirle a otros ni agregar o aceptar amigos; la app le muestra el motivo y hasta cuándo. No hay sanciones automáticas: decide quien modera.
+
+Si alguien borra su cuenta y vuelve a entrar con el mismo Discord, una suspensión vigente sigue, y no cuenta otra vez como referido. Para eso queda, por un año, una huella irreversible de su identificador de Discord (tabla `cuentas_borradas`), sin ningún otro dato.
 
 ### Cómo funcionan los puntos
 
@@ -153,7 +169,8 @@ En la web publicada:
 
 - **Real:** ingreso con Discord, perfil y foto, cola, mensajes, grupos, salas, partidos, confirmaciones, reportes, amigos, notificaciones, clips (vinculación con TikTok, videos, reacciones) y los totales de amistosos jugados y asistencia.
 - **Real también** (con `supabase/05_puntos.sql`): puntos, nivel, racha, lista de referidos y el nivel de los demás jugadores. Sin ese paso, los puntos se siguen calculando en el celular.
-- **En el dispositivo:** bloquear a un jugador (lo oculta en ese dispositivo) y la lista de notificaciones.
+- **Real también** (con `supabase/06_cuenta.sql`): borrar la cuenta, bloqueos y suspensiones. Sin ese paso, bloquear solo oculta al jugador en ese dispositivo.
+- **En el dispositivo:** la lista de notificaciones.
 - **De muestra:** mientras nadie haya vinculado un TikTok con videos de HaxBall, Clips muestra 6 videos inventados (no se reproducen) para que no quede vacío. Desaparecen cuando hay al menos un clip real.
 
 En modo demostración (`npm run probar`) todo está simulado:
@@ -169,5 +186,4 @@ Códigos de amigo de la demostración: `NICO23`, `MATI10`.
 ## Próximas etapas
 
 1. Revisión de la app de TikTok, para que pueda vincular cualquiera.
-2. Borrar la cuenta desde la app, bloqueos en el servidor y moderación.
-3. App de tienda (App Store / Play).
+2. App de tienda (App Store / Play).

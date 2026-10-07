@@ -21,7 +21,8 @@ interface FilaMensaje {
   estado: Mensaje['estado']; auto: boolean; con: string[]
 }
 interface FilaMatch {
-  id: string; creado_por: string; cancha: Cancha; nombre_sala: string
+  /** null si quien creó la sala borró su cuenta. */
+  id: string; creado_por: string | null; cancha: Cancha; nombre_sala: string
   creado_at: string; contado_at: string | null
   participantes: Array<{
     user_id: string; equipo: 'A' | 'B'; confirmado_at: string | null; entro_at: string | null
@@ -164,7 +165,7 @@ export function aLocal(e: EstadoCola, miId: string): ColaLocal {
 
   const matches: Match[] = e.matches.map((m) => ({
     id: m.id,
-    creadoPor: id(m.creado_por),
+    creadoPor: m.creado_por ? id(m.creado_por) : '',
     formato: null,
     cancha: m.cancha,
     nombreSala: m.nombre_sala,
@@ -219,6 +220,19 @@ export async function leerCola(): Promise<{ estado?: EstadoCola; error?: string 
   }
 }
 
+/** Bloqueos guardados en el servidor y estado de la cuenta (paso 6). null si la base todavía no lo tiene. */
+export async function leerSeguridad(): Promise<{ bloqueados: Usuario[]; suspension: string | null } | null> {
+  const r = await rpc<{ bloqueados: FilaUsuario[]; suspension: string | null }>('seguridad')
+  if (!r.data) return null
+  return {
+    bloqueados: (r.data.bloqueados ?? []).map((u) => ({
+      id: u.id, username: u.nick, discord: u.username, nivel: null, color: colorDe(u.id),
+      foto: u.foto !== null && SUPABASE_URL ? `${SUPABASE_URL}/storage/v1/object/public/avatares/${u.id}/foto.jpg?v=${encodeURIComponent(u.foto)}` : null,
+    })),
+    suspension: r.data.suspension ?? null,
+  }
+}
+
 /** Cada acción devuelve el texto del problema, o null si salió bien. */
 const hacer = async (nombre: string, args: Record<string, unknown> = {}): Promise<string | null> =>
   (await rpc(nombre, args)).error ?? null
@@ -232,6 +246,8 @@ export const cola = {
     p_duracion: d.duracion, p_nombre_sala: d.nombreSala ?? null, p_faltan: d.faltan ?? null,
   }),
   cancelar: () => hacer('cancelar_busqueda'),
+  bloquear: (user: string) => hacer('bloquear', { p_user: user }),
+  desbloquear: (user: string) => hacer('desbloquear', { p_user: user }),
   responderAviso: (avisar: boolean) => hacer('responder_aviso', { p_avisar: avisar }),
   renovar: () => hacer('renovar_busqueda'),
   enviarMensaje: (a: string) => hacer('enviar_mensaje', { p_a: a }),

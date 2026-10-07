@@ -14,12 +14,12 @@ import type {
   Notif, Participante, Posicion, PuntosServidor, Reel, Referido, Region, Reporte, TipoNotif, TipoPunto, Usuario,
 } from '../domain/types'
 import {
-  codigoPendiente, completarRegistro, escucharSesion, guardarCodigoPendiente, ingresarConDiscord, miPerfil, quienInvita,
+  borrarCuenta, codigoPendiente, completarRegistro, escucharSesion, guardarCodigoPendiente, ingresarConDiscord, miPerfil, quienInvita,
   quitarFoto, salir, subirFoto, type FilaPerfil,
 } from './cuenta'
 import { clipsApi, irATikTok, leerClips, type TikTokInfo } from './clips'
 import { sincronizarAvisos, soltarAvisos } from './push'
-import { GRACIA_MS, aLocal, cola, leerCola, pedirAmistadPorUsuario, type ColaLocal, type Resumen } from './servidor'
+import { GRACIA_MS, aLocal, cola, leerCola, leerSeguridad, pedirAmistadPorUsuario, type ColaLocal, type Resumen } from './servidor'
 import { REAL } from './supabase'
 import { alCambiar } from './transporte'
 import {
@@ -78,6 +78,8 @@ interface Datos {
   solicitudes: string[]
   solicitudesEnviadas: string[]
   bloqueados: string[]
+  /** Los bloqueos ya están guardados en el servidor (y no solo en este dispositivo). */
+  bloqueosEnServidor: boolean
   busquedas: Busqueda[]
   matches: Match[]
   mensajes: Mensaje[]
@@ -119,6 +121,10 @@ interface Acciones {
   /** Cambia la foto de perfil. null la quita. */
   cambiarFoto: (foto: string | null) => Promise<string | null>
   cerrarSesion: () => void
+  /** Borra la cuenta para siempre. Devuelve el problema, o null si salió bien. */
+  borrarCuenta: () => Promise<string | null>
+  /** Con servidor: trae mis bloqueos y si mi cuenta está suspendida. */
+  cargarSeguridad: () => Promise<void>
   reiniciar: () => void
   avanzarDia: () => void
 
@@ -199,6 +205,8 @@ interface Efimero {
   clipsListos: boolean
   /** Datos de la cuenta de TikTok vinculada. */
   tiktokInfo: TikTokInfo | null
+  /** Si mi cuenta está suspendida: el texto que explica hasta cuándo y por qué. */
+  suspension: string | null
 }
 
 export type Store = Datos & Efimero & Acciones
@@ -219,6 +227,7 @@ function datosIniciales(ahora: number): Datos {
     solicitudes: REAL ? [] : SEED_SOLICITUDES,
     solicitudesEnviadas: [],
     bloqueados: [],
+    bloqueosEnServidor: false,
     busquedas: REAL ? [] : seedBusquedas(ahora),
     matches: REAL ? [] : seedMatches(ahora),
     mensajes: [],
@@ -236,7 +245,7 @@ function datosIniciales(ahora: number): Datos {
 }
 
 const CAMPOS: Array<keyof Datos> = [
-  'perfil', 'cuentaId', 'resumen', 'offsetDias', 'usuarios', 'amigos', 'solicitudes', 'solicitudesEnviadas', 'bloqueados',
+  'perfil', 'cuentaId', 'resumen', 'offsetDias', 'usuarios', 'amigos', 'solicitudes', 'solicitudesEnviadas', 'bloqueados', 'bloqueosEnServidor',
   'busquedas', 'matches', 'mensajes', 'eventos', 'puntosServidor', 'reels', 'misReacciones', 'tiktok', 'notifs',
   'referidos', 'reportes', 'programados',
 ]
@@ -801,6 +810,7 @@ export const useStore = create<Store>()((set, get) => {
   ficha: null,
   clipsListos: !REAL,
   tiktokInfo: null,
+  suspension: null,
   cargandoSesion: REAL,
   colaLista: !REAL,
   errorCola: null,
@@ -857,16 +867,25 @@ export const useStore = create<Store>()((set, get) => {
     const dejarDeEscuchar = alCambiar(pronto)
     // Aunque no llegue ningún aviso, se pregunta cada tanto. También sirve de
     // señal de vida: el servidor saca de la cola a quien deja de aparecer.
-    const cada = setInterval(() => void get().refrescar(), 8 * SEG)
+    let vueltas = 0
+    const cada = setInterval(() => {
+      void get().refrescar()
+      // Cada dos minutos se mira si cambió algo de la cuenta (una suspensión, o un bloqueo hecho en otro celular).
+      if (++vueltas % 15 === 0) void get().cargarSeguridad()
+    }, 8 * SEG)
     // Al volver a la app se pide el estado. Al dejarla también: así el servidor
     // sabe que desde ese momento lo que pase tiene que llegar como notificación.
-    const alVolver = () => void get().refrescar()
+    const alVolver = () => {
+      void get().refrescar()
+      if (document.visibilityState === 'visible') void get().cargarSeguridad()
+    }
     document.addEventListener('visibilitychange', alVolver)
     window.addEventListener('online', alVolver)
     void get().refrescar()
     // Si este celular ya tenía los avisos activos, quedan a nombre de esta cuenta.
     void sincronizarAvisos()
     void get().cargarClips()
+    void get().cargarSeguridad()
     return () => {
       dejarDeEscuchar()
       clearInterval(cada)
@@ -1115,7 +1134,7 @@ export const useStore = create<Store>()((set, get) => {
     if (REAL) {
       const buscaba = !!miBusqueda(get())
       canceleAt = Date.now()
-      set({ perfil: null, toasts: [], busquedas: [], mensajes: [], colaLista: false, ficha: null, reels: [], misReacciones: [], tiktok: false, tiktokInfo: null, clipsListos: false })
+      set({ perfil: null, toasts: [], busquedas: [], mensajes: [], colaLista: false, ficha: null, reels: [], misReacciones: [], tiktok: false, tiktokInfo: null, clipsListos: false, suspension: null })
       guardar(get())
       // La búsqueda se cancela antes de salir: después ya no hay sesión para pedirlo.
       void (async () => {
@@ -1127,6 +1146,47 @@ export const useStore = create<Store>()((set, get) => {
     }
     get().cancelarBusqueda()
     set({ perfil: null, toasts: [] })
+    guardar(get())
+  },
+
+  borrarCuenta: async () => {
+    const cuenta = get().perfil
+    if (!REAL || !cuenta?.id) return 'En esta versión de prueba no hay cuenta para borrar.'
+    const error = await borrarCuenta(cuenta.id)
+    if (error) return error
+    canceleAt = Date.now()
+    set({ ...datosIniciales(Date.now()), perfil: null, toasts: [], irA: null, colaLista: false, ficha: null, tiktokInfo: null, clipsListos: false, suspension: null })
+    guardar(get())
+    return null
+  },
+
+  cargarSeguridad: async () => {
+    const miId = get().perfil?.id
+    if (!REAL || !miId || !get().perfil?.onboarding) return
+    let seg = await leerSeguridad()
+    if (!seg || get().perfil?.id !== miId) return
+    // La primera vez, lo que estaba bloqueado solo en este dispositivo pasa al servidor.
+    if (!get().bloqueosEnServidor) {
+      const faltan = get().bloqueados.filter((u) => u !== YO && !seg!.bloqueados.some((b) => b.id === u))
+      if (faltan.length > 0) {
+        let sinConexion = false
+        for (const u of faltan) {
+          const error = await cola.bloquear(u)
+          // Un jugador que ya no existe no se puede bloquear: ese se da por resuelto. Sin conexión, no.
+          if (error && /conectar|internet/i.test(error)) sinConexion = true
+        }
+        // Si alguno no llegó, se deja todo como estaba y se prueba la próxima vez.
+        if (sinConexion || get().perfil?.id !== miId) return
+        seg = (await leerSeguridad()) ?? seg
+        if (get().perfil?.id !== miId) return
+      }
+    }
+    set((s) => ({
+      bloqueados: seg!.bloqueados.map((b) => b.id),
+      bloqueosEnServidor: true,
+      suspension: seg!.suspension,
+      usuarios: { ...s.usuarios, ...Object.fromEntries(seg!.bloqueados.map((b) => [b.id, { ...s.usuarios[b.id], ...b, nivel: s.usuarios[b.id]?.nivel ?? null }])) },
+    }))
     guardar(get())
   },
 
@@ -1153,7 +1213,10 @@ export const useStore = create<Store>()((set, get) => {
     if (d.modo === 'sala' && !d.nombreSala?.trim()) return 'Escribí el nombre de la sala.'
     if (REAL) {
       canceleAt = 0
-      return enServidor(() => cola.crearBusqueda({ ...d, nombreSala: d.nombreSala?.trim() }), true)
+      const error = await enServidor(() => cola.crearBusqueda({ ...d, nombreSala: d.nombreSala?.trim() }), true)
+      // Si no la dejó por una suspensión, que el cartel del Inicio se entere ya.
+      if (error && /suspendida/i.test(error)) void get().cargarSeguridad()
+      return error
     }
     const b: Busqueda = {
       id: id('b'),
@@ -1750,10 +1813,25 @@ export const useStore = create<Store>()((set, get) => {
   },
 
   alternarBloqueo: (userId) => {
+    const bloquear = !get().bloqueados.includes(userId)
     set((s) => ({
-      bloqueados: s.bloqueados.includes(userId) ? s.bloqueados.filter((u) => u !== userId) : [...s.bloqueados, userId],
+      bloqueados: bloquear ? [...s.bloqueados, userId] : s.bloqueados.filter((u) => u !== userId),
+      // Al bloquear dejan de ser amigos.
+      ...(bloquear ? {
+        amigos: s.amigos.filter((u) => u !== userId),
+        solicitudes: s.solicitudes.filter((u) => u !== userId),
+        solicitudesEnviadas: s.solicitudesEnviadas.filter((u) => u !== userId),
+      } : {}),
     }))
     guardar(get())
+    // Con servidor el bloqueo vale en serio: no me lo acerca la app ni puede escribirme.
+    if (REAL && get().bloqueosEnServidor) {
+      void (bloquear ? cola.bloquear(userId) : cola.desbloquear(userId)).then((error) => {
+        if (error) set({ toasts: conToast(get(), { texto: error }) })
+        void get().cargarSeguridad()
+        void get().refrescar()
+      })
+    }
   },
 
   // ----- Notificaciones y referidos -----

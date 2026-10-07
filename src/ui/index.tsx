@@ -378,6 +378,46 @@ export function CerrarSesion() {
   )
 }
 
+/** Borrar la cuenta para siempre. Pide escribir BORRAR, para que no pase por un toque de más. */
+export function BorrarCuenta() {
+  const borrar = useStore((s) => s.borrarCuenta)
+  const nav = useNavigate()
+  const [abierto, setAbierto] = useState(false)
+  const [texto, setTexto] = useState('')
+  const [ocupado, setOcupado] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const confirmar = async () => {
+    setOcupado(true)
+    const e = await borrar()
+    setOcupado(false)
+    if (e) setError(e)
+    else nav('/ingresar', { replace: true })
+  }
+  return (
+    <>
+      <button className="btn btn--ghost" style={{ alignSelf: 'center', color: 'var(--fg2)' }} onClick={() => { setAbierto(true); setTexto(''); setError(null) }}>
+        Borrar mi cuenta
+      </button>
+      {abierto && (
+        <Sheet title="¿Borrar tu cuenta?">
+          <div>
+            Se borra para siempre tu perfil con todo lo tuyo: foto, puntos y nivel, amigos, partidos, clips y la vinculación con TikTok.
+            No se puede deshacer.
+          </div>
+          <label className="m" htmlFor="confirmar-borrado">Para confirmar, escribí BORRAR</label>
+          <input id="confirmar-borrado" className="field" value={texto} autoComplete="off" autoCapitalize="characters"
+            onChange={(e) => setTexto(e.target.value)} />
+          {error && <div className="err" role="alert">{error}</div>}
+          <button className="btn btn--danger" disabled={ocupado || texto.trim().toUpperCase() !== 'BORRAR'} onClick={() => void confirmar()}>
+            {ocupado ? 'Borrando…' : 'Borrar mi cuenta para siempre'}
+          </button>
+          <button className="btn btn--sec" disabled={ocupado} onClick={() => setAbierto(false)}>Cancelar</button>
+        </Sheet>
+      )}
+    </>
+  )
+}
+
 /** Copia al portapapeles. Devuelve si se pudo. */
 export async function copiar(texto: string): Promise<boolean> {
   try {

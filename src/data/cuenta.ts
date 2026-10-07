@@ -99,6 +99,35 @@ export async function tokenDeSesion(): Promise<string | null> {
   return (await supabase.auth.getSession()).data.session?.access_token ?? null
 }
 
+/**
+ * Borra la cuenta. Primero la foto (es un archivo aparte: si quedara, seguiría
+ * visible), después el perfil con todo lo suyo, y cierra la sesión en este dispositivo.
+ * Devuelve el problema, o null si salió bien. Si falla a mitad de camino se puede
+ * volver a intentar: lo que ya se borró no molesta.
+ */
+export async function borrarCuenta(uid: string): Promise<string | null> {
+  if (!ENSAYO) {
+    if (!supabase) return SIN_CONEXION
+    // El perfil deja de apuntar a la foto antes de borrarla: si lo demás fallara, no queda una foto rota.
+    const sinFoto = await supabase.from('profiles').update({ foto_url: null }).eq('id', uid)
+    if (sinFoto.error) return `No pudimos borrar tu cuenta. ${problema(sinFoto.error)}`
+    const carpeta = supabase.storage.from('avatares')
+    const lista = await carpeta.list(uid)
+    if (lista.error) return `No pudimos borrar tu foto, así que la cuenta no se borró. ${problema(lista.error)}`
+    const archivos = (lista.data ?? []).map((a) => `${uid}/${a.name}`)
+    if (archivos.length > 0) {
+      const { error } = await carpeta.remove(archivos)
+      if (error) return `No pudimos borrar tu foto, así que la cuenta no se borró. ${problema(error)}`
+    }
+  }
+  const r = await rpc('borrar_cuenta')
+  if (r.error) return `${r.error} Tu cuenta no se borró${ENSAYO ? '' : ' (tu foto sí)'}: probá de nuevo.`
+  if (ENSAYO) await salir()
+  // La cuenta ya no existe en el servidor: alcanza con cerrar la sesión acá.
+  else await supabase?.auth.signOut({ scope: 'local' })
+  return null
+}
+
 // ---- Perfil ----
 
 export async function miPerfil(): Promise<{ perfil?: FilaPerfil; error?: string }> {

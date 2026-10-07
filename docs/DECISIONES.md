@@ -199,6 +199,22 @@ Cómo se probó: 298 comprobaciones del servidor (49 nuevas, de puntos), el ensa
 
 Quedó anotado, sin cambiar: el tope de "3 con el mismo rival" mira al conjunto de rivales de la sala, como estaba definido; con una tercera cuenta en la sala, dos amigos llegan igual al tope de 5 por día. Y un referido puede completar sus 5 amistosos jugando siempre con quien lo invitó. Las dos cosas respetan las reglas escritas; si se quieren endurecer, es una decisión de producto.
 
+## Borrar la cuenta, bloqueos y moderación (7/10/2026)
+
+- **Borrar la cuenta** está en el Perfil. Pide escribir BORRAR. Se va en el momento el perfil con todo lo suyo: foto, puntos, amigos, búsquedas, mensajes, clips y la vinculación con TikTok (se le pide a TikTok que anule el permiso).
+- **A los demás no les saca nada:** los partidos que ya contaron les quedan (figuran sin el nombre de quien creó la sala), con sus puntos. Si el que se borra estaba anotado en la sala de otro, ese lugar vuelve a quedar libre. Sus salas que no habían llegado a contar desaparecen.
+- **Se puede volver a entrar** con el mismo Discord: es una cuenta nueva, de cero. No cuenta otra vez como referido de nadie, y si la cuenta borrada estaba suspendida, la suspensión sigue.
+- **Para eso queda una huella** del identificador de Discord que no se puede revertir, sin nombre ni ningún otro dato, junto con la cantidad de reportes recibidos. Se borra sola al año (salvo que tenga una suspensión vigente). Está explicado en la Política de privacidad.
+- **El identificador y el usuario de Discord** de cada perfil se toman de lo que dio Discord al entrar. Antes salían de datos de la sesión que el propio usuario podía editar: alguien podía hacerse pasar por el usuario de otro. Al ejecutar el paso 6 se corrigen los perfiles que ya existían.
+- **Bloquear vale en serio:** queda guardado en el servidor (antes solo ocultaba al jugador en ese celular). A quien bloqueo la app no me lo acerca, no puede escribirme ni mandarme solicitud, ni yo a él; tampoco a través de un grupo que lo traiga. Dejamos de ser amigos. Se desbloquea desde Amigos > Bloqueados. Lo bloqueado en el celular pasa solo al servidor.
+- **El bloqueado no ve quién lo bloqueó.** Si intenta escribirle, le dice "No se puede contactar a ese jugador".
+- **Entre terceros no se impide:** dos jugadores bloqueados entre sí pueden coincidir en la sala de otra persona. Lo que no pasa es que uno entre a la sala o al grupo del otro.
+- **Suspender una cuenta** se hace solo desde Supabase, con las funciones `mod_` (ver README). No hay sanciones automáticas por cantidad de reportes: los reportes falsos serían una forma de molestar. Decide quien modera.
+- **Qué no puede hacer una cuenta suspendida:** buscar partido, abrir o reabrir una sala, escribirle a otros, mandar o aceptar solicitudes de amistad. Sí puede entrar, ver clips y confirmar partidos que ya había jugado. La app le muestra el motivo y hasta cuándo.
+- **Texto del reporte:** decía "varios reportes frenan la subida de nivel", que no era cierto. Ahora dice que una cuenta reportada puede quedar suspendida.
+
+Cómo se probó: 368 comprobaciones del servidor (70 nuevas), el ensayo con usuarios simultáneos (bloquear desde un celular y verlo en otro, suspender y levantar, borrar la cuenta) y una quinta revisión independiente. Esa revisión encontró un problema importante (el identificador de Discord se podía falsear, y con eso esquivar una suspensión) y varios medianos: bloqueos que se podían saltear armando un grupo, partidos de otros que se perdían al borrar una cuenta, suspendidos que podían reabrir una sala o aceptar amigos, y la app borrando la foto antes de saber si la cuenta se iba a poder borrar. Todos corregidos y con su prueba. Lo que no se pudo probar desde acá: borrar un usuario en el Supabase real (es el camino habitual, pero se confirma con la primera cuenta que se borre).
+
 ## Decisiones que tomé al construir (revisar)
 
 1. **El match siempre es con una sala.** Dos jugadores sin sala ya no generan match: se juntan en una misma búsqueda. Quien creó la sala ve "Ya entró X a la sala" y el que se une ve "Ya entré a la sala".
@@ -222,12 +238,11 @@ Quedó anotado, sin cambiar: el tope de "3 con el mismo rival" mira al conjunto 
 - **Carga:** cada cambio hace que todas las apps abiertas vuelvan a pedir el estado. Alcanza para empezar; con muchos usuarios a la vez hay que afinarlo.
 - **Tiempo sin señales:** 10 minutos sin avisos, 30 con avisos activados. Revisar con el uso real.
 - **Aviso de "pasaron 15 minutos"** con la app cerrada: hoy no se manda (haría falta una tarea programada en el servidor).
-- **Bloqueos en el servidor,** para que un bloqueado no pueda mandar solicitudes ni mensajes.
-- **Bloqueos en el servidor,** para que la app no acerque a mi sala a alguien que bloqueé.
-- **Borrar la cuenta desde la app.** Hoy se pide por correo (lo dicen las páginas de Términos y Privacidad).
 - **Revisión de TikTok:** hasta que la aprueben, solo vinculan las cuentas anotadas en el modo de prueba de TikTok.
-- **Clips de quien bloqueé:** se ocultan en ese dispositivo, como el resto de los bloqueos.
-- **Moderación:** hoy los reportes solo se guardan. Falta definir quién los revisa y qué pasa con el reportado. Las fotos de perfil tampoco se moderan todavía.
+- **Clips de un suspendido:** se siguen viendo.
+- **Moderación:** los reportes se revisan a mano desde Supabase y se puede suspender. Falta una pantalla para moderar sin entrar a Supabase, y moderar las fotos de perfil.
+- **Quien borra su cuenta antes de que lo suspendan** se lleva el detalle de sus reportes (queda solo la cantidad) y no se lo puede suspender hasta que vuelva a entrar.
+- **Un suspendido que ya estaba anotado en la sala de otro** sigue anotado: el dueño lo saca con "Se salió" o "No vino".
 - **¿"Se salió" tiene que avisarle al jugador o afectar su asistencia?** Hoy solo libera el lugar.
 - **"Equipo al que más enfrentaste" y resultados G/P:** la app no registra equipos ni resultados, así que esa tarjeta no tiene de dónde sacar datos. Hoy dice "Todavía sin datos". Hay que definir si se agregan equipos o se cambia la tarjeta.
 - **Cómo se arman los equipos de un 2v2, 3v3 o 4v4** dentro de la app (hoy un match son dos personas).

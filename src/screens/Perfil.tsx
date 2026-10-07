@@ -5,7 +5,7 @@ import { cargarFoto, soltarFoto, type FotoElegida } from '../data/foto'
 import { TEXTO_AVISOS, activarAvisos, desactivarAvisos, estadoAvisos, probarAviso, type EstadoAvisos } from '../data/push'
 import { YO, buscarMia, misPuntos, rivalesDe, useStore } from '../data/store'
 import { DIAS_PENDIENTE, diasParaVencer, esPendiente, nivelDe } from '../domain/rules'
-import { Avatar, CerrarSesion, Head, Icon, Portada, TabBar, hace, useAhora } from '../ui'
+import { Avatar, BorrarCuenta, CerrarSesion, Head, Icon, Portada, TabBar, hace, useAhora } from '../ui'
 import { Recortador } from '../ui/Recortador'
 
 /** Partidos que el usuario todavía no confirmó. Se muestran como un aviso pendiente. */
@@ -224,7 +224,8 @@ export function Perfil() {
   const perdidos = mios.filter((m) => m.contadoAt === null && (m.descartado || !esPendiente(m, YO, ahora)) &&
     !m.participantes.find((p) => p.userId === YO)?.confirmadoAt)
   // Con servidor, los totales vienen de toda la historia y no solo de los últimos días.
-  const cuantosJugados = REAL && s.resumen ? s.resumen.jugados : jugados.length
+  // Con puntos en el servidor se toma lo anotado ahí: no baja si otro jugador borra su cuenta.
+  const cuantosJugados = REAL && s.resumen ? Math.max(s.resumen.jugados, s.puntosServidor?.conteos.amistoso ?? 0) : jugados.length
   const cuantosPerdidos = REAL && s.resumen ? s.resumen.perdidos : perdidos.length
   const anotados = cuantosJugados + cuantosPerdidos
   const asistencia = anotados === 0 ? '—' : `${Math.round((cuantosJugados / anotados) * 100)}%`
@@ -326,6 +327,8 @@ export function Perfil() {
             </div>
           )}
           <CerrarSesion />
+          {/* Solo si la base ya sabe borrar cuentas (paso 6). */}
+          {REAL && s.bloqueosEnServidor && <BorrarCuenta />}
           <p className="m center" style={{ margin: 0 }}>
             <a href="/terminos">Términos</a> · <a href="/privacidad">Privacidad</a>
           </p>

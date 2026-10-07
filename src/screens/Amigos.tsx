@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { REAL } from '../config'
 import { nivelTexto, useStore, usuarioDe } from '../data/store'
-import { Head, Icon, Persona, TabBar, hace, useAhora } from '../ui'
+import { Avatar, Head, Icon, Persona, TabBar, hace, useAhora } from '../ui'
 import { FilaDisponible, resumenBusqueda } from './Buscando'
 
 export function Amigos() {
@@ -100,6 +100,22 @@ export function Amigos() {
               </div>
             )
           })}
+
+          {s.bloqueados.length > 0 && (
+            <>
+              <h2 className="h sub">Bloqueados</h2>
+              {s.bloqueados.map((id) => {
+                const u = usuarioDe(s, id)
+                return (
+                  <div key={id} className="card card--row">
+                    <Avatar user={u} size="sm" />
+                    <div className="grow cut"><span className="strong">{u.username}</span></div>
+                    <button className="btn btn--sec" onClick={() => s.alternarBloqueo(id)}>Desbloquear</button>
+                  </div>
+                )
+              })}
+            </>
+          )}
         </div>
       </div>
       <TabBar on="perfil" />

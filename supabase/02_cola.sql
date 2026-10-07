@@ -376,6 +376,17 @@ begin
           and (p.user_id = j.user_id or p.user_id = any (public._miembros(j.id)))));
 end $$;
 
+-- ¿Hay un bloqueo entre uno y alguno de los otros? Los bloqueos llegan con el paso 6,
+-- que reemplaza esta función por la de verdad; por eso acá solo se crea si no existe.
+do $$
+begin
+  if to_regprocedure('public._bloqueo_entre(uuid, uuid[])') is null then
+    execute 'create function public._bloqueo_entre(p_uno uuid, p_otros uuid[]) returns boolean '
+      || 'language sql stable security definer set search_path = '''' '
+      || 'as ''select false'' ';
+  end if;
+end $$;
+
 -- Emparejamiento automático: a cada sala con lugares libres la app le acerca
 -- gente para que su dueño acepte o rechace. Primero un grupo (o jugador) que sea
 -- justo los que faltan, después jugadores sueltos, después grupos más chicos.
@@ -410,6 +421,8 @@ begin
           and (p.user_id = c.user_id or p.user_id = any (public._miembros(c.id))))
       and (c.expira_at is null or c.expira_at > now())
       and public._compatibles(c.region, c.cancha, sala.region, sala.cancha)
+      -- Ni el dueño de la sala bloqueó a alguno de ellos, ni alguno de ellos al dueño (paso 6).
+      and not public._bloqueo_entre(sala.user_id, array[c.user_id] || public._miembros(c.id))
       and public._somos(c.id) <= sala.faltan
     order by
       case when public._somos(c.id) = sala.faltan then 0 when public._somos(c.id) = 1 then 1 else 2 end,
@@ -1025,7 +1038,7 @@ end $$;
 
 revoke all on function
   public._avisar(), public._turno(), public._somos(uuid), public._miembros(uuid),
-  public._compatibles(text[], text[], text[], text[]), public._equipo_completo(text[], int),
+  public._compatibles(text[], text[], text[], text[]), public._equipo_completo(text[], int), public._bloqueo_entre(uuid, uuid[]),
   public._elegir_cancha(text[], text[]), public._recalcular_grupo(uuid), public._evaluar(uuid),
   public._terminar(uuid, text), public._ocupar(uuid, uuid[], text), public._limpiar_pedidos(),
   public._emparejar(), public._vencer(), public._aguante(uuid)

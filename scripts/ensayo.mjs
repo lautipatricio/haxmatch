@@ -596,6 +596,62 @@ try {
   }
   if (deJuan !== 'cancelada') throw new Error(`Al cerrar sesión la búsqueda tiene que cancelarse (quedó ${deJuan})`)
 
+  // -------------------------------------------------------------------------
+  paso('Bloquear, suspender una cuenta y borrar la cuenta')
+  const hasta = async (texto, cumple) => {
+    for (let i = 0; i < 40; i++) {
+      if (await cumple()) return
+      await new Promise((r) => setTimeout(r, 250))
+    }
+    throw new Error(texto)
+  }
+  const bloqueosDeKira = () => servidor.acceso.admin('select a from public.bloqueos where de = $1', [servidor.usuario('kira').id])
+  // Kira bloquea a Ana: el bloqueo queda en el servidor, no solo en su celular.
+  await kira.link('Reportar a Ana').click()
+  await kira.page.getByRole('switch', { name: 'Bloquear a Ana' }).click()
+  await hasta('El bloqueo tendría que guardarse en el servidor', async () => (await bloqueosDeKira())[0]?.a === servidor.usuario('ana').id)
+  await kira.boton('Cancelar').click()
+  await kira.page.goto(`${URL}/perfil/amigos`)
+  await kira.ver('Bloqueados'); await kira.fila('Ana').waitFor(); await kira.foto('bloqueados')
+  // En otro celular (sin nada guardado) el bloqueo sigue ahí.
+  await kira.page.evaluate(() => localStorage.clear())
+  await kira.page.goto(`${URL}/?u=kira`)
+  await Promise.race([
+    kira.boton('Entrar con Discord').waitFor().then(() => kira.boton('Entrar con Discord').click()),
+    kira.ver('Quiero jugar un amistoso'),
+  ])
+  await kira.ver('Quiero jugar un amistoso')
+  await kira.page.goto(`${URL}/perfil/amigos`)
+  await kira.fila('Ana').getByRole('button', { name: 'Desbloquear' }).click()
+  await hasta('Al desbloquear, el bloqueo tendría que irse del servidor', async () => (await bloqueosDeKira()).length === 0)
+  // El dueño suspende a Kira desde el SQL Editor: la app se lo dice y no la deja buscar.
+  await servidor.acceso.admin(`select public.mod_suspender('kira', 3, 'Prueba de moderación')`)
+  await kira.page.goto(URL)
+  await kira.ver('Tu cuenta está suspendida hasta el'); await kira.ver('Motivo: Prueba de moderación'); await kira.foto('suspendida')
+  await kira.link('Quiero jugar un amistoso').click()
+  await kira.boton('Buscar amistoso').click()
+  await kira.page.locator('.err', { hasText: 'Tu cuenta está suspendida' }).waitFor()
+  await servidor.acceso.admin(`select public.mod_levantar('kira')`)
+  await kira.page.goto(URL)
+  await kira.ver('Quiero jugar un amistoso')
+  await kira.page.waitForTimeout(1500)
+  await kira.noVer('Tu cuenta está suspendida')
+  // Beto borra su cuenta: hay que escribir BORRAR, y después no queda nada suyo.
+  await beto.page.goto(`${URL}/perfil`)
+  await beto.boton('Borrar mi cuenta').click()
+  if (await beto.boton('Borrar mi cuenta para siempre').isEnabled()) throw new Error('No se tiene que poder borrar sin escribir BORRAR')
+  await beto.page.getByLabel('Para confirmar, escribí BORRAR').fill('borrar')
+  await beto.page.waitForTimeout(500); await beto.foto('borrar-cuenta')
+  await beto.boton('Borrar mi cuenta para siempre').click()
+  await beto.ver('Entrar con Discord')
+  const deBeto = await servidor.acceso.admin('select 1 from public.profiles where id = $1', [servidor.usuario('beto').id])
+  if (deBeto.length) throw new Error('Al borrar la cuenta, el perfil se tiene que ir del servidor')
+  // A los demás no les rompe nada: Ana conserva su partido con Beto.
+  await ana.inicio()
+  await ana.link('Ver perfil').click()
+  await ana.ver('amistosos jugados')
+  if (Number(await ana.page.locator('.stat .h').first().innerText()) < 1) throw new Error('A Ana no se le tienen que ir los amistosos que jugó con Beto')
+
   const graves = errores.filter((e) => !/favicon|sw\.js|Failed to load resource/.test(e))
   if (graves.length) throw new Error(`Errores en la consola:\n${graves.join('\n')}`)
   console.log('\nEnsayo completo: todo bien.')

@@ -31,12 +31,16 @@ export function Reportar() {
           <label className="h sub" htmlFor="detalle-reporte">Detalle (opcional)</label>
           <textarea id="detalle-reporte" className="field" value={detalle} maxLength={300} placeholder="Contanos qué pasó"
             onChange={(e) => setDetalle(e.target.value)} />
-          <div className="m">Los reportes los revisa el equipo. Varios reportes frenan la subida de nivel.</div>
+          <div className="m">Los reportes los revisa el equipo de HaxMatch. Una cuenta reportada puede quedar suspendida.</div>
           {error && <div className="err" role="alert">{error}</div>}
           <div className="card">
             <div className="grow">
               <div className="strong">Bloquear a {nombre}</div>
-              <div className="m">No lo vas a ver en la cola ni en Clips.</div>
+              <div className="m">
+                {s.bloqueosEnServidor
+                  ? 'No lo vas a ver en la cola ni en Clips, la app no te lo acerca y no puede escribirte ni agregarte. Se desbloquea desde Amigos.'
+                  : 'No lo vas a ver en la cola ni en Clips. Se desbloquea desde Amigos.'}
+              </div>
             </div>
             <button className="switch" role="switch" aria-checked={bloqueado} aria-label={`Bloquear a ${nombre}`}
               onClick={() => s.alternarBloqueo(userId)} />

@@ -26,6 +26,7 @@ export function Inicio() {
   const colaLista = useStore((s) => s.colaLista)
   const errorCola = useStore((s) => s.errorCola)
   const nick = useStore((s) => s.perfil?.nick)
+  const suspension = useStore((s) => s.suspension)
   const activas = busquedas.filter((b) => b.estado === 'activa')
   const cuenta = new Map<string, number>()
   for (const b of activas) for (const f of b.formato ?? []) if (f !== 'Cualquiera') cuenta.set(f, (cuenta.get(f) ?? 0) + 1)
@@ -37,6 +38,11 @@ export function Inicio() {
       <div className="hero">
         <h1 className="h logo">Hax<br /><span>Match</span></h1>
         <div className="saludo cut" style={{ marginTop: 14 }}>Bienvenido, <strong>{nick}</strong></div>
+        {suspension && (
+          <div className="err" role="alert" style={{ marginTop: 16 }}>
+            {suspension} Mientras tanto no podés buscar partido, escribirle a otros jugadores ni agregar amigos.
+          </div>
+        )}
         <div className="card" style={{ marginTop: 20, padding: '10px 16px' }}>
           <span style={{ fontSize: 13 }}>
             {!colaLista

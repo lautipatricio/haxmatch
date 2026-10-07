@@ -8,6 +8,8 @@ const IMITACION = `
   create role anon nologin; create role authenticated nologin;
   create schema auth; create schema storage;
   create table auth.users (id uuid primary key);
+  -- Lo que dio el proveedor (Discord) al entrar. El usuario no lo puede editar; lo de su sesión (jwt), sí.
+  create table auth.identities (user_id uuid primary key references auth.users (id) on delete cascade, provider text not null, identity_data jsonb not null);
   create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('prueba.uid', true), '')::uuid $$;
   create function auth.jwt() returns jsonb language sql stable as $$ select coalesce(nullif(current_setting('prueba.jwt', true), ''), '{}')::jsonb $$;
   create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
@@ -54,9 +56,15 @@ export function crearAcceso(db) {
     cola = r.catch(() => {})
     return r
   }
-  const jwtDe = (u) => JSON.stringify({ user_metadata: { full_name: u.usuario, name: `${u.usuario}#0`, provider_id: u.id, custom_claims: { global_name: u.nombre ?? u.usuario } } })
+  const jwtDe = (u) => JSON.stringify({ user_metadata: { full_name: u.editado?.usuario ?? u.usuario, name: `${u.usuario}#0`, provider_id: u.editado?.discord ?? u.discord ?? u.id, custom_claims: { global_name: u.nombre ?? u.usuario } } })
 
   async function conRol(u, sql, params) {
+    // La primera vez que aparece un usuario queda su identidad, como al entrar con Discord.
+    if (u && !u.sinIdentidad) {
+      await db.query(
+        `insert into auth.identities (user_id, provider, identity_data) select $1, 'discord', $2::jsonb where exists (select 1 from auth.users where id = $1) on conflict do nothing`,
+        [u.id, JSON.stringify({ provider_id: u.discord ?? u.id, sub: u.discord ?? u.id, full_name: u.usuario, name: `${u.usuario}#0` })])
+    }
     await db.exec(`reset role; select set_config('prueba.uid', '${u?.id ?? ''}', false); select set_config('prueba.jwt', '${u ? jwtDe(u).replaceAll("'", "''") : ''}', false); set role ${u ? 'authenticated' : 'anon'};`)
     try {
       return (await db.query(sql, params)).rows
@@ -89,7 +97,11 @@ export function crearAcceso(db) {
       return (await conRol(u, llamada, claves.map(valor)))[0].r
     }),
     /** Consulta sin restricciones, para preparar o revisar datos en las pruebas. */
-    admin: (sql, params = []) => enTurno(async () => (await db.query(sql, params)).rows),
+    admin: (sql, params = []) => enTurno(async () => {
+      // Como en el SQL Editor: sin ningún usuario en sesión.
+      await db.exec(`select set_config('prueba.uid', '', false); select set_config('prueba.jwt', '', false);`)
+      return (await db.query(sql, params)).rows
+    }),
   }
 }
 
