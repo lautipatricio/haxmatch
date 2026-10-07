@@ -1,7 +1,7 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { buscarMia, useStore } from '../data/store'
 import type { Modo } from '../domain/types'
-import { BannerBusqueda } from '../ui'
+import { BannerBusqueda, CerrarSesion } from '../ui'
 
 function BotonModo({ modo, titulo, destino }: { modo: Modo; titulo: string; destino: string }) {
   const mia = useStore(buscarMia)
@@ -23,8 +23,6 @@ function BotonModo({ modo, titulo, destino }: { modo: Modo; titulo: string; dest
 
 export function Inicio() {
   const busquedas = useStore((s) => s.busquedas)
-  const cerrarSesion = useStore((s) => s.cerrarSesion)
-  const nav = useNavigate()
   const activas = busquedas.filter((b) => b.estado === 'activa')
   const cuenta = new Map<string, number>()
   for (const b of activas) for (const f of b.formato ?? []) if (f !== 'Cualquiera') cuenta.set(f, (cuenta.get(f) ?? 0) + 1)
@@ -51,7 +49,7 @@ export function Inicio() {
           <Link className="chip grow" to="/clips" style={{ display: 'grid', placeItems: 'center', textDecoration: 'none' }}>Ver clips</Link>
           <Link className="chip grow" to="/perfil" style={{ display: 'grid', placeItems: 'center', textDecoration: 'none' }}>Ver perfil</Link>
         </div>
-        <button className="btn btn--ghost" onClick={() => { cerrarSesion(); nav('/ingresar') }}>Cerrar sesión</button>
+        <CerrarSesion />
       </div>
     </div>
   )

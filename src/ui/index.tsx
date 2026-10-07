@@ -250,6 +250,28 @@ export function Toasts() {
   return <div className="toasts">{toasts.map((t) => <ToastItem key={t.id} t={t} />)}</div>
 }
 
+/**
+ * Cerrar sesión, con confirmación. El botón es angosto y va centrado para que
+ * un toque de más sobre la barra inferior no lo active sin querer.
+ */
+export function CerrarSesion() {
+  const cerrar = useStore((s) => s.cerrarSesion)
+  const nav = useNavigate()
+  const [abierto, setAbierto] = useState(false)
+  return (
+    <>
+      <button className="btn btn--ghost" style={{ alignSelf: 'center' }} onClick={() => setAbierto(true)}>Cerrar sesión</button>
+      {abierto && (
+        <Sheet title="¿Cerrar sesión?">
+          <div>Vas a tener que volver a entrar con Discord. Si estás buscando, la búsqueda se cancela.</div>
+          <button className="btn btn--danger" onClick={() => { cerrar(); nav('/ingresar') }}>Sí, cerrar sesión</button>
+          <button className="btn btn--sec" onClick={() => setAbierto(false)}>Cancelar</button>
+        </Sheet>
+      )}
+    </>
+  )
+}
+
 /** Copia al portapapeles. Devuelve si se pudo. */
 export async function copiar(texto: string): Promise<boolean> {
   try {

@@ -1,10 +1,11 @@
 import { useEffect, useId, useState, type ChangeEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { PREVIEW } from '../config'
-import { prepararFoto } from '../data/foto'
+import { cargarFoto, soltarFoto, type FotoElegida } from '../data/foto'
 import { YO, buscarMia, rivalesDe, useStore } from '../data/store'
 import { DIAS_PENDIENTE, diasParaVencer, esPendiente, nivelDe, totalPuntos } from '../domain/rules'
-import { Avatar, Head, Icon, TabBar, hace, useAhora } from '../ui'
+import { Avatar, CerrarSesion, Head, Icon, TabBar, hace, useAhora } from '../ui'
+import { Recortador } from '../ui/Recortador'
 
 /** Partidos que el usuario todavía no confirmó. Se muestran como un aviso pendiente. */
 function Pendientes() {
@@ -71,10 +72,9 @@ function Instalar() {
   )
 }
 
-/** Avatar propio. Al tocarlo se abre la galería del celular para elegir la foto de perfil. */
-function FotoDePerfil({ onError }: { onError: (texto: string | null) => void }) {
+/** Avatar propio. Al tocarlo se abre la galería del celular; después se encuadra la foto elegida. */
+function FotoDePerfil({ onElegida, onError }: { onElegida: (f: FotoElegida) => void; onError: (texto: string | null) => void }) {
   const perfil = useStore((s) => s.perfil)
-  const cambiarFoto = useStore((s) => s.cambiarFoto)
   const id = useId()
   const elegir = async (e: ChangeEvent<HTMLInputElement>) => {
     const archivo = e.target.files?.[0]
@@ -82,7 +82,7 @@ function FotoDePerfil({ onError }: { onError: (texto: string | null) => void }) 
     e.target.value = ''
     if (!archivo) return
     try {
-      cambiarFoto(await prepararFoto(archivo))
+      onElegida(await cargarFoto(archivo))
       onError(null)
     } catch (err) {
       onError(err instanceof Error ? err.message : 'No pudimos leer esa imagen. Probá con otra.')
@@ -106,6 +106,13 @@ export function Perfil() {
   const nivel = nivelDe(totalPuntos(s.eventos, YO))
   const sinLeer = s.notifs.some((n) => !n.leida)
   const [errorFoto, setErrorFoto] = useState<string | null>(null)
+  /** Foto recién elegida de la galería, a la espera de que la encuadre. */
+  const [porAjustar, setPorAjustar] = useState<FotoElegida | null>(null)
+  const terminarAjuste = (foto?: string) => {
+    if (foto) s.cambiarFoto(foto)
+    if (porAjustar) soltarFoto(porAjustar)
+    setPorAjustar(null)
+  }
 
   const mios = s.matches.filter((m) => m.participantes.some((p) => p.userId === YO))
   const jugados = mios.filter((m) => m.contadoAt !== null)
@@ -132,7 +139,7 @@ export function Perfil() {
       <div className="scroll">
         <div className="pad">
           <div className="card" style={{ gap: 14 }}>
-            <FotoDePerfil onError={setErrorFoto} />
+            <FotoDePerfil onElegida={setPorAjustar} onError={setErrorFoto} />
             <div className="grow">
               <div className="h cut" style={{ fontSize: 24, textTransform: 'none' }}>{s.perfil?.nick}</div>
               <div className="m">Perfil público · {s.perfil?.region.join(', ')}</div>
@@ -206,10 +213,11 @@ export function Perfil() {
             <button className="btn btn--sec" onClick={s.avanzarDia}>Avanzar un día</button>
             <button className="btn btn--sec" onClick={() => { s.reiniciar(); nav('/ingresar') }}>Reiniciar datos de prueba</button>
           </div>
-          <button className="btn btn--ghost" onClick={() => { s.cerrarSesion(); nav('/ingresar') }}>Cerrar sesión</button>
+          <CerrarSesion />
         </div>
       </div>
       <TabBar on="perfil" />
+      {porAjustar && <Recortador foto={porAjustar} onGuardar={terminarAjuste} onCancelar={() => terminarAjuste()} />}
     </div>
   )
 }

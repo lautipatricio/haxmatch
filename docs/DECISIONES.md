@@ -72,10 +72,16 @@ Qué decidí yo en esta ronda:
 ## Foto de perfil (6/10/2026)
 
 - Se elige desde el Perfil, tocando el círculo. Abre la galería del celular (no la cámara).
-- La app la recorta cuadrada (se queda con el centro) y la achica a 256 px antes de guardarla.
+- Después de elegirla se abre "Ajustar foto": se arrastra para moverla y se hace zoom (con el control, pellizcando o con la rueda), hasta 4 veces. El círculo muestra cómo va a quedar.
+- Todas se guardan cuadradas y del mismo tamaño (256 px), así se ven parejas en toda la app.
 - Se puede quitar, y vuelve a mostrarse la inicial.
 - En esta versión de prueba se guarda en el dispositivo. Con backend va a Supabase Storage.
 - Pendiente para publicar: las fotos son contenido de los usuarios, así que el reporte de jugadores tiene que cubrir "foto inapropiada" y el equipo tiene que poder quitarlas (lo pide la App Store).
+
+## Cerrar sesión (6/10/2026)
+
+- Pide confirmación antes de cerrar.
+- En el Inicio el botón es angosto y va centrado. Antes ocupaba todo el ancho, justo donde en las otras pantallas está la pestaña "Inicio": al tocarla dos veces seguidas, el segundo toque cerraba la sesión.
 
 ## Decisiones que tomé al construir (revisar)
 

@@ -1,39 +1,48 @@
 // Foto de perfil elegida de la galería del celular.
-// Se recorta cuadrada y se achica antes de guardarla, para que pese poco.
+// El usuario la encuadra (mover y zoom) y se guarda siempre cuadrada y del
+// mismo tamaño, para que todas las fotos se vean igual y pesen poco.
 // Con backend, el resultado se sube a Supabase Storage en lugar de guardarse en el dispositivo.
 
-const LADO = 256
+/** Lado en píxeles de la foto guardada. */
+export const LADO_FOTO = 256
 const PESO_MAXIMO = 20 * 1024 * 1024
 
-function cargar(url: string): Promise<HTMLImageElement> {
+export interface FotoElegida {
+  img: HTMLImageElement
+  /** Dirección temporal de la imagen. Hay que liberarla con soltarFoto al terminar. */
+  url: string
+}
+
+/** Lee la imagen elegida. Tira un error con el motivo para mostrarle al usuario. */
+export function cargarFoto(archivo: File): Promise<FotoElegida> {
+  if (!archivo.type.startsWith('image/')) return Promise.reject(new Error('Elegí una imagen.'))
+  if (archivo.size > PESO_MAXIMO) return Promise.reject(new Error('Esa imagen es muy pesada. Elegí una de menos de 20 MB.'))
+  const url = URL.createObjectURL(archivo)
   return new Promise((ok, mal) => {
     const img = new Image()
-    img.onload = () => ok(img)
-    img.onerror = () => mal(new Error('imagen'))
+    img.onload = () => {
+      if (img.naturalWidth && img.naturalHeight) ok({ img, url })
+      else { URL.revokeObjectURL(url); mal(new Error('No pudimos leer esa imagen. Probá con otra.')) }
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); mal(new Error('No pudimos leer esa imagen. Probá con otra.')) }
     img.src = url
   })
 }
 
-/** Devuelve la foto lista para usar (JPEG cuadrado de 256 px), o tira un error con el motivo para mostrar. */
-export async function prepararFoto(archivo: File): Promise<string> {
-  if (!archivo.type.startsWith('image/')) throw new Error('Elegí una imagen.')
-  if (archivo.size > PESO_MAXIMO) throw new Error('Esa imagen es muy pesada. Elegí una de menos de 20 MB.')
-  const url = URL.createObjectURL(archivo)
-  try {
-    const img = await cargar(url)
-    const lado = Math.min(img.naturalWidth, img.naturalHeight)
-    if (!lado) throw new Error('imagen')
-    const canvas = document.createElement('canvas')
-    canvas.width = LADO
-    canvas.height = LADO
-    const ctx = canvas.getContext('2d')
-    if (!ctx) throw new Error('imagen')
-    // Recorte centrado: se queda con el cuadrado del medio.
-    ctx.drawImage(img, (img.naturalWidth - lado) / 2, (img.naturalHeight - lado) / 2, lado, lado, 0, 0, LADO, LADO)
-    return canvas.toDataURL('image/jpeg', 0.85)
-  } catch {
-    throw new Error('No pudimos leer esa imagen. Probá con otra.')
-  } finally {
-    URL.revokeObjectURL(url)
-  }
+export function soltarFoto(f: FotoElegida) {
+  URL.revokeObjectURL(f.url)
+}
+
+/**
+ * Recorta un cuadrado de la imagen original (x, y y lado en píxeles de la
+ * imagen) y lo devuelve como JPEG de LADO_FOTO x LADO_FOTO.
+ */
+export function recortarFoto(img: HTMLImageElement, x: number, y: number, lado: number): string {
+  const canvas = document.createElement('canvas')
+  canvas.width = LADO_FOTO
+  canvas.height = LADO_FOTO
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('No pudimos preparar la foto. Probá de nuevo.')
+  ctx.drawImage(img, x, y, lado, lado, 0, 0, LADO_FOTO, LADO_FOTO)
+  return canvas.toDataURL('image/jpeg', 0.85)
 }

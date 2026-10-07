@@ -163,6 +163,29 @@ a { color: inherit; }
   border: 2px solid var(--card); pointer-events: none;
 }
 
+/* Encuadre de la foto de perfil: ocupa toda la pantalla. */
+.recorte {
+  position: absolute; inset: 0; z-index: 30; background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  padding: calc(20px + var(--safe-top)) var(--gutter) calc(20px + var(--safe-bottom));
+  overflow-y: auto;
+}
+.recorte .title { align-self: flex-start; }
+.recorte__visor {
+  position: relative; flex: none; overflow: hidden; border-radius: 16px;
+  background: var(--card); touch-action: none; cursor: grab; user-select: none; margin-top: 8px;
+}
+.recorte__visor:active { cursor: grabbing; }
+.recorte__visor img { position: absolute; max-width: none; pointer-events: none; user-select: none; -webkit-user-drag: none; }
+/* Lo que queda fuera del círculo se oscurece: así se ve cómo va a quedar. */
+.recorte__circulo {
+  position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
+  box-shadow: 0 0 0 200px rgba(14, 21, 18, .72); outline: 2px solid var(--accent); outline-offset: -2px;
+}
+.recorte__zoom { width: 100%; max-width: 280px; display: flex; align-items: center; gap: 12px; }
+.recorte__zoom input { flex: 1; min-height: 44px; accent-color: var(--accent); }
+.recorte__acciones { width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
+
 .tag {
   background: var(--accent); color: var(--on-accent);
   border-radius: 8px; padding: 1px 6px; margin-left: 6px;
