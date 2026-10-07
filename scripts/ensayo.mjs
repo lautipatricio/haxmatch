@@ -586,7 +586,13 @@ try {
   await visita.getByText('Términos y condiciones de uso de HaxMatch').waitFor()
   // Desde la pantalla de ingreso también se llega.
   await visita.goto(URL)
-  await visita.getByRole('link', { name: 'Política de privacidad' }).click()
+  // Sin entrar también se puede leer qué es la app (lo pide TikTok para aprobar la vinculación).
+  await visita.getByRole('button', { name: 'Qué es HaxMatch' }).click()
+  await visita.getByRole('heading', { name: 'Cómo funciona' }).waitFor()
+  await visita.getByText('Solo leemos tu nombre de TikTok y la lista de tus videos públicos').waitFor()
+  await visita.getByRole('link', { name: 'Contacto' }).waitFor()
+  await visita.waitForTimeout(700); await visita.screenshot({ path: `${dir}/${String(++n).padStart(2, '0')}-visita-que-es.png` })
+  await visita.getByRole('link', { name: 'Política de privacidad' }).first().click()
   await visita.getByRole('heading', { name: 'Qué datos guardamos' }).waitFor()
   await visita.screenshot({ path: `${dir}/${String(++n).padStart(2, '0')}-visita-terminos.png` })
 

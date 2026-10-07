@@ -37,7 +37,7 @@ export function hace(ms: number): string {
 
 // ---------- Íconos (trazo, como en los mockups) ----------
 
-type IconName = 'inicio' | 'clips' | 'perfil' | 'campana' | 'atras' | 'flecha' | 'check' | 'play' | 'x' | 'corazon' | 'copiar' | 'reloj' | 'camara' | 'sonido' | 'mudo'
+type IconName = 'inicio' | 'clips' | 'perfil' | 'campana' | 'atras' | 'flecha' | 'abajo' | 'check' | 'play' | 'x' | 'corazon' | 'copiar' | 'reloj' | 'camara' | 'sonido' | 'mudo'
 
 const PATHS: Record<IconName, ReactNode> = {
   inicio: <path d="M4 11.5 12 4l8 7.5V20h-5.5v-5h-5v5H4z" />,
@@ -46,6 +46,7 @@ const PATHS: Record<IconName, ReactNode> = {
   campana: <path d="M6.5 10a5.5 5.5 0 0 1 11 0c0 5 2 6.5 2 6.5h-15s2-1.5 2-6.5zM10 19.5h4" />,
   atras: <path d="m15 6-6 6 6 6" />,
   flecha: <path d="m9 6 6 6-6 6" />,
+  abajo: <path d="m6 9 6 6 6-6" />,
   check: <path d="M5 12l5 5 9-10" />,
   play: <path d="M8 5l11 7-11 7z" fill="currentColor" stroke="none" />,
   sonido: <><path d="M4 9.5v5h3.5L12 18V6L7.5 9.5z" /><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11" /></>,

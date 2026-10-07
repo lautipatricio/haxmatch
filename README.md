@@ -87,7 +87,7 @@ Necesita los avisos ya configurados (usa la misma clave compartida entre la base
 3. Cargar en Cloudflare, como *Secret*, `TIKTOK_CLIENT_KEY` y `TIKTOK_CLIENT_SECRET` (los da TikTok en la página de la app) y publicar.
 4. `https://haxmatch.lauti.workers.dev/api/tiktok/estado` tiene que decir `{"configurado":true}`. Ahí aparece "Vincular TikTok" en Clips > Mis videos.
 
-Mientras la app de TikTok esté en modo *Sandbox* solo pueden vincular las cuentas de TikTok anotadas como "Target users" (hasta 10). Para que pueda cualquiera hay que mandarla a revisión, con un video que muestre el recorrido.
+Mientras la app de TikTok esté en modo *Sandbox* solo pueden vincular las cuentas de TikTok anotadas como "Target users" (hasta 10). Para que pueda cualquiera hay que mandarla a revisión, con un video que muestre el recorrido: el paso a paso está en `docs/TIKTOK_REVISION.md`.
 
 Cómo funciona: la app le pide a la web (`/api/tiktok/entrar`) empezar una vinculación > el usuario da el permiso en la página de TikTok > TikTok lo devuelve a `/api/tiktok/volver` > el Worker cambia ese permiso por las llaves de acceso, las guarda en la base (en una tabla que la app no puede leer) y trae la lista de videos. De TikTok se guarda solo la lista (título, fecha, duración y enlace): los videos se reproducen desde TikTok. En Clips aparecen los que tienen `#haxball` o `#haxmatch` y que su dueño no ocultó. La lista se actualiza al abrir "Mis videos", con el botón "Actualizar", al deslizar hacia abajo en el primer clip (ahí se piden los videos nuevos de todas las cuentas vinculadas), y cada 6 horas si el proyecto de Supabase tiene `pg_cron`. Al desvincular se borran las llaves y los videos, y se le pide a TikTok que anule el permiso.
 
@@ -167,6 +167,7 @@ Si alguien borra su cuenta y vuelve a entrar con el mismo Discord, una suspensi�
 | `scripts/probar-push.mjs`, `scripts/probar-tiktok.mjs`, `scripts/tiktok-falso.mjs` | Pruebas de la parte de servidor de la web: avisos y TikTok (con un TikTok de mentira). |
 | `docs/DECISIONES.md` | Decisiones tomadas sobre la especificación y puntos abiertos. |
 | `docs/DISENO.md` | El diseño de la app: colores, letras, piezas y reglas para que las pantallas nuevas queden iguales. |
+| `docs/TIKTOK_REVISION.md` | Cómo mandar la app de TikTok a revisión: datos, texto para pegar y qué grabar en el video. |
 
 ## Qué es real y qué es de muestra
 

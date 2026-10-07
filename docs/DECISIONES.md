@@ -270,6 +270,10 @@ Pedido: al tocar el nombre de un jugador en la cola, ver su perfil con la cantid
 
 Cómo se probó: 11 comprobaciones nuevas del servidor, el recorrido de la demostración y el ensayo con usuarios (una dueña de sala mira el perfil de un jugador antes de invitarlo y ve el amistoso que acaban de jugar).
 
+## Presentación pública, para la revisión de TikTok (7/10/2026)
+
+TikTok no aprueba una app cuyo sitio sea solo una pantalla de ingreso: pide un sitio que explique qué es, con Términos y Privacidad a la vista. Por eso la pantalla de ingreso ahora sigue hacia abajo: la primera vista es la de siempre (nombre y botones para entrar) y debajo cuenta qué es HaxMatch, cómo funciona, qué hace con TikTok, y tiene los enlaces a Términos, Privacidad y Contacto. Se lee sin entrar. El paso a paso para mandar la app a revisión quedó en `docs/TIKTOK_REVISION.md`.
+
 ## Decisiones que tomé al construir (revisar)
 
 1. **El match siempre es con una sala.** Dos jugadores sin sala ya no generan match: se juntan en una misma búsqueda. Quien creó la sala ve "Ya entró X a la sala" y el que se une ve "Ya entré a la sala".

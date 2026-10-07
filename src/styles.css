@@ -375,6 +375,22 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
 .h.logo { font-size: 84px; font-weight: 700; line-height: .9; text-align: center; letter-spacing: 1px; text-transform: uppercase; }
 .h.logo span { color: var(--accent); }
 .hero { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 28px var(--gutter); }
+/* Pantalla de ingreso: la primera vista ocupa la pantalla entera (nombre y botones);
+   debajo sigue qué es la app, para quien llega sin conocerla. */
+.portada { min-height: 100%; display: flex; flex-direction: column; padding-top: var(--safe-top); }
+.portada__mas { align-self: center; margin-bottom: calc(6px + var(--safe-bottom)); font-size: 14px; }
+.sobre { --gap: 32px; padding: 28px var(--gutter) calc(32px + var(--safe-bottom)); border-top: 1px solid var(--mute); }
+.sobre section { display: flex; flex-direction: column; gap: 10px; }
+.sobre .h { font-size: 28px; }
+.sobre p { margin: 0; color: var(--fg); }
+.sobre .m p, .sobre footer p { color: var(--fg2); }
+.sobre footer { display: flex; flex-direction: column; gap: 10px; padding-top: 20px; border-top: 1px solid var(--mute); }
+.sobre footer a { display: inline-block; padding: 8px 0; }
+/* Pasos numerados: el número va en la tipografía de los títulos. */
+.pasos { margin: 0; padding: 0; list-style: none; counter-reset: paso; display: flex; flex-direction: column; }
+.pasos li { counter-increment: paso; display: grid; grid-template-columns: 36px minmax(0, 1fr); column-gap: 8px; padding: 12px 0; border-top: 1px solid var(--mute); }
+.pasos li::before { content: counter(paso); grid-row: span 2; font: 700 30px/1 var(--display); color: var(--fg2); font-variant-numeric: tabular-nums; padding-top: 1px; }
+.pasos li > span { grid-column: 2; }
 
 /* ---------- Búsqueda: reloj y barra de avance ---------- */
 
