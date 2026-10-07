@@ -23,6 +23,12 @@ function ConSesion() {
   return <Outlet />
 }
 
+/** Lleva a una página fija del sitio (fuera de la app). */
+function PaginaFija({ archivo }: { archivo: string }) {
+  useEffect(() => { window.location.replace(archivo) }, [archivo])
+  return null
+}
+
 function SinConexion() {
   const [online, setOnline] = useState(() => navigator.onLine)
   useEffect(() => {
@@ -100,6 +106,9 @@ export function App() {
   return (
     <div className="app">
       <Routes>
+        {/* Términos y Privacidad son páginas comunes (public/*.html), para que se puedan leer sin entrar ni cargar la app. */}
+        <Route path="/terminos" element={<PaginaFija archivo="/terminos.html" />} />
+        <Route path="/privacidad" element={<PaginaFija archivo="/privacidad.html" />} />
         <Route path="/ingresar" element={perfil ? <Navigate to={perfil.onboarding ? '/' : '/bienvenida'} replace /> : <Ingresar />} />
         <Route path="/bienvenida" element={!perfil ? <Navigate to="/ingresar" replace /> : perfil.onboarding ? <Navigate to="/" replace /> : <Onboarding />} />
         <Route element={<ConSesion />}>

@@ -12,7 +12,54 @@ const URL = `http://localhost:${PUERTO_APP}`
 const dir = process.argv[2] ?? 'capturas-ensayo'
 mkdirSync(dir, { recursive: true })
 
-const servidor = await iniciarEnsayo(8787)
+// conWeb: además de la base, la parte de servidor de la web, con un TikTok de mentira.
+const servidor = await iniciarEnsayo(8787, { conWeb: true })
+
+/** Reproductor de TikTok de mentira: avisa que está listo y obedece "play" y "pause". */
+const REPRODUCTOR = `<!doctype html><body style="margin:0;background:#123;color:#fff;font:16px sans-serif"><p id="e">pausado</p><script>
+  const decir = (type, value) => parent.postMessage({ 'x-tiktok-player': true, type, value }, '*')
+  addEventListener('message', (e) => {
+    const d = e.data
+    if (!d || d['x-tiktok-player'] !== true) return
+    if (d.type === 'play') { document.getElementById('e').textContent = 'reproduciendo'; decir('onStateChange', 1) }
+    if (d.type === 'pause') { document.getElementById('e').textContent = 'pausado'; decir('onStateChange', 2) }
+  })
+  decir('onPlayerReady')
+</script></body>`
+
+const saltar = (destino) => `<!doctype html><script>location.replace(${JSON.stringify(destino)})</script>`
+
+/** Conecta el navegador de un usuario con la web de ensayo y con el TikTok de mentira. */
+async function conectar(ctx, nombre) {
+  // Lo que la app le pide a su propia web (/api/...).
+  await ctx.route(`${URL}/api/**`, async (ruta) => {
+    const pedido = ruta.request()
+    const r = await servidor.web(new Request(pedido.url(), {
+      method: pedido.method(), headers: await pedido.allHeaders(),
+      body: ['GET', 'HEAD'].includes(pedido.method()) ? undefined : pedido.postData() ?? undefined,
+    }))
+    const encabezados = {}
+    r.headers.forEach((v, k) => { encabezados[k] = v })
+    void servidor.alDia()
+    // El navegador de prueba no deja interceptar el destino de una redirección:
+    // se la reemplaza por una página que va a ese destino (para el usuario es lo mismo).
+    if (r.status >= 300 && r.status < 400) {
+      const { location: destino, ...resto } = encabezados
+      return ruta.fulfill({ status: 200, headers: { ...resto, 'content-type': 'text/html' }, body: saltar(destino) })
+    }
+    await ruta.fulfill({ status: r.status, headers: encabezados, body: await r.text() })
+  })
+  // La página de TikTok donde se da el permiso: acá dice que sí y vuelve.
+  await ctx.route('https://www.tiktok.com/v2/auth/authorize/**', async (ruta) => {
+    const ida = new globalThis.URL(ruta.request().url())
+    const vuelta = new globalThis.URL(ida.searchParams.get('redirect_uri'))
+    vuelta.searchParams.set('code', `codigo-${nombre}_tt`)
+    vuelta.searchParams.set('scopes', 'user.info.basic,video.list')
+    vuelta.searchParams.set('state', ida.searchParams.get('state'))
+    await ruta.fulfill({ status: 200, contentType: 'text/html', body: saltar(vuelta.toString()) })
+  })
+  await ctx.route('https://www.tiktok.com/player/v1/**', (ruta) => ruta.fulfill({ status: 200, contentType: 'text/html', body: REPRODUCTOR }))
+}
 const web = spawn('npx', ['vite', 'preview', '--outDir', 'dist-ensayo', '--port', String(PUERTO_APP), '--strictPort'], { stdio: 'ignore' })
 const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {})
 const errores = []
@@ -31,6 +78,7 @@ async function esperarWeb() {
 /** Abre la app como un usuario nuevo, entra y termina el registro. */
 async function abrir(nombre) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })
+  await conectar(ctx, nombre)
   const page = await ctx.newPage()
   page.on('console', (m) => { if (m.type() === 'error') errores.push(`${nombre}: ${m.text()}`) })
   page.on('pageerror', (e) => errores.push(`${nombre}: ${e}`))
@@ -314,6 +362,66 @@ try {
   await lola.page.waitForTimeout(1000)
   if (await lola.fila('Mora').getByText('AMIGO').count()) throw new Error('Mora ya no tendría que figurar como amiga de Lola')
   await lola.boton('Cancelar búsqueda').click(); await mora.inicio(); await mora.link('Quiero jugar un amistoso').click(); await mora.boton('Cancelar búsqueda').click()
+
+  // -------------------------------------------------------------------------
+  paso('Clips: vincular TikTok, ver y reproducir los clips, reaccionar, video nuevo, ocultar y desvincular')
+  const olga = await abrir('olga')
+  const pato = await abrir('pato')
+  const golazo = servidor.tiktok.publicar('olga_tt', 'Golazo de media cancha #haxball #golazo', 3600)
+  servidor.tiktok.publicar('olga_tt', 'Asado del domingo', 1800)
+  await olga.link('Ver clips').click()
+  await olga.ver('Clip de muestra'); await olga.foto('clips-de-muestra')
+  await olga.link('Vincular TikTok').click()
+  await olga.ver('Vinculá tu cuenta de TikTok'); await olga.foto('vincular')
+  await olga.boton('Vincular TikTok').click()
+  // Va a "TikTok", da el permiso y vuelve sola.
+  await olga.ver('TikTok vinculado. Importamos tus videos')
+  await olga.ver('TikTok vinculado: olga_tt')
+  await olga.ver('Golazo de media cancha'); await olga.ver('Sin #haxball ni #haxmatch: no aparece en Clips'); await olga.foto('mis-videos')
+  if (olga.page.url().includes('tiktok=')) throw new Error('El resultado de TikTok tendría que salir de la dirección')
+  // Otro usuario ve el clip y lo reproduce.
+  await pato.page.goto(`${URL}/clips`)
+  await pato.ver('Golazo de media cancha #haxball #golazo'); await pato.ver('@Olga')
+  await pato.noVer('Asado del domingo'); await pato.noVer('Clip de muestra')
+  const marco = pato.page.frameLocator('.reel__video iframe')
+  await marco.getByText('pausado').waitFor()
+  if (!(await pato.page.locator('.reel__video iframe').getAttribute('src')).startsWith(`https://www.tiktok.com/player/v1/${golazo}?`)) throw new Error('El reproductor tiene que ser el de TikTok, con el número del video')
+  await pato.boton('Reproducir').click()
+  await marco.getByText('reproduciendo').waitFor()
+  await pato.boton('Pausar').click()
+  await marco.getByText('pausado').waitFor(); await pato.foto('clip-real')
+  await pato.boton('Reaccionar').click()
+  await pato.boton('Quitar reacción').waitFor()
+  await pato.page.reload()
+  await pato.boton('Quitar reacción').waitFor()
+  if ((await pato.page.locator('.like').innerText()).trim() !== '1') throw new Error('La reacción tendría que quedar guardada')
+  // Olga publica un video nuevo en TikTok y actualiza.
+  servidor.tiktok.publicar('olga_tt', 'Triple pared y adentro #haxmatch', 30)
+  await olga.boton('Actualizar mis videos').click()
+  await olga.ver('Triple pared y adentro', 15000); await olga.ver('Reel nuevo en Clips · +8 puntos')
+  // Oculta el primero: los demás dejan de verlo.
+  await olga.page.getByRole('switch', { name: /Golazo de media cancha/ }).click()
+  await pato.page.goto(`${URL}/clips`)
+  await pato.ver('Triple pared y adentro')
+  await pato.noVer('Golazo de media cancha')
+  // Desvincula: se va todo.
+  await olga.boton('Desvincular TikTok').click()
+  await olga.boton('Sí, desvincular').click()
+  await olga.ver('Vinculá tu cuenta de TikTok')
+  await pato.page.goto(`${URL}/clips`)
+  await pato.ver('Clip de muestra')
+  // Términos y privacidad se leen sin entrar.
+  const visita = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage()
+  await visita.goto(`${URL}/privacidad`)
+  await visita.getByText('Política de privacidad de HaxMatch').waitFor()
+  await visita.getByRole('link', { name: 'lpatriciogauna@outlook.com' }).first().waitFor()
+  await visita.getByRole('link', { name: 'Términos y condiciones' }).click()
+  await visita.getByText('Términos y condiciones de uso de HaxMatch').waitFor()
+  // Desde la pantalla de ingreso también se llega.
+  await visita.goto(URL)
+  await visita.getByRole('link', { name: 'Política de privacidad' }).click()
+  await visita.getByRole('heading', { name: 'Qué datos guardamos' }).waitFor()
+  await visita.screenshot({ path: `${dir}/${String(++n).padStart(2, '0')}-visita-terminos.png` })
 
   // -------------------------------------------------------------------------
   paso('Reportar a un jugador y cerrar sesión con una búsqueda abierta')

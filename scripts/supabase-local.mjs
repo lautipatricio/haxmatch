@@ -84,7 +84,9 @@ export function crearAcceso(db) {
       const claves = Object.keys(args)
       for (const k of claves) if (!t[k]) throw new Error(`${nombre} no tiene el argumento ${k}`)
       const llamada = `select public.${nombre}(${claves.map((k, i) => `${k} => $${i + 1}::${t[k]}`).join(', ')}) as r`
-      return (await conRol(u, llamada, claves.map((k) => literal(args[k]))))[0].r
+      // Los argumentos json viajan como texto json; el resto, como los escribe Postgres.
+      const valor = (k) => (/^jsonb?$/.test(t[k]) && args[k] !== null && args[k] !== undefined ? JSON.stringify(args[k]) : literal(args[k]))
+      return (await conRol(u, llamada, claves.map(valor)))[0].r
     }),
     /** Consulta sin restricciones, para preparar o revisar datos en las pruebas. */
     admin: (sql, params = []) => enTurno(async () => (await db.query(sql, params)).rows),

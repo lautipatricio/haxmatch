@@ -92,6 +92,13 @@ export async function salir(): Promise<void> {
   if (error) await supabase.auth.signOut({ scope: 'local' })
 }
 
+/** Credencial de la sesión abierta, para identificarse ante la parte de servidor de la web. */
+export async function tokenDeSesion(): Promise<string | null> {
+  if (ENSAYO) return entroEnEnsayo() ? `ensayo:${usuarioDeEnsayo()}` : null
+  if (!supabase) return null
+  return (await supabase.auth.getSession()).data.session?.access_token ?? null
+}
+
 // ---- Perfil ----
 
 export async function miPerfil(): Promise<{ perfil?: FilaPerfil; error?: string }> {

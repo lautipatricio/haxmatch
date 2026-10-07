@@ -395,3 +395,18 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
 /* Saludo del Inicio, con el nick del usuario. */
 .saludo { font-size: 18px; color: var(--fg2); max-width: 100%; padding: 0 20px; }
 .saludo strong { color: var(--fg); font-weight: 600; }
+
+/* Clip real: reproductor de TikTok, con una capa encima que recibe los toques. */
+.reel--video { background: #000; }
+.reel--video::before { display: none; }
+.reel__video { position: absolute; z-index: 1; inset: calc(64px + var(--safe-top)) 0 150px; }
+.reel__video iframe { width: 100%; height: 100%; border: 0; display: block; background: #000; }
+.reel__toque {
+  position: absolute; inset: 0; background: transparent; border: 0; color: var(--fg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 0 60px; text-align: center;
+}
+.reel__toque > span:first-child:not(.m) { width: 76px; height: 76px; border-radius: 50%; background: rgba(14, 21, 18, .55); display: grid; place-items: center; padding-left: 4px; }
+.reel__enlace { align-self: flex-start; color: var(--fg2); text-decoration: underline; padding: 6px 0; }
+
+/* Enlaces dentro de un texto secundario (Términos, Privacidad). */
+.m a { color: var(--fg2); text-decoration: underline; }

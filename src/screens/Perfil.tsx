@@ -235,7 +235,7 @@ export function Perfil() {
           </div>
           <div className="card card--row">
             <Avatar nombre="T" />
-            <div className="grow"><div className="strong">TikTok</div><div className="m">{s.tiktok ? 'Conectado' : 'Sin vincular'}</div></div>
+            <div className="grow"><div className="strong">TikTok</div><div className="m cut">{s.tiktok ? `Conectado${s.tiktokInfo?.nombre ? ` como ${s.tiktokInfo.nombre}` : ''}` : 'Sin vincular'}</div></div>
             <Link className={`btn${s.tiktok ? ' btn--sec' : ''}`} to="/clips/mis-videos">{s.tiktok ? 'Mis videos' : 'Vincular'}</Link>
           </div>
           {['YouTube', 'Kick'].map((n) => (
@@ -285,6 +285,9 @@ export function Perfil() {
             </div>
           )}
           <CerrarSesion />
+          <p className="m center" style={{ margin: 0 }}>
+            <a href="/terminos">Términos</a> · <a href="/privacidad">Privacidad</a>
+          </p>
         </div>
       </div>
       <TabBar on="perfil" />

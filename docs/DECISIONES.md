@@ -130,7 +130,7 @@ Cómo se probó: 141 comprobaciones de las reglas sobre una copia local de la ba
 
 ## Amigos, avisos y saludo (7/10/2026)
 
-Pedido: saludo con el nombre en el Inicio, notificaciones con la app en segundo plano, poder tocar a quien está buscando para agregarlo como amigo, y TikTok real (queda para la etapa siguiente, depende de un trámite con TikTok).
+Pedido: saludo con el nombre en el Inicio, notificaciones con la app en segundo plano, poder tocar a quien está buscando para agregarlo como amigo, y TikTok real (hecho en la etapa siguiente, ver más abajo).
 
 - **Inicio:** en lugar de "Amistosos de HaxBall, sin vueltas" dice "Bienvenido, (nick)". El lema queda en la pantalla de ingreso.
 - **Ficha del jugador:** tocando la foto o el nombre de cualquier jugador (en la cola, en "Buscan con vos", en "En tu sala", en "Te escribieron", en Match listo) se abre su ficha: nombre, usuario de Discord, "Agregar a amigos" y "Reportar o bloquear".
@@ -152,6 +152,27 @@ Pedido: saludo con el nombre en el Inicio, notificaciones con la app en segundo 
 - **Bloquear** sigue siendo por dispositivo: un bloqueado todavía puede mandar una solicitud de amistad.
 
 Cómo se probó: 193 comprobaciones del servidor, 25 del envío de avisos (el cifrado se comparó con las dos librerías de referencia), el ensayo con usuarios simultáneos ampliado con amigos, la ruta de la web con el motor de Cloudflare en local, y una segunda revisión independiente (encontró 8 problemas menores; corregidos). Lo que no se puede probar desde acá: que el aviso llegue de verdad a un celular (los servicios de Google y Apple solo se pueden usar desde la web publicada). Para eso está el botón de prueba.
+
+## Clips y TikTok reales (7/10/2026)
+
+Pedido: que se pueda vincular TikTok de verdad y empezar a importar los videos.
+
+- **El permiso se da en la página de TikTok,** no en HaxMatch: la app nunca ve la contraseña. Se piden dos cosas: el nombre de la cuenta y la lista de videos públicos.
+- **Las llaves de acceso quedan solo en el servidor,** en una tabla que la app no puede leer. Ni el dueño de la cuenta las ve desde el celular.
+- **Los videos no se copian.** Se guarda la lista (título, fecha, duración y enlace) y cada clip se reproduce desde TikTok, con su reproductor. Si el video no se puede reproducir adentro, queda el enlace "Ver en TikTok".
+- **En Clips aparecen solo los que tienen #haxball o #haxmatch** y que su dueño no ocultó. En "Mis videos" el dueño ve todos los suyos y cuáles se muestran.
+- **Una cuenta de TikTok, un usuario.** Si ya está vinculada a otro usuario de HaxMatch, avisa y no la vincula.
+- **Cuándo se actualiza la lista:** al vincular, al abrir "Mis videos", con el botón "Actualizar" (una vez cada 45 segundos como mucho) y cada 6 horas para todos, si Supabase tiene disponible la tarea programada. Si no la tiene, no se rompe nada.
+- **Si un video se borra en TikTok,** desaparece de HaxMatch en la siguiente actualización. Si TikTok falla o contesta algo raro, no se borra nada: se intenta de nuevo más tarde.
+- **Si el usuario quita el permiso desde TikTok, o el permiso vence** (dura un año sin usar), "Mis videos" pide volver a vincular. Los videos que ya estaban se mantienen hasta entonces.
+- **Desvincular** borra las llaves, todos los videos de ese usuario y sus reacciones recibidas, y le pide a TikTok que anule el permiso.
+- **Se revisan hasta los 200 videos más recientes** de cada cuenta. Con más que eso, los viejos que ya estaban no se borran solos.
+- **Videos de muestra:** mientras no haya ningún clip real, Clips muestra los 6 inventados para que la pantalla no esté vacía. Con el primer clip real desaparecen.
+- **Puntos por video nuevo:** siguen calculándose en el celular, como el resto de los puntos, y solo para videos publicados después de vincular (los que ya estaban no suman). Pasan al servidor en la etapa de puntos.
+- **Términos y Privacidad** son dos páginas fijas (`/terminos` y `/privacidad`) que se leen sin entrar a la app: TikTok las exige y las revisa. El contacto publicado es lpatriciogauna@outlook.com. Hay enlaces desde la pantalla de ingreso y desde el Perfil.
+- **Mientras TikTok no esté configurado,** "Mis videos" dice que todavía no se puede vincular, en lugar de mostrar un botón que falla.
+
+Cómo se probó: 241 comprobaciones del servidor, 37 de la parte de la web que habla con TikTok (contra un TikTok de mentira que imita sus respuestas, incluidos permisos vencidos, quitados, fallas y respuestas rotas), el ensayo con usuarios simultáneos ampliado con todo el recorrido (vincular, ver, reproducir, reaccionar, video nuevo, ocultar, desvincular), las páginas fijas con el motor de Cloudflare en local, y una tercera revisión independiente. Esa revisión encontró un problema grave (si faltaba la clave compartida, las funciones protegidas quedaban abiertas) y 14 menores; todos corregidos y con su prueba. Lo que no se pudo probar desde acá: el TikTok real. Las direcciones, los nombres de los campos y las respuestas salen de su documentación, pero recién se confirma con la primera vinculación de verdad.
 
 ## Decisiones que tomé al construir (revisar)
 
@@ -178,6 +199,9 @@ Cómo se probó: 193 comprobaciones del servidor, 25 del envío de avisos (el ci
 - **Aviso de "pasaron 15 minutos"** con la app cerrada: hoy no se manda (haría falta una tarea programada en el servidor).
 - **Bloqueos en el servidor,** para que un bloqueado no pueda mandar solicitudes ni mensajes.
 - **Bloqueos en el servidor,** para que la app no acerque a mi sala a alguien que bloqueé.
+- **Borrar la cuenta desde la app.** Hoy se pide por correo (lo dicen las páginas de Términos y Privacidad).
+- **Revisión de TikTok:** hasta que la aprueben, solo vinculan las cuentas anotadas en el modo de prueba de TikTok.
+- **Clips de quien bloqueé:** se ocultan en ese dispositivo, como el resto de los bloqueos.
 - **Moderación:** hoy los reportes solo se guardan. Falta definir quién los revisa y qué pasa con el reportado. Las fotos de perfil tampoco se moderan todavía.
 - **¿"Se salió" tiene que avisarle al jugador o afectar su asistencia?** Hoy solo libera el lugar.
 - **"Equipo al que más enfrentaste" y resultados G/P:** la app no registra equipos ni resultados, así que esa tarjeta no tiene de dónde sacar datos. Hoy dice "Todavía sin datos". Hay que definir si se agregan equipos o se cambia la tarjeta.
@@ -186,4 +210,4 @@ Cómo se probó: 193 comprobaciones del servidor, 25 del envío de avisos (el ci
 - **Inicio sin barra inferior:** desde el Inicio no hay acceso directo al Perfil ni a las notificaciones (hay que pasar por Clips).
 - **Zona horaria del "día"** para topes y racha. Hoy es la del celular. En el backend hay que fijar una.
 - **Vencimiento de salas** y de pendientes (propuesta del documento: 7 días, es lo que está puesto).
-- Los pendientes de la sección 7 del documento siguen igual: sorteo, marca, revisión de TikTok.
+- Los pendientes de la sección 7 del documento siguen igual: sorteo y marca.

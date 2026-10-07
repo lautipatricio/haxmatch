@@ -124,7 +124,15 @@ export interface Reel {
   visible: boolean
   publicadoAt: number
   reacciones: number
-  formato: Formato
+  /** Solo en los clips de muestra. */
+  formato?: Formato
+  /** Número del video en TikTok: con eso se arma el reproductor. */
+  tiktokId?: string
+  /** Dirección del video en TikTok. */
+  enlace?: string
+  duracion?: number
+  /** Vino con la primera importación, al vincular: no suma puntos. */
+  inicial?: boolean
 }
 
 export type TipoNotif =

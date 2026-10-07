@@ -1,7 +1,8 @@
 // Parte de servidor de la web de HaxMatch (Cloudflare Worker).
 // La web en sí son archivos estáticos (la carpeta dist). Este código atiende
-// solo las direcciones que empiezan con /api/ y hoy hace una sola cosa: mandar
-// las notificaciones a los celulares (Web Push).
+// solo las direcciones que empiezan con /api/. Hace dos cosas: mandar las
+// notificaciones a los celulares (Web Push, en este archivo) y vincular las
+// cuentas de TikTok (en tiktok.js).
 //
 // Cómo llega un aviso:
 //   la base de datos (supabase/03_amigos_avisos.sql) decide a quién avisarle y
@@ -12,6 +13,8 @@
 // Claves (se cargan en Cloudflare como "Secret", nunca van en el repositorio):
 //   VAPID_PUBLICA, VAPID_PRIVADA  identifican a HaxMatch ante los servicios de avisos
 //   PUSH_SECRETO                  la comparte con la base, para que nadie más pueda mandar avisos
+
+import { entrar, revocar, sincronizar, tiktokConfigurado, volver } from './tiktok.js'
 
 const txt = new TextEncoder()
 const SERVICIOS = /^https:\/\/(fcm\.googleapis\.com|[a-z0-9-]+\.push\.apple\.com|updates\.push\.services\.mozilla\.com|[a-z0-9-]+\.notify\.windows\.com)\//
@@ -219,6 +222,11 @@ export default {
     }
     if (pathname === '/api/push/enviar' && request.method === 'POST') return enviar(request, env, ctx)
     if (pathname === '/api/push/configurar' && request.method === 'GET') return paginaConfigurar(request, env)
+    if (pathname === '/api/tiktok/estado' && request.method === 'GET') return json({ configurado: tiktokConfigurado(env) })
+    if (pathname === '/api/tiktok/entrar' && request.method === 'POST') return entrar(request, env)
+    if (pathname === '/api/tiktok/volver' && request.method === 'GET') return volver(request, env)
+    if (pathname === '/api/tiktok/sincronizar' && request.method === 'POST') return sincronizar(request, env, ctx)
+    if (pathname === '/api/tiktok/revocar' && request.method === 'POST') return revocar(request, env, ctx)
     if (pathname.startsWith('/api/')) return json({ error: 'No existe' }, 404)
     return env.ASSETS.fetch(request)
   },

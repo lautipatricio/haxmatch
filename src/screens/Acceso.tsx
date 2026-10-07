@@ -56,8 +56,11 @@ export function Ingresar() {
           </button>
           <p className="m center" style={{ margin: 0 }}>
             {REAL
-              ? 'Versión de prueba: la cuenta, la cola y los partidos son reales. Los clips todavía son de muestra.'
+              ? 'Encontrá jugadores de HaxBall, armá amistosos y mirá los clips de la comunidad.'
               : 'Versión de prueba: el ingreso está simulado y los demás jugadores son inventados.'}
+          </p>
+          <p className="m center" style={{ margin: 0 }}>
+            Al entrar aceptás los <a href="/terminos">Términos</a> y la <a href="/privacidad">Política de privacidad</a>.
           </p>
         </div>
       )}

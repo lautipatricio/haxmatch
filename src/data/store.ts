@@ -17,6 +17,7 @@ import {
   codigoPendiente, completarRegistro, escucharSesion, guardarCodigoPendiente, ingresarConDiscord, miPerfil, quienInvita,
   quitarFoto, salir, subirFoto, type FilaPerfil,
 } from './cuenta'
+import { clipsApi, irATikTok, leerClips, type TikTokInfo } from './clips'
 import { sincronizarAvisos, soltarAvisos } from './push'
 import { GRACIA_MS, aLocal, cola, leerCola, pedirAmistadPorUsuario, type ColaLocal, type Resumen } from './servidor'
 import { REAL } from './supabase'
@@ -146,8 +147,15 @@ interface Acciones {
   confirmarMatch: (matchId: string) => void
   descartarMatch: (matchId: string) => void
 
+  /** Con servidor: vuelve a pedir los clips, mis videos y el estado de mi TikTok. */
+  cargarClips: () => Promise<void>
   reaccionar: (reelId: string) => void
-  vincularTikTok: () => void
+  /** Con servidor manda al usuario a TikTok a dar el permiso. Devuelve el problema, si no se pudo empezar. */
+  vincularTikTok: () => Promise<string | null>
+  /** Pide traer de nuevo mis videos de TikTok. */
+  actualizarTikTok: () => Promise<string | null>
+  /** Desvincula TikTok: se borran mis videos de HaxMatch. */
+  desvincularTikTok: () => Promise<string | null>
   alternarVisible: (reelId: string) => void
   simularVideoNuevo: () => void
 
@@ -182,6 +190,10 @@ interface Efimero {
   irA: string | null
   /** Jugador cuya ficha está abierta. */
   ficha: string | null
+  /** Con servidor: ya llegaron los clips por primera vez. */
+  clipsListos: boolean
+  /** Datos de la cuenta de TikTok vinculada. */
+  tiktokInfo: TikTokInfo | null
 }
 
 export type Store = Datos & Efimero & Acciones
@@ -206,7 +218,8 @@ function datosIniciales(ahora: number): Datos {
     matches: REAL ? [] : seedMatches(ahora),
     mensajes: [],
     eventos: SEED_EVENTOS,
-    reels: seedReels(ahora),
+    // Con servidor los clips son los de TikTok de cada usuario; los de muestra se usan solo si no hay ninguno.
+    reels: REAL ? [] : seedReels(ahora),
     misReacciones: [],
     tiktok: false,
     notifs: REAL ? [] : seedNotifs(ahora),
@@ -698,7 +711,9 @@ function aplicarCola(s: Store, n: ColaLocal, primera: boolean): Cambio {
 const guardado = leerGuardado() ?? datosIniciales(Date.now())
 // Con servidor, el perfil no sale del dispositivo (se carga de la sesión) y la
 // cola tampoco: se pide de nuevo al abrir la app.
-const inicial: Datos = REAL ? { ...guardado, perfil: null, busquedas: [], mensajes: [], programados: [], offsetDias: 0 } : guardado
+const inicial: Datos = REAL
+  ? { ...guardado, perfil: null, busquedas: [], mensajes: [], programados: [], offsetDias: 0, reels: [], misReacciones: [], tiktok: false }
+  : guardado
 
 function aPerfil(f: FilaPerfil): Perfil {
   return {
@@ -744,6 +759,8 @@ export const useStore = create<Store>()((set, get) => {
   toasts: [],
   irA: null,
   ficha: null,
+  clipsListos: !REAL,
+  tiktokInfo: null,
   cargandoSesion: REAL,
   colaLista: !REAL,
   errorCola: null,
@@ -809,6 +826,7 @@ export const useStore = create<Store>()((set, get) => {
     void get().refrescar()
     // Si este celular ya tenía los avisos activos, quedan a nombre de esta cuenta.
     void sincronizarAvisos()
+    void get().cargarClips()
     return () => {
       dejarDeEscuchar()
       clearInterval(cada)
@@ -1055,7 +1073,7 @@ export const useStore = create<Store>()((set, get) => {
     if (REAL) {
       const buscaba = !!miBusqueda(get())
       canceleAt = Date.now()
-      set({ perfil: null, toasts: [], busquedas: [], mensajes: [], colaLista: false, ficha: null })
+      set({ perfil: null, toasts: [], busquedas: [], mensajes: [], colaLista: false, ficha: null, reels: [], misReacciones: [], tiktok: false, tiktokInfo: null, clipsListos: false })
       guardar(get())
       // La búsqueda se cancela antes de salir: después ya no hay sesión para pedirlo.
       void (async () => {
@@ -1435,12 +1453,46 @@ export const useStore = create<Store>()((set, get) => {
 
   // ----- Clips -----
 
+  cargarClips: async () => {
+    const cuenta = get().perfil
+    const miId = cuenta?.id
+    if (!REAL || !miId || !cuenta?.onboarding) return
+    const r = await leerClips(miId)
+    if (get().perfil?.id !== miId) return
+    if (!r.clips) {
+      // Si la base todavía no tiene el paso de clips, la pantalla queda con los de muestra.
+      set({ clipsListos: true })
+      return
+    }
+    const s = get()
+    const ahora = s.ahora()
+    let st: Store = { ...s, usuarios: { ...s.usuarios, ...r.clips.usuarios } }
+    // Un video mío nuevo en Clips suma puntos (el primero de cada día). Los que vinieron al vincular, no.
+    const apto = (h: string[]) => h.some((x) => x === 'haxball' || x === 'haxmatch')
+    for (const reel of r.clips.reels) {
+      if (reel.userId !== YO || reel.inicial || !reel.visible || !apto(reel.hashtags)) continue
+      if (st.eventos.some((e) => e.tipo === 'reel' && e.referencia === reel.id)) continue
+      const puntos = puntosReel(st.eventos, YO, reel.id, ahora)
+      st = { ...st, ...sumar(st, ahora, 'reel', puntos, reel.id) }
+      st = { ...st, toasts: conToast(st, puntos > 0
+        ? { texto: `Reel nuevo en Clips · +${puntos} puntos` }
+        : { texto: 'Reel nuevo en Clips', detalle: 'Hoy ya sumaste por un reel. Mañana vuelve a sumar.' }) }
+    }
+    set({
+      usuarios: st.usuarios, eventos: st.eventos, notifs: st.notifs, toasts: st.toasts,
+      reels: r.clips.reels, misReacciones: r.clips.misReacciones,
+      tiktok: r.clips.tiktok !== null, tiktokInfo: r.clips.tiktok, clipsListos: true,
+    })
+    guardar(get())
+  },
+
   reaccionar: (reelId) => {
     const s = get()
     const ahora = s.ahora()
     const reel = s.reels.find((r) => r.id === reelId)
     if (!reel) return
-    if (s.misReacciones.includes(reelId)) {
+    const marcar = !s.misReacciones.includes(reelId)
+    if (!marcar) {
       set({ misReacciones: s.misReacciones.filter((r) => r !== reelId) })
     } else {
       const puntos = reel.userId === YO ? 0 : puntosReaccion(s.eventos, YO, reelId, ahora)
@@ -1449,12 +1501,22 @@ export const useStore = create<Store>()((set, get) => {
         ...(puntos > 0 ? sumar(s, ahora, 'reaccion', puntos, reelId) : {}),
       })
     }
+    // Los clips de TikTok guardan la reacción en el servidor; los de muestra, solo acá.
+    if (REAL && reel.tiktokId) {
+      // Se le dice al servidor cómo tiene que quedar, no "lo contrario de lo que haya".
+      void clipsApi.reaccionar(reelId, marcar).then((error) => {
+        if (error) set({ toasts: conToast(get(), { texto: error }) })
+        void get().cargarClips()
+      })
+      return
+    }
     guardar(get())
   },
 
-  vincularTikTok: () => {
+  vincularTikTok: async () => {
+    if (REAL) return irATikTok()
     const s = get()
-    if (s.tiktok) return
+    if (s.tiktok) return null
     // Importar no da puntos: solo suma el reel nuevo que aparece después en el feed.
     set({
       tiktok: true,
@@ -1462,14 +1524,48 @@ export const useStore = create<Store>()((set, get) => {
       toasts: conToast(s, { texto: 'TikTok vinculado', detalle: 'Importamos tus videos. Los que tienen #haxball o #haxmatch ya están en Clips.' }),
     })
     guardar(get())
+    return null
+  },
+
+  actualizarTikTok: async () => {
+    if (!REAL) return null
+    const error = await clipsApi.actualizar()
+    if (error) return error
+    // TikTok tarda unos segundos en contestar: se mira un par de veces.
+    for (const espera of [2500, 4000]) {
+      await new Promise((listo) => setTimeout(listo, espera))
+      await get().cargarClips()
+    }
+    return null
+  },
+
+  desvincularTikTok: async () => {
+    if (!REAL) {
+      set((s) => ({ tiktok: false, reels: s.reels.filter((r) => r.userId !== YO) }))
+      guardar(get())
+      return null
+    }
+    const error = await clipsApi.desvincular()
+    await get().cargarClips()
+    return error
   },
 
   alternarVisible: (reelId) => {
+    const reel = get().reels.find((r) => r.id === reelId)
+    if (!reel) return
     set((s) => ({ reels: s.reels.map((r) => (r.id === reelId ? { ...r, visible: !r.visible } : r)) }))
+    if (REAL && reel.tiktokId) {
+      void clipsApi.visible(reelId, !reel.visible).then((error) => {
+        if (error) set({ toasts: conToast(get(), { texto: error }) })
+        void get().cargarClips()
+      })
+      return
+    }
     guardar(get())
   },
 
   simularVideoNuevo: () => {
+    if (REAL) return
     const s = get()
     const ahora = s.ahora()
     const titulos = ['Gol de taco en el último minuto', 'Triple pared y adentro', 'Atajada imposible', 'Contra letal en Big']
