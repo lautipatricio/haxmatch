@@ -9,7 +9,7 @@ import { SIN_BASE, rpc } from './transporte'
 
 interface FilaReel {
   id: string; tiktok_id: string; titulo: string; hashtags: string[]; duracion: number | null
-  enlace: string | null; publicado_at: string; reacciones: number
+  enlace: string | null; portada?: string | null; publicado_at: string; reacciones: number
 }
 interface EstadoClips {
   feed: Array<FilaReel & { user_id: string; nick: string; username: string; foto: string | null; reaccione: boolean }>
@@ -49,6 +49,7 @@ export async function leerClips(miId: string): Promise<{ clips?: ClipsLocal; err
   const base = (f: FilaReel): Omit<Reel, 'userId' | 'visible' | 'reacciones'> => ({
     id: f.id, origen: 'tiktok', titulo: f.titulo, hashtags: f.hashtags ?? [], publicadoAt: Date.parse(f.publicado_at),
     tiktokId: f.tiktok_id, enlace: f.enlace ?? undefined, duracion: f.duracion ?? undefined,
+    portada: f.portada?.startsWith('https://') ? f.portada : undefined,
   })
   for (const f of e.feed ?? []) {
     const foto = f.foto !== null && SUPABASE_URL

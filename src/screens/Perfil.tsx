@@ -1,11 +1,11 @@
-import { useEffect, useId, useState, type ChangeEvent } from 'react'
+import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { PREVIEW, REAL } from '../config'
 import { cargarFoto, soltarFoto, type FotoElegida } from '../data/foto'
 import { TEXTO_AVISOS, activarAvisos, desactivarAvisos, estadoAvisos, probarAviso, type EstadoAvisos } from '../data/push'
 import { YO, buscarMia, rivalesDe, useStore } from '../data/store'
 import { DIAS_PENDIENTE, diasParaVencer, esPendiente, nivelDe, totalPuntos } from '../domain/rules'
-import { Avatar, CerrarSesion, Head, Icon, TabBar, hace, useAhora } from '../ui'
+import { Avatar, CerrarSesion, Head, Icon, Portada, TabBar, hace, useAhora } from '../ui'
 import { Recortador } from '../ui/Recortador'
 
 /** Partidos que el usuario todavía no confirmó. Se muestran como un aviso pendiente. */
@@ -42,6 +42,46 @@ function Pendientes() {
         )
       })}
     </section>
+  )
+}
+
+/** Mis clips: cuántos tengo en Clips y una miniatura de cada uno. Al tocar una, se abre ese clip. */
+function MisClips() {
+  const s = useStore()
+  const ahora = useAhora()
+  const mios = s.reels.filter((r) => r.userId === YO).sort((a, b) => b.publicadoAt - a.publicadoAt)
+  const enClips = mios.filter((r) => r.visible && r.hashtags.some((h) => h === 'haxball' || h === 'haxmatch'))
+  // Las miniaturas de TikTok vencen a las 6 horas: si la lista es vieja, se vuelve a pedir (una vez).
+  const info = s.tiktokInfo
+  const vieja = REAL && s.tiktok && !!info && !info.error && info.sincronizadaAt !== null && ahora - info.sincronizadaAt > 5 * 3600 * 1000
+  const actualizar = s.actualizarTikTok
+  const pedida = useRef(false)
+  useEffect(() => {
+    if (!vieja || pedida.current) return
+    pedida.current = true
+    void actualizar()
+  }, [vieja, actualizar])
+  if (!s.tiktok) return null
+  return (
+    <>
+      <h2 className="h sub">Tus clips ({enClips.length})</h2>
+      {enClips.length === 0 ? (
+        <div className="card m">Todavía no tenés clips. Subí un video a TikTok con #haxball o #haxmatch y aparece acá.</div>
+      ) : (
+        <div className="clips-mini">
+          {enClips.slice(0, 12).map((r) => (
+            <Link key={r.id} className="clip-mini" to={`/clips?v=${encodeURIComponent(r.id)}`} aria-label={`Ver el clip: ${r.titulo || 'sin título'}`}>
+              <Icon name="play" size={26} />
+              <Portada src={r.portada} />
+              <span className="clip-mini__t">{r.titulo}</span>
+            </Link>
+          ))}
+        </div>
+      )}
+      <Link className="btn btn--outline" to="/clips/mis-videos">
+        {mios.length > enClips.length ? `Ver los ${mios.length} videos de tu TikTok` : 'Administrar mis videos'}
+      </Link>
+    </>
   )
 }
 
@@ -226,6 +266,7 @@ export function Perfil() {
 
           <Pendientes />
           <Avisos />
+          <MisClips />
 
           <h2 className="h sub sub--accent">Tus cuentas</h2>
           <div className="card card--row">

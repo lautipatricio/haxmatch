@@ -625,8 +625,8 @@ await falla('una cuenta de TikTok no puede estar en dos usuarios', () => guardar
 titulo('Clips: importar videos')
 await falla('importar necesita la clave', () => x.rpc(null, 'tiktok_importar', { p_secreto: 'no', p_user: ana.id, p_videos: [] }))
 ok((await web('tiktok_importar', { p_user: ana.id, p_inicial: true, p_completa: true, p_videos: [
-  video(7000000001, 'Golazo desde mitad de cancha #HaxBall #golazo'),
-  video(7000000002, 'Atajadas de la semana #haxmatch', { creado: Math.floor(Date.now() / 1000) - 60 }),
+  video(7000000001, 'Golazo desde mitad de cancha #HaxBall #golazo', { portada: 'https://p16.tiktokcdn.com/img/1.jpeg?x-expires=1&sig=a_b' }),
+  video(7000000002, 'Atajadas de la semana #haxmatch', { creado: Math.floor(Date.now() / 1000) - 60, portada: 'javascript:alert(1)' }),
   video(7000000003, 'Cumple de mi hermana'),
   { id: 'no-es-un-id', descripcion: 'x' },
 ] })) === 3, 'se guardan los videos válidos y se ignora lo que no es un video')
@@ -634,6 +634,11 @@ c = await clips(ana)
 ok(c.mios.length === 3 && c.mios.every((r) => r.inicial), 'en Mis videos están todos, marcados como de la primera importación')
 ok(c.feed.length === 2 && c.feed[0].tiktok_id === '7000000002' && c.feed[0].nick === 'ana', 'en Clips solo los que tienen #haxball o #haxmatch, del más nuevo al más viejo, con su autor')
 ok(c.feed[1].hashtags.includes('haxball') && c.feed[1].titulo.startsWith('Golazo'), 'el hashtag vale aunque esté en mayúsculas, y el título sale de la descripción')
+ok(c.feed[1].portada === 'https://p16.tiktokcdn.com/img/1.jpeg?x-expires=1&sig=a_b' && c.mios.find((r) => r.tiktok_id === '7000000001').portada === c.feed[1].portada, 'cada video guarda su miniatura')
+ok(c.feed[0].portada === null, 'una miniatura que no es una dirección https se descarta')
+await web('tiktok_importar', { p_user: ana.id, p_videos: [video(7000000001, 'Golazo desde mitad de cancha #HaxBall #golazo', { portada: 'https://p16.tiktokcdn.com/img/1-nueva.jpeg' })] })
+await web('tiktok_importar', { p_user: ana.id, p_videos: [video(7000000001, 'Golazo desde mitad de cancha #HaxBall #golazo')] })
+ok((await clips(ana)).feed[1].portada === 'https://p16.tiktokcdn.com/img/1-nueva.jpeg', 'la miniatura se renueva al volver a traer la lista, y no se pierde si una vez no viene')
 ok((await clips(beto)).feed.length === 2 && (await clips(beto)).mios.length === 0, 'los demás ven el feed, no la biblioteca de otro')
 await x.rpc(ana, 'reel_visible', { p_reel: c.feed[0].id, p_visible: false })
 ok((await clips(beto)).feed.length === 1 && (await clips(ana)).mios.find((r) => r.tiktok_id === '7000000002').visible === false, 'el dueño puede ocultar un video de Clips')

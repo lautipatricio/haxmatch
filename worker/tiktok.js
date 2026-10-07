@@ -18,7 +18,7 @@ const AUTORIZAR = 'https://www.tiktok.com/v2/auth/authorize/'
 const API = 'https://open.tiktokapis.com'
 const PERMISOS = 'user.info.basic,video.list'
 const COOKIE = 'hx_tiktok'
-const CAMPOS = 'id,title,video_description,duration,create_time,share_url'
+const CAMPOS = 'id,title,video_description,duration,create_time,share_url,cover_image_url'
 /** Cuántas páginas de 20 videos se traen como mucho por vez. */
 const PAGINAS = 10
 
@@ -142,6 +142,7 @@ async function traerVideos(accessToken) {
       videos.push({
         id: String(v.id ?? ''), titulo: String(v.title ?? ''), descripcion: String(v.video_description ?? ''),
         duracion: Number(v.duration) || null, creado: Number(v.create_time) || null, enlace: String(v.share_url ?? ''),
+        portada: String(v.cover_image_url ?? ''),
       })
     }
     if (d.data.has_more === false) return { videos, completa: true }

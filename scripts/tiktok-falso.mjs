@@ -34,7 +34,7 @@ export function crearTikTokFalso() {
     publicar(nombre, descripcion, haceSegundos = 60) {
       const c = cuenta(nombre)
       const id = String(7400000000000000000n + BigInt(++serie))
-      c.videos.unshift({ id, title: '', video_description: descripcion, duration: 23, create_time: Math.floor(Date.now() / 1000) - haceSegundos, share_url: `https://www.tiktok.com/@${nombre}/video/${id}` })
+      c.videos.unshift({ id, title: '', video_description: descripcion, duration: 23, create_time: Math.floor(Date.now() / 1000) - haceSegundos, share_url: `https://www.tiktok.com/@${nombre}/video/${id}`, cover_image_url: `https://p16.tiktokcdn.test/portada/${id}.jpg?x-expires=1` })
       return id
     },
     borrar(nombre, id) { cuenta(nombre).videos = cuenta(nombre).videos.filter((v) => v.id !== id) },

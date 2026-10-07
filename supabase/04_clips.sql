@@ -55,6 +55,8 @@ create table if not exists public.reels (
   inicial boolean not null default false,
   importado_at timestamptz not null default now()
 );
+-- Miniatura del video. La da TikTok y dura 6 horas: se renueva cada vez que se trae la lista.
+alter table public.reels add column if not exists portada text;
 create index if not exists reels_por_usuario on public.reels (user_id);
 create index if not exists reels_por_fecha on public.reels (publicado_at desc);
 
@@ -235,7 +237,7 @@ begin
 end $$;
 
 -- Lista de videos de un usuario, recién traída de TikTok.
--- p_videos: [{id, titulo, descripcion, duracion, creado (segundos), enlace}]
+-- p_videos: [{id, titulo, descripcion, duracion, creado (segundos), enlace, portada}]
 -- p_completa: la lista trae todos sus videos (entonces los que ya no están se borran).
 -- p_inicial: es la primera importación, al vincular. También cuenta como primera
 --   si todavía no se había podido traer nada desde que se vinculó.
@@ -268,16 +270,18 @@ begin
     v_ids := v_ids || (v ->> 'id');
     -- El "título" de TikTok suele venir vacío: lo que escribe la gente es la descripción.
     v_titulo := left(trim(coalesce(nullif(trim(v ->> 'titulo'), ''), v ->> 'descripcion', '')), 150);
-    insert into public.reels (user_id, tiktok_id, titulo, hashtags, duracion, enlace, publicado_at, inicial)
+    insert into public.reels (user_id, tiktok_id, titulo, hashtags, duracion, enlace, portada, publicado_at, inicial)
     values (
       p_user, v ->> 'id', v_titulo,
       public._hashtags(coalesce(v ->> 'titulo', '') || ' ' || coalesce(v ->> 'descripcion', '')),
       case when (v ->> 'duracion') ~ '^[0-9]{1,6}$' then (v ->> 'duracion')::int end,
       case when (v ->> 'enlace') ~ '^https://(www|vm|vt|m)\.tiktok\.com/' then left(v ->> 'enlace', 300) end,
+      case when (v ->> 'portada') ~ '^https://[^[:space:]"''<>]+$' and length(v ->> 'portada') <= 1500 then v ->> 'portada' end,
       case when (v ->> 'creado') ~ '^[0-9]{9,11}$' then to_timestamp((v ->> 'creado')::bigint) else now() end,
       v_primera)
     on conflict (tiktok_id) do update
-      set titulo = excluded.titulo, hashtags = excluded.hashtags, duracion = excluded.duracion, enlace = excluded.enlace
+      set titulo = excluded.titulo, hashtags = excluded.hashtags, duracion = excluded.duracion, enlace = excluded.enlace,
+          portada = coalesce(excluded.portada, public.reels.portada)
       where public.reels.user_id = p_user;
     n := n + 1;
   end loop;
@@ -327,7 +331,7 @@ begin
   return json_build_object(
     'feed', (
       select coalesce(json_agg(f order by f.publicado_at desc), '[]'::json) from (
-        select r.id, r.user_id, r.tiktok_id, r.titulo, r.hashtags, r.duracion, r.enlace, r.publicado_at,
+        select r.id, r.user_id, r.tiktok_id, r.titulo, r.hashtags, r.duracion, r.enlace, r.portada, r.publicado_at,
                u.nick, u.username, public._foto_version(u.id, u.foto_url) as foto,
                (select count(*) from public.reel_reacciones x where x.reel_id = r.id)::int as reacciones,
                exists (select 1 from public.reel_reacciones x where x.reel_id = r.id and x.user_id = yo) as reaccione
@@ -337,7 +341,7 @@ begin
     'mios', (
       select coalesce(json_agg(json_build_object(
         'id', r.id, 'tiktok_id', r.tiktok_id, 'titulo', r.titulo, 'hashtags', r.hashtags, 'duracion', r.duracion,
-        'enlace', r.enlace, 'publicado_at', r.publicado_at, 'visible', r.visible, 'inicial', r.inicial,
+        'enlace', r.enlace, 'portada', r.portada, 'publicado_at', r.publicado_at, 'visible', r.visible, 'inicial', r.inicial,
         'reacciones', (select count(*) from public.reel_reacciones x where x.reel_id = r.id)::int
       ) order by r.publicado_at desc), '[]'::json)
       from public.reels r where r.user_id = yo),

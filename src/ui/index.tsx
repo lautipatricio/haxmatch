@@ -65,6 +65,13 @@ export function Icon({ name, size = 22, stroke = 2, fill }: { name: IconName; si
 
 // ---------- Piezas ----------
 
+/** Miniatura de un video de TikTok. Vence a las horas: si ya no carga, no se muestra nada. */
+export function Portada({ src }: { src?: string }) {
+  const [rota, setRota] = useState<string | null>(null)
+  if (!src || rota === src) return null
+  return <img className="portada" src={src} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setRota(src)} />
+}
+
 export function Avatar({ user, nombre, size, foto }: { user?: Usuario; nombre?: string; size?: 'sm' | 'lg'; foto?: string | null }) {
   const n = user?.username ?? nombre ?? '?'
   const imagen = foto ?? user?.foto

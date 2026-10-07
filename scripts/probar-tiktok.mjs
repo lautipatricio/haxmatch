@@ -58,6 +58,7 @@ let c = await clips('ana')
 ok(c.tiktok?.vinculada && c.tiktok.nombre === 'ana_tt', 'la cuenta queda vinculada, con su nombre de TikTok')
 ok(c.mios.length === 3 && c.mios.every((r) => r.inicial), 'se importan todos sus videos a la biblioteca')
 ok(c.feed.length === 2 && c.feed[0].titulo.startsWith('Atajadas') && c.feed[0].enlace.includes('tiktok.com/@ana_tt/video/'), 'en Clips aparecen solo los que tienen #haxball o #haxmatch, con su enlace')
+ok(c.feed.every((r) => r.portada === `https://p16.tiktokcdn.test/portada/${r.tiktok_id}.jpg?x-expires=1`), 'y con su miniatura')
 ok((await clips('beto')).feed.length === 2, 'los demás usuarios los ven')
 ok(!JSON.stringify(c).includes('acc-ana_tt') && !JSON.stringify(c).includes('ref-ana_tt'), 'las llaves de TikTok no aparecen en nada de lo que recibe la app')
 

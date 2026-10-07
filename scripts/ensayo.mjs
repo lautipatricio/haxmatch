@@ -18,23 +18,31 @@ const servidor = await iniciarEnsayo(8787, { conWeb: true })
 /**
  * Reproductor de TikTok de mentira. Se porta como el de verdad (comprobado con el
  * real): manda sus avisos como texto, solo se pone en marcha si la dirección trae
- * autoplay=1, y arranca sin sonido. "estricto" imita a los celulares que frenan
- * el video cuando se le pide sonido sin que el usuario toque el video mismo.
+ * autoplay=1, y arranca sin sonido. Tres formas de portarse con el sonido:
+ * - "libre": deja activar el sonido siempre (computadora, Android).
+ * - "iphone": en cada video frena el primer pedido de sonido (el que la app hace
+ *   sola) y acepta los siguientes (los que nacen de un toque del usuario).
+ * - "estricto": no deja nunca; solo sirven los controles del propio video.
  */
-const reproductor = (estricto) => `<!doctype html><body style="margin:0;background:#123;color:#fff;font:16px sans-serif"><p id="e">quieto</p><script>
+const reproductor = (modo) => `<!doctype html><body style="margin:0;background:#123;color:#fff;font:16px sans-serif"><p id="e">quieto</p><p id="c"></p><script>
   const decir = (type, value) => parent.postMessage(JSON.stringify({ type, value, 'x-tiktok-player': true }), '*')
-  let anda = false, mudo = true
+  const modo = ${JSON.stringify(modo)}
+  let anda = false, mudo = true, pedidos = 0
+  const frenado = () => modo === 'estricto' || (modo === 'iphone' && pedidos < 2)
   const pintar = () => { document.getElementById('e').textContent = (anda ? 'reproduciendo' : 'pausado') + (mudo ? ' sin sonido' : ' con sonido') }
-  if (new URLSearchParams(location.search).get('autoplay') === '1') {
+  const q = new URLSearchParams(location.search)
+  document.getElementById('c').textContent = q.get('controls') === '1' ? 'con controles' : 'sin controles'
+  if (q.get('autoplay') === '1') {
     addEventListener('message', (e) => {
       const d = e.data
       if (!d || d['x-tiktok-player'] !== true) return
-      if (d.type === 'play') { anda = true; decir('onStateChange', 1) }
+      if (d.type === 'play' && (mudo || !frenado())) { anda = true; decir('onStateChange', 1) }
       if (d.type === 'pause') { anda = false; decir('onStateChange', 2) }
       if (d.type === 'mute') { mudo = true; decir('onMute', true) }
       if (d.type === 'unMute') {
+        pedidos++
         mudo = false; decir('onMute', false)
-        if (${estricto}) { anda = false; decir('onStateChange', 2) }
+        if (frenado() && anda) { anda = false; decir('onStateChange', 2) }
       }
       pintar()
     })
@@ -43,6 +51,9 @@ const reproductor = (estricto) => `<!doctype html><body style="margin:0;backgrou
     anda = true; decir('onStateChange', 1); pintar()
   }
 </script></body>`
+
+/** Imagen mínima, para las miniaturas de mentira. */
+const PIXEL = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEUlEQVR4nGPQiHLTiHJjgFAAFXYDIRzyJPsAAAAASUVORK5CYII=', 'base64')
 
 const saltar = (destino) => `<!doctype html><script>location.replace(${JSON.stringify(destino)})</script>`
 
@@ -75,7 +86,8 @@ async function conectar(ctx, nombre) {
     vuelta.searchParams.set('state', ida.searchParams.get('state'))
     await ruta.fulfill({ status: 200, contentType: 'text/html', body: saltar(vuelta.toString()) })
   })
-  await ctx.route('https://www.tiktok.com/player/v1/**', (ruta) => ruta.fulfill({ status: 200, contentType: 'text/html', body: reproductor(nombre === 'olga') }))
+  await ctx.route('https://www.tiktok.com/player/v1/**', (ruta) => ruta.fulfill({ status: 200, contentType: 'text/html', body: reproductor(nombre === 'olga' ? 'estricto' : nombre === 'rita' ? 'iphone' : 'libre') }))
+  await ctx.route('https://p16.tiktokcdn.test/**', (ruta) => ruta.fulfill({ status: 200, contentType: 'image/png', body: PIXEL }))
 }
 const web = spawn('npx', ['vite', 'preview', '--outDir', 'dist-ensayo', '--port', String(PUERTO_APP), '--strictPort'], { stdio: 'ignore' })
 const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {})
@@ -406,6 +418,7 @@ try {
   const src = await pato.page.locator('.reel__video iframe').getAttribute('src')
   if (!src.startsWith(`https://www.tiktok.com/player/v1/${golazo}?`)) throw new Error('El reproductor tiene que ser el de TikTok, con el número del video')
   if (!src.includes('autoplay=1')) throw new Error('El reproductor tiene que arrancar solo')
+  await marco.getByText('sin controles').waitFor()
   await pato.boton('Pausar').click()
   await marco.getByText('pausado con sonido').waitFor()
   await pato.boton('Reproducir').click()
@@ -415,7 +428,7 @@ try {
   await pato.boton('Activar el sonido').click()
   await marco.getByText('reproduciendo con sonido').waitFor(); await pato.foto('clip-real')
   // En un celular que no deja activar el sonido solo: el clip sigue andando sin sonido
-  // y ofrece activarlo. Si ni tocando se puede, quedan los controles del propio video.
+  // y ofrece activarlo. Si ni tocando se puede, aparecen los controles del propio video.
   await olga.page.goto(`${URL}/clips`)
   const marcoOlga = olga.page.frameLocator('.reel__video iframe')
   await marcoOlga.getByText('reproduciendo sin sonido').waitFor()
@@ -423,6 +436,7 @@ try {
   await olga.boton('Activar el sonido').click()
   await marcoOlga.getByText('reproduciendo sin sonido').waitFor()
   await olga.page.locator('.reel__toque').waitFor({ state: 'detached' })
+  await marcoOlga.getByText('con controles').waitFor()
   await olga.page.goto(`${URL}/clips/mis-videos`)
   await pato.boton('Reaccionar').click()
   await pato.boton('Quitar reacción').waitFor()
@@ -430,9 +444,34 @@ try {
   await pato.boton('Quitar reacción').waitFor()
   if ((await pato.page.locator('.like').innerText()).trim() !== '1') throw new Error('La reacción tendría que quedar guardada')
   // Olga publica un video nuevo en TikTok y actualiza.
-  servidor.tiktok.publicar('olga_tt', 'Triple pared y adentro #haxmatch', 30)
+  const triple = servidor.tiktok.publicar('olga_tt', 'Triple pared y adentro #haxmatch', 30)
   await olga.boton('Actualizar mis videos').click()
   await olga.ver('Triple pared y adentro', 15000); await olga.ver('Reel nuevo en Clips · +8 puntos')
+  // En un iPhone: cada video arranca sin sonido y alcanza con tocarlo una vez. El cartel
+  // grande sale solo la primera vez; lo elegido (con o sin sonido) queda guardado.
+  const rita = await abrir('rita')
+  await rita.page.goto(`${URL}/clips`)
+  const marcoRita = rita.page.frameLocator('.reel__video iframe')
+  await marcoRita.getByText('reproduciendo sin sonido').waitFor()
+  await rita.page.locator('.reel__sonido--pedir').getByText('Activar sonido').waitFor(); await rita.foto('clip-activar-sonido')
+  await rita.boton('Tocar para activar el sonido').click({ position: { x: 60, y: 320 } })
+  await marcoRita.getByText('reproduciendo con sonido').waitFor()
+  await rita.boton('Silenciar').waitFor(); await rita.boton('Pausar').waitFor()
+  await rita.page.waitForTimeout(2000)
+  await rita.page.evaluate(() => { const f = document.querySelector('.feed'); f.scrollTop = f.scrollHeight })
+  await rita.page.waitForFunction((id) => document.querySelector('.reel__video iframe')?.src.includes(id), golazo)
+  await marcoRita.getByText('reproduciendo sin sonido').waitFor()
+  await rita.ver('Tocá para el sonido')
+  if (await rita.page.locator('.reel__sonido--pedir').count()) throw new Error('El cartel grande de sonido sale solo la primera vez')
+  await rita.boton('Tocar para activar el sonido').click({ position: { x: 60, y: 320 } })
+  await marcoRita.getByText('reproduciendo con sonido').waitFor(); await rita.foto('clip-pantalla-completa')
+  await rita.boton('Silenciar').click()
+  await marcoRita.getByText('reproduciendo sin sonido').waitFor()
+  await rita.page.reload()
+  await marcoRita.getByText('reproduciendo sin sonido').waitFor()
+  await rita.boton('Activar el sonido').waitFor()
+  await rita.page.waitForTimeout(1200)
+  if (await rita.page.getByText('Activar sonido').count() || await rita.page.getByText('Tocá para el sonido').count()) throw new Error('Si el usuario silenció, no se le insiste con el sonido')
   // Oculta el primero: los demás dejan de verlo.
   await olga.page.getByRole('switch', { name: /Golazo de media cancha/ }).click()
   await pato.page.goto(`${URL}/clips`)
@@ -461,6 +500,14 @@ try {
   await pato.ver('Soltá para actualizar')
   await dedo('touchend', 520)
   await pato.ver('No hay clips nuevos', 15000)
+  // En el perfil: cuántos clips tiene, con su miniatura, y al tocar uno se abre ese clip.
+  await olga.page.goto(`${URL}/perfil`)
+  await olga.ver('Tus clips (2)'); await olga.ver('Ver los 4 videos de tu TikTok')
+  await olga.page.waitForFunction(() => { const fotos = [...document.querySelectorAll('.clip-mini img.portada')]; return fotos.length === 2 && fotos.every((f) => f.complete && f.naturalWidth > 0) })
+  await olga.foto('perfil-mis-clips')
+  await olga.link('Ver el clip: Triple pared y adentro #haxmatch').click()
+  await olga.page.waitForFunction((id) => location.pathname === '/clips' && !location.search && document.querySelector('.feed')?.scrollTop > 0 && document.querySelector('.reel__video iframe')?.src.includes(id), triple)
+  await olga.page.goto(`${URL}/clips/mis-videos`)
   // Desvincula: se va todo.
   await olga.boton('Desvincular TikTok').click()
   await olga.boton('Sí, desvincular').click()

@@ -3,19 +3,33 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { REAL } from '../config'
 import { RESULTADO_TIKTOK, tiktokHabilitado } from '../data/clips'
 import { seedReels } from '../data/seed'
-import { YO, feed, nombreDe, useStore } from '../data/store'
+import { YO, buscarMia, feed, nombreDe, useStore } from '../data/store'
 import { nivelDe, totalPuntos } from '../domain/rules'
 import type { Reel } from '../domain/types'
-import { Avatar, BannerBusqueda, Empty, Head, Icon, Sheet, TabBar, hace, useAhora } from '../ui'
+import { Avatar, BannerBusqueda, Empty, Head, Icon, Portada, Sheet, TabBar, hace, useAhora } from '../ui'
 
 const TIKTOK = 'https://www.tiktok.com'
-// Reproductor de TikTok sin sus textos ni videos relacionados: eso lo muestra HaxMatch.
+// Reproductor de TikTok sin sus textos, sus videos relacionados ni su barra de controles:
+// el clip arranca solo y el sonido se maneja con el botón de HaxMatch.
 // Va con autoplay=1: sin eso el reproductor de TikTok no se pone en marcha (ni avisa
 // que está listo, ni obedece) hasta que alguien toca el video mismo.
-const OPCIONES = 'controls=1&progress_bar=1&play_button=1&volume_control=1&fullscreen_button=0&timestamp=0&loop=1&autoplay=1&music_info=0&description=0&rel=0&native_context_menu=0&closed_caption=0'
+const opciones = (controles: boolean) => {
+  const c = controles ? 1 : 0
+  return `controls=${c}&progress_bar=${c}&play_button=${c}&volume_control=${c}&fullscreen_button=0&timestamp=0&loop=1&autoplay=1&music_info=0&description=0&rel=0&native_context_menu=0&closed_caption=0`
+}
 
-/** ¿Los clips van con sonido? Vale mientras la app está abierta; cambia cuando el usuario silencia o activa. */
-let quiereSonido = true
+const CLAVE_SONIDO = 'haxmatch-sonido'
+const leerSonido = () => {
+  try { return window.localStorage.getItem(CLAVE_SONIDO) !== '0' } catch { return true }
+}
+/** ¿Los clips van con sonido? Se elige una vez y vale para todos los clips, también la próxima vez que se abre la app. */
+let quiereSonido = leerSonido()
+/** ¿Ya sonó algún clip desde que se abrió la app? El cartel grande de "Activar sonido" sale solo antes de eso. */
+let yaSono = false
+const elegirSonido = (si: boolean) => {
+  quiereSonido = si
+  try { window.localStorage.setItem(CLAVE_SONIDO, si ? '1' : '0') } catch { /* sin almacenamiento: vale mientras la app está abierta */ }
+}
 
 type AvisoTikTok = { 'x-tiktok-player'?: boolean; type?: string; value?: unknown }
 /** El reproductor de TikTok manda sus avisos como texto; se aceptan las dos formas. */
@@ -30,8 +44,9 @@ function leerAviso(dato: unknown): AvisoTikTok | null {
 /**
  * Video de TikTok, reproducido desde TikTok (no se copia). Arranca solo cuando
  * el clip queda en pantalla. Los navegadores solo dejan arrancar sin sonido,
- * así que al arrancar se pide el sonido; si el celular no lo permite, el video
- * sigue sin sonido y queda el botón para activarlo.
+ * así que al arrancar se pide el sonido (si el usuario no lo silenció). Si el
+ * celular no lo permite sin un toque, el video sigue sin sonido y alcanza con
+ * tocarlo una vez.
  * Encima va una capa que recibe los toques: así se puede deslizar al clip
  * siguiente, cosa que sobre el reproductor solo no se podría.
  */
@@ -41,85 +56,103 @@ function Reproductor({ id, titulo }: { id: string; titulo: string }) {
   const [arranco, setArranco] = useState(false)
   const [pausado, setPausado] = useState(false)
   const [mudo, setMudo] = useState(true)
+  /** El celular no dejó activar el sonido sin que el usuario toque. */
+  const [trabado, setTrabado] = useState(false)
   /** Si el reproductor no obedece, se saca la capa y se usan los controles de TikTok. */
   const [directo, setDirecto] = useState(false)
-  const r = useRef({ listo: false, mudo: true, pausaMia: false, pedido: 0, conToque: false, probado: false })
+  const r = useRef({ listo: false, mudo: true, anda: false, pausaMia: false, pedido: 0, conToque: false, probado: false, reloj: 0 })
+
+  const mandar = useCallback((type: string) => {
+    marco.current?.contentWindow?.postMessage({ 'x-tiktok-player': true, type }, TIKTOK)
+  }, [])
+  const pedirSonido = useCallback((conToque: boolean) => {
+    const x = r.current
+    x.probado = true; x.conToque = conToque; x.pedido = Date.now()
+    mandar('unMute')
+    // Si un rato después sigue andando y con sonido, ya está: los próximos clips no muestran el cartel grande.
+    window.setTimeout(() => { if (x.anda && !x.mudo) { yaSono = true; setTrabado(false) } }, 1800)
+  }, [mandar])
 
   useEffect(() => {
-    const mandar = (type: string) => marco.current?.contentWindow?.postMessage({ 'x-tiktok-player': true, type }, TIKTOK)
+    const x = r.current
     const oir = (e: MessageEvent) => {
       if (e.origin !== TIKTOK || e.source !== marco.current?.contentWindow) return
       const d = leerAviso(e.data)
       if (!d || d['x-tiktok-player'] !== true) return
-      const x = r.current
       if (d.type === 'onPlayerReady' || d.type === 'onStateChange') { x.listo = true; setListo(true) }
       if (d.type === 'onMute') { x.mudo = d.value === true; setMudo(x.mudo) }
       // No pudo arrancar solo (o falló): que se pueda tocar el video mismo.
       if (d.type === 'onPlayerError') setDirecto(true)
       if (d.type === 'onStateChange' && d.value === 1) {
+        x.anda = true; x.pausaMia = false
         setArranco(true); setPausado(false)
-        x.pausaMia = false
         // Arrancó sin sonido: se pide una vez.
-        if (quiereSonido && x.mudo && !x.probado) { x.probado = true; x.pedido = Date.now(); mandar('unMute') }
+        if (quiereSonido && x.mudo && !x.probado) pedirSonido(false)
       }
       if (d.type === 'onStateChange' && d.value === 2) {
+        x.anda = false
         if (x.pausaMia) setPausado(true)
         else if (Date.now() - x.pedido < 1500) {
-          // Se frenó al pedirle sonido: el celular no lo permite. Sigue sin sonido.
+          // Se frenó al pedirle sonido. Puede ser un tropiezo: se le pide que siga. Si no
+          // sigue, es que el celular no deja sonar sin un toque: entonces sigue sin sonido.
           x.pedido = 0
-          mandar('mute'); mandar('play')
-          // Ni tocando el botón: que use el control de sonido del propio video.
-          if (x.conToque) setDirecto(true)
+          mandar('play')
+          window.clearTimeout(x.reloj)
+          x.reloj = window.setTimeout(() => {
+            if (x.anda || x.pausaMia) return
+            mandar('mute'); mandar('play')
+            setTrabado(true)
+            // Ni tocando: se muestran los controles del propio video.
+            if (x.conToque) setDirecto(true)
+          }, 700)
         }
       }
     }
     // Si se va a otra app o pestaña, el clip no sigue sonando.
     const alOcultar = () => {
-      if (document.visibilityState === 'hidden') { r.current.pausaMia = true; mandar('pause') }
+      if (document.visibilityState === 'hidden') { x.pausaMia = true; mandar('pause') }
     }
     window.addEventListener('message', oir)
     document.addEventListener('visibilitychange', alOcultar)
     // Si en un rato el reproductor no dio señales, se deja tocar el video mismo.
-    const t = window.setTimeout(() => { if (!r.current.listo) setDirecto(true) }, 10000)
+    const t = window.setTimeout(() => { if (!x.listo) setDirecto(true) }, 10000)
     return () => {
       window.removeEventListener('message', oir)
       document.removeEventListener('visibilitychange', alOcultar)
-      window.clearTimeout(t)
+      window.clearTimeout(t); window.clearTimeout(x.reloj)
     }
-  }, [])
+  }, [mandar, pedirSonido])
 
-  const mandar = (type: string) => marco.current?.contentWindow?.postMessage({ 'x-tiktok-player': true, type }, TIKTOK)
+  /** Un toque en el video: si está sin sonido y el usuario lo quiere con sonido, lo activa; si no, pausa o sigue. */
   const tocar = () => {
+    const x = r.current
     if (!listo) return
-    if (pausado) { r.current.pausaMia = false; mandar('play') }
-    else { r.current.pausaMia = true; mandar('pause') }
+    if (pausado) { x.pausaMia = false; mandar('play') }
+    if (mudo && quiereSonido) pedirSonido(true)
+    else if (!pausado) { x.pausaMia = true; mandar('pause') }
   }
   const sonido = () => {
-    if (mudo) {
-      quiereSonido = true
-      r.current.conToque = true; r.current.probado = true; r.current.pedido = Date.now()
-      mandar('unMute')
-    } else {
-      quiereSonido = false
-      mandar('mute')
-    }
+    if (mudo) { elegirSonido(true); pedirSonido(true) }
+    else { elegirSonido(false); setTrabado(false); mandar('mute') }
   }
+  const pedir = trabado && mudo && quiereSonido
 
   return (
     <div className="reel__video">
-      <iframe ref={marco} src={`${TIKTOK}/player/v1/${id}?${OPCIONES}`} title={titulo || 'Video de TikTok'}
+      <iframe ref={marco} key={directo ? 'directo' : 'capa'} src={`${TIKTOK}/player/v1/${id}?${opciones(directo)}`} title={titulo || 'Video de TikTok'}
         allow="autoplay; encrypted-media; fullscreen" referrerPolicy="strict-origin-when-cross-origin" />
       {!directo && (
         <>
-          <button type="button" className="reel__toque" aria-label={pausado ? 'Reproducir' : 'Pausar'} onClick={tocar}>
+          <button type="button" className="reel__toque" onClick={tocar}
+            aria-label={pausado ? 'Reproducir' : pedir ? 'Tocar para activar el sonido' : 'Pausar'}>
             {pausado && <span><Icon name="play" size={40} /></span>}
             {!arranco && <span className="m">Cargando el video de TikTok…</span>}
           </button>
           {arranco && (
-            <button type="button" className={`reel__sonido${mudo && quiereSonido ? ' reel__sonido--pedir' : ''}`}
-              aria-label={mudo ? 'Activar el sonido' : 'Silenciar'} onClick={sonido}>
+            <button type="button" className={`reel__sonido${pedir && !yaSono ? ' reel__sonido--pedir' : ''}`}
+              aria-label={mudo ? 'Activar el sonido' : 'Silenciar'} aria-pressed={!mudo} onClick={sonido}>
               <Icon name={mudo ? 'mudo' : 'sonido'} size={20} />
-              {mudo && quiereSonido && <span>Activar sonido</span>}
+              {pedir && <span>{yaSono ? 'Tocá para el sonido' : 'Activar sonido'}</span>}
             </button>
           )}
         </>
@@ -150,6 +183,20 @@ export function Clips() {
   const activo = posicion === -1 ? 0 : posicion
   /** Reacciones a los clips de muestra: no se guardan. */
   const [gustan, setGustan] = useState<string[]>([])
+  /** Con una búsqueda abierta, arriba va su cartel: lo que está debajo se corre. */
+  const conCartel = useStore(buscarMia) !== undefined
+
+  // Llegar directo a un clip (desde el perfil): /clips?v=<clip>.
+  const [parametros, setParametros] = useSearchParams()
+  const pedido = parametros.get('v')
+  useEffect(() => {
+    if (!pedido || !lista.current) return
+    const el = [...lista.current.querySelectorAll<HTMLElement>('.reel')].find((x) => x.dataset.id === pedido)
+    if (!el) return
+    lista.current.scrollTop = el.offsetTop
+    setEnPantalla(pedido)
+    setParametros({}, { replace: true })
+  }, [pedido, ids, s.clipsListos]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Deslizar hacia abajo estando en el primer clip (o girar la rueda hacia arriba): busca clips nuevos.
   const [tiron, setTiron] = useState(0)
@@ -245,7 +292,7 @@ export function Clips() {
   return (
     <div className="screen">
       <div className="screen">
-        <div className="feed" ref={lista} aria-label="Clips. Deslizá para pasar al siguiente. En el primero, deslizá hacia abajo para buscar clips nuevos"
+        <div className={`feed${conCartel ? ' feed--cartel' : ''}`} ref={lista} aria-label="Clips. Deslizá para pasar al siguiente. En el primero, deslizá hacia abajo para buscar clips nuevos"
           onTouchStart={alTocar} onTouchMove={alMover} onTouchEnd={alSoltar} onTouchCancel={alSoltar} onWheel={alRodar}>
           {reels.map((r, i) => {
             const mio = r.userId === YO
@@ -261,33 +308,51 @@ export function Clips() {
               <article key={r.id} data-id={r.id} className={`reel${r.tiktokId ? ' reel--video' : ''}`} style={{ '--tinte': autor?.color } as CSSProperties}
                 aria-label={`${r.titulo}, de ${nombreDe(s, r.userId)}`}>
                 {r.tiktokId ? (
-                  // Solo el clip en pantalla y sus vecinos cargan el reproductor.
-                  i === activo
-                    ? <Reproductor key={r.tiktokId} id={r.tiktokId} titulo={r.titulo} />
-                    : <div className="reel__play"><span><Icon name="play" size={40} /></span></div>
+                  <>
+                    {/* Solo el clip en pantalla carga el reproductor; los demás muestran su miniatura. */}
+                    {i === activo
+                      ? <Reproductor key={r.tiktokId} id={r.tiktokId} titulo={r.titulo} />
+                      : <div className="reel__video reel__video--espera"><Portada src={r.portada} /><span><Icon name="play" size={40} /></span></div>}
+                    {/* Del lado derecho quedan los números de TikTok: lo de HaxMatch va a la izquierda. */}
+                    <div className="reel__info reel__info--video">
+                      <div className="row" style={{ gap: 8 }}>
+                        <Avatar user={autor} nombre={nombreDe(s, r.userId)} foto={mio ? s.perfil?.foto : null} size="sm" />
+                        <div className="strong cut">@{nombreDe(s, r.userId)}{nivel !== null && ` · Nivel ${nivel}`}</div>
+                      </div>
+                      <div className="titulo">{r.titulo}</div>
+                      <div className="row" style={{ gap: 10 }}>
+                        <button className="like num" aria-pressed={reaccione} aria-label={reaccione ? 'Quitar reacción' : 'Reaccionar'} onClick={reaccionar}>
+                          <Icon name="corazon" size={26} fill={reaccione} />{r.reacciones + (reaccione ? 1 : 0)}
+                        </button>
+                        <span className="m cut">{detalle}</span>
+                        {r.enlace && <a className="m reel__enlace" href={r.enlace} target="_blank" rel="noopener noreferrer">Ver en TikTok</a>}
+                      </div>
+                    </div>
+                  </>
                 ) : (
-                  <div className="reel__play">
-                    <span><Icon name="play" size={40} /></span>
-                    <span className="m">
-                      {REAL
-                        ? 'Clip de muestra. Cuando alguien vincule su TikTok, acá van a aparecer los clips de verdad.'
-                        : 'Video de TikTok. En esta versión de prueba no se reproduce.'}
-                    </span>
-                  </div>
+                  <>
+                    <div className="reel__play">
+                      <span><Icon name="play" size={40} /></span>
+                      <span className="m">
+                        {REAL
+                          ? 'Clip de muestra. Cuando alguien vincule su TikTok, acá van a aparecer los clips de verdad.'
+                          : 'Video de TikTok. En esta versión de prueba no se reproduce.'}
+                      </span>
+                    </div>
+                    <div className="reel__info">
+                      <div className="strong cut">@{nombreDe(s, r.userId)}{nivel !== null && ` · Nivel ${nivel}`}</div>
+                      <div className="titulo">{r.titulo}</div>
+                      <div className="m cut">{detalle}</div>
+                    </div>
+                    <div className="reel__acts">
+                      <Avatar user={autor} nombre={nombreDe(s, r.userId)} foto={mio ? s.perfil?.foto : null} />
+                      <button className="like like--col num" aria-pressed={reaccione} aria-label={reaccione ? 'Quitar reacción' : 'Reaccionar'}
+                        onClick={reaccionar}>
+                        <Icon name="corazon" size={30} fill={reaccione} />{r.reacciones + (reaccione ? 1 : 0)}
+                      </button>
+                    </div>
+                  </>
                 )}
-                <div className="reel__info">
-                  <div className="strong cut">@{nombreDe(s, r.userId)}{nivel !== null && ` · Nivel ${nivel}`}</div>
-                  <div className="titulo">{r.titulo}</div>
-                  <div className="m cut">{detalle}</div>
-                  {r.enlace && <a className="m reel__enlace" href={r.enlace} target="_blank" rel="noopener noreferrer">Ver en TikTok</a>}
-                </div>
-                <div className="reel__acts">
-                  <Avatar user={autor} nombre={nombreDe(s, r.userId)} foto={mio ? s.perfil?.foto : null} />
-                  <button className="like like--col num" aria-pressed={reaccione} aria-label={reaccione ? 'Quitar reacción' : 'Reaccionar'}
-                    onClick={reaccionar}>
-                    <Icon name="corazon" size={30} fill={reaccione} />{r.reacciones + (reaccione ? 1 : 0)}
-                  </button>
-                </div>
                 {i === 0 && reels.length > 1 && <div className="reel__pista">Deslizá hacia arriba para ver el siguiente</div>}
               </article>
             )

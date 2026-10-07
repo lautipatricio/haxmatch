@@ -131,6 +131,8 @@ export interface Reel {
   /** Dirección del video en TikTok. */
   enlace?: string
   duracion?: number
+  /** Miniatura del video. La da TikTok y vence a las 6 horas. */
+  portada?: string
   /** Vino con la primera importación, al vincular: no suma puntos. */
   inicial?: boolean
 }
