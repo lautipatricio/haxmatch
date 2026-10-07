@@ -2,6 +2,7 @@ import { useEffect, useId, useState, type ChangeEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { PREVIEW, REAL } from '../config'
 import { cargarFoto, soltarFoto, type FotoElegida } from '../data/foto'
+import { TEXTO_AVISOS, activarAvisos, desactivarAvisos, estadoAvisos, probarAviso, type EstadoAvisos } from '../data/push'
 import { YO, buscarMia, rivalesDe, useStore } from '../data/store'
 import { DIAS_PENDIENTE, diasParaVencer, esPendiente, nivelDe, totalPuntos } from '../domain/rules'
 import { Avatar, CerrarSesion, Head, Icon, TabBar, hace, useAhora } from '../ui'
@@ -41,6 +42,61 @@ function Pendientes() {
         )
       })}
     </section>
+  )
+}
+
+/** Avisos con la app cerrada: se activan en cada celular por separado. */
+function Avisos() {
+  const [estado, setEstado] = useState<EstadoAvisos | null>(null)
+  const [problema, setProblema] = useState<string | null>(null)
+  const [probado, setProbado] = useState<string | null>(null)
+  const [ocupado, setOcupado] = useState(false)
+  const [probando, setProbando] = useState(false)
+  const probar = async () => {
+    setOcupado(true)
+    setProbando(true)
+    setProblema(null)
+    setProbado(null)
+    const r = await probarAviso()
+    if (r.ok) setProbado(r.texto)
+    else setProblema(r.texto)
+    setProbando(false)
+    setOcupado(false)
+  }
+  useEffect(() => {
+    let vivo = true
+    void estadoAvisos().then((e) => { if (vivo) setEstado(e) })
+    return () => { vivo = false }
+  }, [])
+  if (!REAL || estado === null) return null
+  const cambiar = async () => {
+    setOcupado(true)
+    setProbado(null)
+    setProblema(estado === 'activos' ? await desactivarAvisos() : await activarAvisos())
+    setEstado(await estadoAvisos())
+    setOcupado(false)
+  }
+  const sePuede = estado === 'apagados' || estado === 'activos'
+  return (
+    <div className="card card--col">
+      <div className="row">
+        <span style={{ color: estado === 'activos' ? 'var(--accent)' : 'var(--fg2)', display: 'grid' }}><Icon name="campana" /></span>
+        <div className="grow">
+          <div className="strong">Avisos en este celular</div>
+          <div className="m">{TEXTO_AVISOS[estado]}</div>
+        </div>
+      </div>
+      {problema && <div className="err" role="alert">{problema}</div>}
+      {probado && <div className="ok" role="status">{probado}</div>}
+      {estado === 'activos' && (
+        <button className="btn" disabled={ocupado} onClick={() => void probar()}>{probando ? 'Probando…' : 'Mandar un aviso de prueba'}</button>
+      )}
+      {sePuede && (
+        <button className={`btn${estado === 'activos' ? ' btn--sec' : ''}`} disabled={ocupado} onClick={() => void cambiar()}>
+          {estado === 'activos' ? 'Desactivar avisos' : 'Activar avisos'}
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -169,6 +225,7 @@ export function Perfil() {
           {errorFoto && <div className="err" role="alert">{errorFoto}</div>}
 
           <Pendientes />
+          <Avisos />
 
           <h2 className="h sub sub--accent">Tus cuentas</h2>
           <div className="card card--row">

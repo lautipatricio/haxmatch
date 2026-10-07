@@ -13,7 +13,7 @@ import { Notificaciones } from './screens/Notificaciones'
 import { Perfil } from './screens/Perfil'
 import { Referir } from './screens/Referir'
 import { Reportar } from './screens/Reportar'
-import { Empty, Toasts } from './ui'
+import { Empty, FichaJugador, Toasts } from './ui'
 
 /** Solo deja pasar a quien ya entró con Discord y terminó el onboarding. */
 function ConSesion() {
@@ -59,6 +59,17 @@ export function App() {
 
   // Con servidor: mientras haya una cuenta abierta, la cola se mantiene al día.
   useEffect(() => (registrado ? conectarCola() : undefined), [registrado, conectarCola])
+
+  // Al tocar una notificación con la app ya abierta, se va a la pantalla que corresponde.
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return
+    const alAbrir = (e: MessageEvent) => {
+      const d = e.data as { tipo?: string; ruta?: string } | null
+      if (d?.tipo === 'abrir' && typeof d.ruta === 'string' && d.ruta.startsWith('/')) nav(d.ruta)
+    }
+    navigator.serviceWorker.addEventListener('message', alAbrir)
+    return () => navigator.serviceWorker.removeEventListener('message', alAbrir)
+  }, [nav])
 
   // Reloj de la app: vence búsquedas, registra la conexión del día y mueve a los jugadores simulados.
   useEffect(() => {
@@ -108,6 +119,7 @@ export function App() {
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <FichaJugador />
       <Toasts />
       <SinConexion />
     </div>

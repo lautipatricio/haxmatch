@@ -17,7 +17,8 @@ import {
   codigoPendiente, completarRegistro, escucharSesion, guardarCodigoPendiente, ingresarConDiscord, miPerfil, quienInvita,
   quitarFoto, salir, subirFoto, type FilaPerfil,
 } from './cuenta'
-import { GRACIA_MS, aLocal, cola, leerCola, type ColaLocal, type Resumen } from './servidor'
+import { sincronizarAvisos, soltarAvisos } from './push'
+import { GRACIA_MS, aLocal, cola, leerCola, pedirAmistadPorUsuario, type ColaLocal, type Resumen } from './servidor'
 import { REAL } from './supabase'
 import { alCambiar } from './transporte'
 import {
@@ -150,8 +151,16 @@ interface Acciones {
   alternarVisible: (reelId: string) => void
   simularVideoNuevo: () => void
 
-  enviarSolicitud: (username: string) => { ok: boolean; texto: string }
+  /** Agregar a un amigo por su usuario de Discord. */
+  enviarSolicitud: (username: string) => Promise<{ ok: boolean; texto: string }>
+  /** Agregar a un amigo desde su ficha. Devuelve el problema, o null. */
+  pedirAmistad: (userId: string) => Promise<string | null>
   responderSolicitud: (userId: string, aceptar: boolean) => void
+  /** Dejar de ser amigos, o retirar una solicitud que mandé. */
+  quitarAmigo: (userId: string) => void
+  /** Abre la ficha de un jugador (para agregarlo como amigo o reportarlo). */
+  abrirFicha: (userId: string) => void
+  cerrarFicha: () => void
 
   reportar: (d: { reportado: string; motivo: MotivoReporte; detalle: string }) => Promise<string | null>
   alternarBloqueo: (userId: string) => void
@@ -171,6 +180,8 @@ interface Efimero {
   desfaseMs: number
   toasts: Toast[]
   irA: string | null
+  /** Jugador cuya ficha está abierta. */
+  ficha: string | null
 }
 
 export type Store = Datos & Efimero & Acciones
@@ -623,6 +634,30 @@ function aplicarCola(s: Store, n: ColaLocal, primera: boolean): Cambio {
     }
   }
 
+  // Amigos: solicitudes nuevas, solicitudes aceptadas y amigos que se ponen a buscar.
+  if (!primera) {
+    for (const u of n.solicitudes) {
+      if (s.solicitudes.includes(u) || s.amigos.includes(u)) continue
+      notif('solicitud', `${nombre(u)} quiere ser tu amigo`, 'Respondé desde Amigos', u)
+      toast({ texto: `${nombre(u)} quiere ser tu amigo`, to: '/perfil/amigos' })
+    }
+    for (const u of n.amigos) {
+      if (!s.solicitudesEnviadas.includes(u)) continue
+      notif('solicitud', `${nombre(u)} aceptó tu solicitud`, 'Ya son amigos', u)
+      toast({ texto: `${nombre(u)} aceptó tu solicitud`, detalle: 'Ya son amigos.' })
+    }
+    for (const b of n.busquedas) {
+      if (b.estado !== 'activa' || !n.amigos.includes(b.userId) || s.busquedas.some((x) => x.id === b.id)) continue
+      const titulo = b.modo === 'sala'
+        ? `Tu amigo ${nombre(b.userId)} necesita ${b.faltan ?? 1} más`
+        : `Tu amigo ${nombre(b.userId)} se puso disponible`
+      const detalle = b.modo === 'sala' ? `Sala "${b.nombreSala ?? ''}"` : `${(b.formato ?? []).join(', ')} · ${b.cancha.join(', ')}`
+      notif(b.modo === 'sala' ? 'amigo_sala' : 'amigo_disponible', titulo, detalle, b.id)
+      // Si ya estoy en un partido o en un grupo, no interrumpe: queda en Notificaciones.
+      if (!entreAUno && !mia?.liderId) toast({ texto: titulo, detalle, to: '/perfil/amigos' })
+    }
+  }
+
   // Partidos que ya cuentan y todavía no sumaron puntos en este dispositivo.
   const porSumar = n.matches
     .filter((m) => m.contadoAt !== null && soyParte(m) && !st.eventos.some((e) => e.tipo === 'amistoso' && e.referencia === m.id))
@@ -645,6 +680,9 @@ function aplicarCola(s: Store, n: ColaLocal, primera: boolean): Cambio {
     mensajes: n.mensajes,
     matches: n.matches,
     resumen: n.resumen,
+    amigos: n.amigos,
+    solicitudes: n.solicitudes,
+    solicitudesEnviadas: n.enviadas,
     desfaseMs: n.desfaseMs,
     eventos: st.eventos,
     notifs: st.notifs.slice(0, 50),
@@ -705,6 +743,7 @@ export const useStore = create<Store>()((set, get) => {
   ...inicial,
   toasts: [],
   irA: null,
+  ficha: null,
   cargandoSesion: REAL,
   colaLista: !REAL,
   errorCola: null,
@@ -762,12 +801,14 @@ export const useStore = create<Store>()((set, get) => {
     // Aunque no llegue ningún aviso, se pregunta cada tanto. También sirve de
     // señal de vida: el servidor saca de la cola a quien deja de aparecer.
     const cada = setInterval(() => void get().refrescar(), 8 * SEG)
-    const alVolver = () => {
-      if (document.visibilityState === 'visible') void get().refrescar()
-    }
+    // Al volver a la app se pide el estado. Al dejarla también: así el servidor
+    // sabe que desde ese momento lo que pase tiene que llegar como notificación.
+    const alVolver = () => void get().refrescar()
     document.addEventListener('visibilitychange', alVolver)
     window.addEventListener('online', alVolver)
     void get().refrescar()
+    // Si este celular ya tenía los avisos activos, quedan a nombre de esta cuenta.
+    void sincronizarAvisos()
     return () => {
       dejarDeEscuchar()
       clearInterval(cada)
@@ -1014,11 +1055,12 @@ export const useStore = create<Store>()((set, get) => {
     if (REAL) {
       const buscaba = !!miBusqueda(get())
       canceleAt = Date.now()
-      set({ perfil: null, toasts: [], busquedas: [], mensajes: [], colaLista: false })
+      set({ perfil: null, toasts: [], busquedas: [], mensajes: [], colaLista: false, ficha: null })
       guardar(get())
       // La búsqueda se cancela antes de salir: después ya no hay sesión para pedirlo.
       void (async () => {
         if (buscaba) await cola.cancelar()
+        await soltarAvisos()
         await salir()
       })()
       return
@@ -1449,12 +1491,17 @@ export const useStore = create<Store>()((set, get) => {
 
   // ----- Amigos -----
 
-  enviarSolicitud: (username) => {
-    if (REAL) return { ok: false, texto: 'Agregar amigos llega en la próxima actualización.' }
+  enviarSolicitud: async (username) => {
     const s = get()
     const buscado = username.trim().replace(/^@/, '').toLowerCase()
     if (!buscado) return { ok: false, texto: 'Escribí un usuario de Discord.' }
     if (buscado === s.perfil?.username.toLowerCase()) return { ok: false, texto: 'Ese sos vos.' }
+    if (REAL) {
+      const r = await pedirAmistadPorUsuario(buscado)
+      await get().refrescar()
+      if (r.error) return { ok: false, texto: r.error }
+      return { ok: true, texto: r.estado === 'amigos' ? `${r.nick} y vos ya son amigos.` : `Solicitud enviada a ${r.nick}.` }
+    }
     const u = Object.values(s.usuarios).find((x) => x.username.toLowerCase() === buscado)
     if (!u) return { ok: false, texto: 'Ese usuario todavía no está en HaxMatch.' }
     if (s.amigos.includes(u.id)) return { ok: false, texto: `${u.username} ya es tu amigo.` }
@@ -1471,13 +1518,55 @@ export const useStore = create<Store>()((set, get) => {
     return { ok: true, texto: `Solicitud enviada a ${u.username}.` }
   },
 
+  pedirAmistad: async (userId) => {
+    const s = get()
+    if (userId === YO || s.amigos.includes(userId) || s.solicitudesEnviadas.includes(userId)) return null
+    if (s.solicitudes.includes(userId)) {
+      // Ya me había mandado una: aceptarla es lo mismo.
+      get().responderSolicitud(userId, true)
+      return null
+    }
+    if (REAL) {
+      // Se muestra como enviada en el momento; el servidor confirma o avisa el problema.
+      set({ solicitudesEnviadas: [...s.solicitudesEnviadas, userId] })
+      return enServidor(() => cola.pedirAmistad(userId), true)
+    }
+    set({
+      solicitudesEnviadas: [...s.solicitudesEnviadas, userId],
+      programados: [...s.programados, { at: s.ahora() + 5 * SEG, tipo: 'acepta_solicitud', userId }],
+    })
+    guardar(get())
+    return null
+  },
+
   responderSolicitud: (userId, aceptar) => {
     set((s) => ({
       solicitudes: s.solicitudes.filter((u) => u !== userId),
       amigos: aceptar && !s.amigos.includes(userId) ? [...s.amigos, userId] : s.amigos,
     }))
+    if (REAL) {
+      void enServidor(() => cola.responderAmistad(userId, aceptar))
+      return
+    }
     guardar(get())
   },
+
+  quitarAmigo: (userId) => {
+    set((s) => ({
+      amigos: s.amigos.filter((u) => u !== userId),
+      solicitudesEnviadas: s.solicitudesEnviadas.filter((u) => u !== userId),
+    }))
+    if (REAL) {
+      void enServidor(() => cola.quitarAmigo(userId))
+      return
+    }
+    guardar(get())
+  },
+
+  abrirFicha: (userId) => {
+    if (userId !== YO) set({ ficha: userId })
+  },
+  cerrarFicha: () => set({ ficha: null }),
 
   // ----- Moderación -----
 

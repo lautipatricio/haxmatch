@@ -380,3 +380,18 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Foto y nombre de un jugador, como botón: abre su ficha. */
+.persona {
+  display: flex; align-items: center; gap: 12px; min-width: 0;
+  background: none; border: 0; padding: 0; margin: 0;
+  color: inherit; font: inherit; text-align: left; cursor: pointer;
+  border-radius: 12px;
+}
+.persona > .grow { display: block; }
+.persona .strong, .persona .m { display: block; }
+.persona:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+/* Saludo del Inicio, con el nick del usuario. */
+.saludo { font-size: 18px; color: var(--fg2); max-width: 100%; padding: 0 20px; }
+.saludo strong { color: var(--fg); font-weight: 600; }

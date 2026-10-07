@@ -9,7 +9,7 @@ export interface Respuesta<T> {
 }
 
 const SIN_CONEXION = 'No pudimos conectar con el servidor. Revisá tu internet e intentá de nuevo.'
-const SIN_BASE = 'Falta configurar la base de datos de HaxMatch.'
+export const SIN_BASE = 'Falta configurar la base de datos de HaxMatch.'
 const ALGO_SALIO_MAL = 'Algo salió mal. Probá de nuevo.'
 /** Tiempo máximo de espera de un pedido. Sin esto, uno colgado dejaría a la app esperando para siempre. */
 const LIMITE_MS = 15000

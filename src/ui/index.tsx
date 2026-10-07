@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { YO, buscarMia, nombreDe, useStore, type Toast } from '../data/store'
+import { REAL } from '../config'
+import { YO, buscarMia, nombreDe, useStore, usuarioDe, type Toast } from '../data/store'
 import type { Usuario } from '../domain/types'
 
 // ---------- Tiempo ----------
@@ -68,6 +69,82 @@ export function Avatar({ user, nombre, size, foto }: { user?: Usuario; nombre?: 
   return (
     <div className={`av${size ? ` av--${size}` : ''}`} style={user ? { background: user.color } : undefined} aria-hidden="true">
       {imagen ? <img src={imagen} alt="" /> : n.replace(/[^a-zA-Z0-9]/g, '').slice(0, 1) || '?'}
+    </div>
+  )
+}
+
+/**
+ * Foto y nombre de otro jugador. Al tocarlo se abre su ficha, para agregarlo
+ * como amigo o reportarlo.
+ */
+export function Persona({ user, children }: { user: Usuario; children: ReactNode }) {
+  const abrir = useStore((s) => s.abrirFicha)
+  return (
+    <button type="button" className="persona grow" aria-label={`Ver a ${user.username}`} onClick={() => abrir(user.id)}>
+      <Avatar user={user} size="sm" />
+      <span className="grow">{children}</span>
+    </button>
+  )
+}
+
+/** Ficha de un jugador: quién es y qué puedo hacer con él. Se abre desde cualquier lista. */
+export function FichaJugador() {
+  const s = useStore()
+  const nav = useNavigate()
+  const [error, setError] = useState<string | null>(null)
+  const [quitar, setQuitar] = useState(false)
+  const id = s.ficha
+  useEffect(() => { setError(null); setQuitar(false) }, [id])
+  if (!id) return null
+  const u = usuarioDe(s, id)
+  const amigo = s.amigos.includes(id)
+  const enviada = s.solicitudesEnviadas.includes(id)
+  const recibida = s.solicitudes.includes(id)
+  const cerrar = s.cerrarFicha
+  const agregar = async () => setError(await s.pedirAmistad(id))
+  return (
+    <div className="scrim" style={{ zIndex: 40 }} onClick={(e) => { if (e.target === e.currentTarget) cerrar() }}>
+      <div className="sheet" role="dialog" aria-label={`Jugador ${u.username}`}>
+        <div className="row">
+          <Avatar user={u} />
+          <div className="grow">
+            <div className="h cut" style={{ textTransform: 'none' }}>{u.username}</div>
+            <div className="m cut">
+              {u.discord ? `Discord: ${u.discord}` : 'Jugador de HaxMatch'}
+              {amigo && ' · es tu amigo'}
+            </div>
+          </div>
+        </div>
+        {error && <div className="err" role="alert">{error}</div>}
+        {amigo ? (
+          quitar ? (
+            <>
+              <div>¿Dejar de ser amigos? Ya no te vamos a avisar cuando se ponga a buscar.</div>
+              <button className="btn btn--danger" onClick={() => { s.quitarAmigo(id); cerrar() }}>Sí, quitar de amigos</button>
+            </>
+          ) : (
+            <button className="btn btn--sec" onClick={() => setQuitar(true)}>Quitar de amigos</button>
+          )
+        ) : recibida ? (
+          <>
+            <div>{u.username} quiere ser tu amigo.</div>
+            <button className="btn" onClick={() => s.responderSolicitud(id, true)}>Aceptar solicitud</button>
+            <button className="btn btn--sec" onClick={() => s.responderSolicitud(id, false)}>Rechazar</button>
+          </>
+        ) : enviada ? (
+          <>
+            <button className="btn btn--sec" disabled>Solicitud enviada</button>
+            <button className="btn btn--ghost" onClick={() => s.quitarAmigo(id)}>Retirar la solicitud</button>
+          </>
+        ) : (
+          <>
+            <button className="btn" onClick={() => void agregar()}>Agregar a amigos</button>
+            <div className="m">{REAL ? 'Cuando acepte, te avisamos cada vez que se ponga a buscar partido.' : 'Cuando acepte, lo vas a ver primero en la cola.'}</div>
+          </>
+        )}
+        <button className="btn btn--ghost" onClick={() => { cerrar(); nav(`/reportar/${id}`) }}>Reportar o bloquear</button>
+        <button className="btn btn--sec" onClick={cerrar}>Cerrar</button>
+      </div>
     </div>
   )
 }

@@ -423,6 +423,18 @@ begin
   end loop;
 end $$;
 
+-- Cuánto aguanta una búsqueda sin señales de su dueño. El paso 3 (avisos) la
+-- reemplaza para darle más tiempo a quien tiene los avisos activados; por eso
+-- acá solo se crea si todavía no existe.
+do $$
+begin
+  if to_regprocedure('public._aguante(uuid)') is null then
+    execute 'create function public._aguante(p_user uuid) returns interval '
+      || 'language sql stable security definer set search_path = '''' '
+      || 'as ''select interval ''''10 minutes'''''' ';
+  end if;
+end $$;
+
 -- Vence las búsquedas que cumplieron su tiempo o cuyo dueño dejó de dar señales.
 create or replace function public._vencer()
 returns boolean language plpgsql security definer set search_path = '' as $$
@@ -453,8 +465,8 @@ begin
       and (
         -- 15 minutos, más 2 para responder el cartel de renovar.
         (estado = 'activa' and modo = 'jugador' and expira_at is not null and expira_at < now() - interval '2 minutes')
-        -- App cerrada o sin conexión hace 10 minutos.
-        or visto_at < now() - interval '10 minutes'
+        -- App cerrada o sin conexión hace rato (10 minutos; más si tiene los avisos activados).
+        or visto_at < now() - public._aguante(user_id)
       )
     order by creada_at
   loop
@@ -1016,7 +1028,7 @@ revoke all on function
   public._compatibles(text[], text[], text[], text[]), public._equipo_completo(text[], int),
   public._elegir_cancha(text[], text[]), public._recalcular_grupo(uuid), public._evaluar(uuid),
   public._terminar(uuid, text), public._ocupar(uuid, uuid[], text), public._limpiar_pedidos(),
-  public._emparejar(), public._vencer()
+  public._emparejar(), public._vencer(), public._aguante(uuid)
 from public, anon, authenticated;
 
 revoke all on function

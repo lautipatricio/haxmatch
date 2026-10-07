@@ -38,7 +38,7 @@ export function Notificaciones() {
     <div className="screen">
       <Head title="Notificaciones" back="/perfil" />
       {notifs.length === 0 ? (
-        <Empty title="Sin notificaciones" text="Te avisamos cuando un amigo se ponga disponible, necesite jugadores o te escriba." />
+        <Empty title="Sin notificaciones" text="Te avisamos cuando te escriben, cuando entrás a una sala y cuando un amigo se pone a buscar." />
       ) : (
         <div className="scroll">
           <div className="pad">
@@ -51,7 +51,7 @@ export function Notificaciones() {
                 <Accion n={n} />
               </div>
             ))}
-            <p className="m center" style={{ margin: 0 }}>Solo recibís avisos sobre tus amigos.</p>
+            <p className="m center" style={{ margin: 0 }}>Para recibirlos con la app cerrada, activá los avisos desde tu Perfil.</p>
           </div>
         </div>
       )}

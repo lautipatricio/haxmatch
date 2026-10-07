@@ -19,6 +19,12 @@ const IMITACION = `
   grant select, insert, update, delete on storage.objects to authenticated;
   grant usage on sequence storage.objects_id_seq to authenticated;
   create publication supabase_realtime;
+  -- pg_net de mentira: en lugar de mandar el pedido, lo anota para poder revisarlo.
+  create schema net;
+  create table net.pedidos (id bigserial primary key, url text, body jsonb, headers jsonb);
+  create table net._http_response (id bigint, status_code int, content_type text, headers jsonb, content text, timed_out boolean, error_msg text, created timestamptz default now());
+  create function net.http_post(url text, body jsonb default '{}', params jsonb default '{}', headers jsonb default '{}', timeout_milliseconds int default 2000)
+  returns bigint language sql as $$ insert into net.pedidos (url, body, headers) values (url, body, headers) returning id $$;
 `
 
 /** Crea la base y ejecuta todos los SQL de supabase/, dos veces cada uno (tienen que poder repetirse). */

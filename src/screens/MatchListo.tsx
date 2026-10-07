@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { YO, buscarMia, enSala, nombreDe, useStore, usuarioDe } from '../data/store'
 import { DIAS_PENDIENTE } from '../domain/rules'
-import { Avatar, Empty, Head, Icon, Sheet, copiar } from '../ui'
+import { Avatar, Empty, Head, Icon, Persona, Sheet, copiar } from '../ui'
 
 /** Matches donde ya se mostró el cartel "No te olvides", para no repetirlo al volver. */
 const recordados = new Set<string>()
@@ -53,11 +53,10 @@ function MiSalaCompleta({ matchId }: { matchId: string }) {
             const u = usuarioDe(s, p.userId)
             return (
               <div key={p.userId} className="card card--row">
-                <Avatar user={u} size="sm" />
-                <div className="grow">
-                  <div className="strong cut">{u.username}</div>
-                  <div className="m cut">{p.entroAt ? (p.confirmadoAt ? 'Adentro · confirmó' : 'Adentro') : 'No llegó a entrar'}</div>
-                </div>
+                <Persona user={u}>
+                  <span className="strong cut">{u.username}</span>
+                  <span className="m cut">{p.entroAt ? (p.confirmadoAt ? 'Adentro · confirmó' : 'Adentro') : 'No llegó a entrar'}</span>
+                </Persona>
                 {p.entroAt ? (
                   <button className="btn btn--sec" aria-label={`${u.username} se salió`} onClick={() => s.marcarSalio(p.userId, m.id)}>Se salió</button>
                 ) : (
@@ -168,12 +167,11 @@ export function MatchListo() {
             </div>
           )}
 
-          <div className="card">
-            <Avatar user={s.usuarios[m.creadoPor]} nombre={creador} />
-            <div className="grow">
-              <div className="strong">Quién crea la sala</div>
-              <div className="m cut">{creador} · ya está esperando</div>
-            </div>
+          <div className="card card--row">
+            <Persona user={usuarioDe(s, m.creadoPor)}>
+              <span className="strong cut">Quién crea la sala</span>
+              <span className="m cut">{creador} · tocá para agregarlo como amigo</span>
+            </Persona>
           </div>
 
           <Link className={`btn${confirme ? '' : ' btn--ghost'}`} to="/">Volver al inicio</Link>

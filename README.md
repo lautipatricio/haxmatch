@@ -2,7 +2,7 @@
 
 App para armar amistosos de HaxBall desde el celular. PWA en React.
 
-**Estado: cuenta, cola y partidos reales.** El ingreso con Discord, el perfil, la cola, los mensajes, los grupos, las salas y los partidos funcionan entre usuarios de verdad, con el servidor (Supabase) aplicando las reglas. Los puntos y niveles todavía se calculan en cada dispositivo, y los clips, los amigos y los referidos siguen de muestra.
+**Estado: cuenta, cola, partidos, amigos y avisos reales.** El ingreso con Discord, el perfil, la cola, los mensajes, los grupos, las salas, los partidos y los amigos funcionan entre usuarios de verdad, con el servidor (Supabase) aplicando las reglas. Las notificaciones llegan con la app cerrada. Los puntos y niveles todavía se calculan en cada dispositivo, y los clips y la lista de referidos siguen de muestra.
 
 Publicada en https://haxmatch.lauti.workers.dev
 
@@ -14,7 +14,8 @@ Necesitás Node 20 o más nuevo.
 npm install
 npm run dev        # abre la app en http://localhost:5173, con el servidor real
 npm test           # tests de las reglas (puntos, niveles, validación)
-npm run test:sql   # prueba los SQL de supabase/ en una base local (141 comprobaciones)
+npm run test:sql   # prueba los SQL de supabase/ en una base local (193 comprobaciones)
+npm run test:push  # prueba el envío de notificaciones (worker/index.js)
 npm run build      # versión para publicar, en dist/
 npm run probar     # versión de demostración, sin servidor, en http://localhost:4173
 npm run ensayo     # ensayo con varios usuarios a la vez contra una base local
@@ -50,7 +51,21 @@ La web se publica en Cloudflare, conectado a este repositorio: cada cambio en la
 | Preview command | `npx wrangler preview` |
 | Node | 22 (lo toma de `.nvmrc`) |
 
-`wrangler.jsonc` le dice a Cloudflare que publique la carpeta `dist/` y que cualquier dirección abra la app.
+`wrangler.jsonc` le dice a Cloudflare que publique la carpeta `dist/`, que cualquier dirección abra la app y que lo que empieza con `/api/` lo atienda `worker/index.js`.
+
+### Notificaciones (avisos con la app cerrada)
+
+Se configuran una sola vez:
+
+1. Ejecutar `supabase/03_amigos_avisos.sql` en Supabase.
+2. Abrir `https://haxmatch.lauti.workers.dev/api/push/configurar`. Genera tres claves y dice dónde pegarlas: las tres en Cloudflare (como *Secret*) y una línea en el SQL Editor de Supabase.
+3. En cada celular: Perfil > "Activar avisos" y después "Mandar un aviso de prueba".
+
+Las claves no están en el repositorio ni las ve nadie más que quien las carga. `VAPID_PUBLICA` y `VAPID_PRIVADA` identifican a HaxMatch ante los servicios de avisos de los navegadores; `PUSH_SECRETO` la comparten la base y la web para que nadie más pueda pedir que se mande un aviso.
+
+Cómo viaja un aviso: algo cambia en la base (un mensaje, un lugar en una sala, un amigo que se pone a buscar) > un disparador decide a quién avisarle > la base le hace un pedido a `/api/push/enviar` > el Worker cifra el aviso para cada celular y se lo entrega al servicio de avisos del navegador > el service worker (`public/sw.js`) lo muestra. Si el usuario tiene la app abierta y a la vista, no se manda: lo ve ahí.
+
+En iPhone las notificaciones solo funcionan con la app agregada a la pantalla de inicio.
 
 ## Servidor (Supabase)
 
@@ -62,6 +77,7 @@ La web se publica en Cloudflare, conectado a este repositorio: cada cambio en la
 |---|---|
 | `supabase/01_perfiles.sql` | Tabla de perfiles con sus permisos, alta automática al entrar con Discord, registro (nick y región), código de un amigo y la carpeta de fotos de perfil |
 | `supabase/02_cola.sql` | La cola: búsquedas, mensajes, grupos, salas con cupos, partidos, confirmaciones y reportes. La app no toca las tablas: todo pasa por funciones que aplican las reglas. Incluye la señal de tiempo real |
+| `supabase/03_amigos_avisos.sql` | Amigos (solicitudes, aceptar, quitar), las suscripciones de cada celular a los avisos, y los disparadores que deciden qué se avisa y a quién |
 
 ### Cómo funciona la cola
 
@@ -81,6 +97,8 @@ La web se publica en Cloudflare, conectado a este repositorio: cada cambio en la
 | `src/data/servidor.ts` | La cola real: llamadas a las funciones del servidor y traducción de lo que devuelven a la forma que usan las pantallas. |
 | `src/data/transporte.ts` | Cómo se llama a una función y cómo se escucha que algo cambió (Supabase o servidor de ensayo). |
 | `src/data/supabase.ts`, `src/data/cuenta.ts` | Conexión con Supabase: sesión con Discord, perfil y foto. |
+| `src/data/push.ts` | Activar y desactivar los avisos en cada celular, y el aviso de prueba. |
+| `worker/index.js` | Parte de servidor de la web (Cloudflare): cifra y manda las notificaciones. |
 | `src/data/seed.ts` | Datos de muestra y comportamiento de los jugadores simulados de la demostración. |
 | `supabase/` | SQL de la base de datos. |
 | `src/screens/` | Una pantalla por archivo. |
@@ -96,10 +114,10 @@ La web se publica en Cloudflare, conectado a este repositorio: cada cambio en la
 
 En la web publicada:
 
-- **Real:** ingreso con Discord, perfil y foto, cola, mensajes, grupos, salas, partidos, confirmaciones, reportes, y los totales de amistosos jugados y asistencia.
+- **Real:** ingreso con Discord, perfil y foto, cola, mensajes, grupos, salas, partidos, confirmaciones, reportes, amigos, notificaciones, y los totales de amistosos jugados y asistencia.
 - **En el dispositivo:** puntos, nivel y racha (se calculan en el celular con los partidos que confirma el servidor). Bloquear a un jugador también: lo oculta en ese dispositivo.
 - **De muestra:** clips (6 videos inventados, no se reproducen) y la vinculación con TikTok.
-- **Todavía no:** amigos, notificaciones push, lista de referidos y nivel de los demás jugadores.
+- **Todavía no:** lista de referidos y nivel de los demás jugadores.
 
 En modo demostración (`npm run probar`) todo está simulado:
 
@@ -113,6 +131,5 @@ Códigos de amigo de la demostración: `NICO23`, `MATI10`.
 
 ## Próximas etapas
 
-1. Amigos y notificaciones (Web Push con VAPID).
+1. Clips de TikTok (requiere una app registrada en TikTok for Developers y su revisión).
 2. Puntos, niveles y referidos en el servidor.
-3. Clips de TikTok (requiere revisión de TikTok).

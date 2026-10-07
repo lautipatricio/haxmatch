@@ -128,6 +128,31 @@ La cola, los mensajes, los grupos, las salas y los partidos pasan al servidor. L
 
 Cómo se probó: 141 comprobaciones de las reglas sobre una copia local de la base, un ensayo automático con 11 usuarios simultáneos en la app (salas, pedidos, grupos, equipo completo, 15 minutos, "No vino", reportes, cierre de sesión), un ensayo de la versión que se publica, y una revisión independiente del servidor y de la app buscando formas de romperlo (encontró 11 problemas, todos corregidos o anotados abajo). Lo que no se pudo probar desde acá, porque necesita el Supabase real: el ingreso con Discord junto con la cola, los avisos en tiempo real (si fallan, la app igual se actualiza sola cada 8 segundos) y dos personas tocando exactamente al mismo tiempo.
 
+## Amigos, avisos y saludo (7/10/2026)
+
+Pedido: saludo con el nombre en el Inicio, notificaciones con la app en segundo plano, poder tocar a quien está buscando para agregarlo como amigo, y TikTok real (queda para la etapa siguiente, depende de un trámite con TikTok).
+
+- **Inicio:** en lugar de "Amistosos de HaxBall, sin vueltas" dice "Bienvenido, (nick)". El lema queda en la pantalla de ingreso.
+- **Ficha del jugador:** tocando la foto o el nombre de cualquier jugador (en la cola, en "Buscan con vos", en "En tu sala", en "Te escribieron", en Match listo) se abre su ficha: nombre, usuario de Discord, "Agregar a amigos" y "Reportar o bloquear".
+- **Amigos:** se agregan desde la ficha o por usuario de Discord. Son solicitudes: el otro acepta o rechaza. Si los dos se piden amistad, quedan amigos. Hasta 300 amigos y 30 solicitudes por hora.
+- **Qué se avisa** (dentro de la app y, con la app cerrada, como notificación del celular):
+  - alguien quiere entrar a mi sala, o me escribió;
+  - me aceptaron en una sala ("Match listo");
+  - alguien va a entrar a mi sala (uno solo por tanda: si entra un grupo de tres, llega un aviso);
+  - alguien se sumó a mi búsqueda;
+  - un amigo se puso a buscar o abrió una sala;
+  - me mandaron una solicitud de amistad, o aceptaron la mía.
+- **Con la app abierta y a la vista no se manda la notificación:** el aviso ya aparece adentro.
+- **Para que nadie moleste:** si alguien cancela y vuelve a buscar una y otra vez, a sus amigos se les avisa una vez cada 10 minutos y al dueño de una sala una vez cada 5. Una solicitud de amistad retirada y vuelta a mandar no avisa de nuevo ese día.
+- **Los avisos se activan en cada celular,** desde el Perfil o al tocar "Sí, avisarme" cuando se empieza a buscar. En iPhone hay que tener la app en la pantalla de inicio.
+- **"Mandar un aviso de prueba"** en el Perfil: manda una notificación al propio celular y dice si salió o qué falló.
+- **Con avisos activados, la búsqueda aguanta 30 minutos sin señales** (en lugar de 10), porque el usuario se entera por la notificación aunque tenga la app en segundo plano.
+- **Al cerrar sesión,** ese celular deja de recibir los avisos de esa cuenta.
+- **El texto de la notificación no pasa a la vista por ningún intermediario:** va cifrado para ese celular.
+- **Bloquear** sigue siendo por dispositivo: un bloqueado todavía puede mandar una solicitud de amistad.
+
+Cómo se probó: 193 comprobaciones del servidor, 25 del envío de avisos (el cifrado se comparó con las dos librerías de referencia), el ensayo con usuarios simultáneos ampliado con amigos, la ruta de la web con el motor de Cloudflare en local, y una segunda revisión independiente (encontró 8 problemas menores; corregidos). Lo que no se puede probar desde acá: que el aviso llegue de verdad a un celular (los servicios de Google y Apple solo se pueden usar desde la web publicada). Para eso está el botón de prueba.
+
 ## Decisiones que tomé al construir (revisar)
 
 1. **El match siempre es con una sala.** Dos jugadores sin sala ya no generan match: se juntan en una misma búsqueda. Quien creó la sala ve "Ya entró X a la sala" y el que se une ve "Ya entré a la sala".
@@ -149,7 +174,9 @@ Cómo se probó: 141 comprobaciones de las reglas sobre una copia local de la ba
 - **El dueño acepta y el jugador entra sin que le pregunten.** Es lo que se pidió ("automático"), pero con gente real puede pasar que el jugador ya no esté mirando. Si no entra, el dueño usa "No vino".
 - **Cancelar sin conexión:** la búsqueda desaparece de la pantalla y vuelve al reconectar, con un aviso genérico.
 - **Carga:** cada cambio hace que todas las apps abiertas vuelvan a pedir el estado. Alcanza para empezar; con muchos usuarios a la vez hay que afinarlo.
-- **¿10 minutos sin señales es poco?** Con la app en segundo plano la búsqueda se cae. Revisar cuando haya notificaciones push.
+- **Tiempo sin señales:** 10 minutos sin avisos, 30 con avisos activados. Revisar con el uso real.
+- **Aviso de "pasaron 15 minutos"** con la app cerrada: hoy no se manda (haría falta una tarea programada en el servidor).
+- **Bloqueos en el servidor,** para que un bloqueado no pueda mandar solicitudes ni mensajes.
 - **Bloqueos en el servidor,** para que la app no acerque a mi sala a alguien que bloqueé.
 - **Moderación:** hoy los reportes solo se guardan. Falta definir quién los revisa y qué pasa con el reportado. Las fotos de perfil tampoco se moderan todavía.
 - **¿"Se salió" tiene que avisarle al jugador o afectar su asistencia?** Hoy solo libera el lugar.

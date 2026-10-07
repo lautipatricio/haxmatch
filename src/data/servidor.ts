@@ -4,7 +4,7 @@
 import type { Busqueda, Cancha, Formato, Match, Mensaje, Posicion, Region, Usuario } from '../domain/types'
 import { YO } from './seed'
 import { SUPABASE_URL } from './supabase'
-import { rpc } from './transporte'
+import { SIN_BASE, rpc } from './transporte'
 
 // ---- Lo que devuelve estado_cola ----
 
@@ -34,9 +34,12 @@ export interface EstadoCola {
   mensajes: FilaMensaje[]
   matches: FilaMatch[]
   /** foto: versión de la foto de perfil, o null si no tiene. */
-  usuarios: Array<{ id: string; nick: string; username: string; foto: string | null }>
+  usuarios: FilaUsuario[]
   resumen: Resumen | null
+  /** Amigos y solicitudes. relacion: amigo, enviada (la mandé yo) o recibida. */
+  amigos?: Array<FilaUsuario & { relacion: 'amigo' | 'enviada' | 'recibida' }>
 }
+interface FilaUsuario { id: string; nick: string; username: string; foto: string | null }
 
 /** Totales del perfil: partidos que contaron y partidos anotados que no se jugaron. */
 export interface Resumen {
@@ -50,6 +53,11 @@ export interface ColaLocal {
   mensajes: Mensaje[]
   matches: Match[]
   resumen: Resumen
+  amigos: string[]
+  /** Solicitudes de amistad que me mandaron. */
+  solicitudes: string[]
+  /** Solicitudes que mandé y todavía no respondieron. */
+  enviadas: string[]
   /** Diferencia entre el reloj del servidor y el del dispositivo. */
   desfaseMs: number
 }
@@ -75,13 +83,14 @@ export function aLocal(e: EstadoCola, miId: string): ColaLocal {
   const ahora = Date.parse(e.ahora)
 
   const usuarios: Record<string, Usuario> = {}
-  for (const u of e.usuarios) {
+  for (const u of [...e.usuarios, ...(e.amigos ?? [])]) {
     // La dirección de la foto se arma acá, con la carpeta del usuario: del servidor solo llega la versión.
     const foto = u.foto !== null && SUPABASE_URL
       ? `${SUPABASE_URL}/storage/v1/object/public/avatares/${u.id}/foto.jpg?v=${encodeURIComponent(u.foto)}`
       : null
     usuarios[id(u.id)] = { id: id(u.id), username: u.nick, discord: u.username, nivel: null, color: colorDe(u.id), foto }
   }
+  const conRelacion = (r: 'amigo' | 'enviada' | 'recibida') => (e.amigos ?? []).filter((a) => a.relacion === r).map((a) => a.id)
 
   const porId = new Map(e.busquedas.map((b) => [b.id, b]))
   const sumadosA = (b: FilaBusqueda) => e.busquedas.filter((x) => x.lider_id === b.id && x.estado === 'agrupada')
@@ -157,13 +166,21 @@ export function aLocal(e: EstadoCola, miId: string): ColaLocal {
   }))
 
   const resumen = { jugados: Number(e.resumen?.jugados ?? 0), perdidos: Number(e.resumen?.perdidos ?? 0) }
-  return { usuarios, busquedas, mensajes, matches, resumen, desfaseMs: ahora - Date.now() }
+  return {
+    usuarios, busquedas, mensajes, matches, resumen,
+    amigos: conRelacion('amigo'), solicitudes: conRelacion('recibida'), enviadas: conRelacion('enviada'),
+    desfaseMs: ahora - Date.now(),
+  }
 }
 
 // ---- Llamadas ----
 
 export async function leerCola(): Promise<{ estado?: EstadoCola; error?: string }> {
-  const r = await rpc<EstadoCola>('estado_cola')
+  // Se avisa si la app está a la vista: con la app en segundo plano, lo que pase llega como notificación.
+  const visible = typeof document === 'undefined' || document.visibilityState === 'visible'
+  let r = await rpc<EstadoCola>('estado', { p_visible: visible })
+  // Si la base todavía no tiene el paso 3 (amigos y avisos), la cola sigue funcionando sin eso.
+  if (r.error === SIN_BASE) r = await rpc<EstadoCola>('estado_cola')
   return r.data ? { estado: r.data } : { error: r.error }
 }
 
@@ -192,4 +209,16 @@ export const cola = {
     hacer('convertir_en_sala', { p_nombre: nombre, p_faltan: faltan, p_entre_nosotros: entreNosotros }),
   reportar: (usuario: string, motivo: string, detalle: string) =>
     hacer('reportar', { p_user: usuario, p_motivo: motivo, p_detalle: detalle }),
+  pedirAmistad: (usuario: string) => hacer('pedir_amistad', { p_user: usuario }),
+  responderAmistad: (usuario: string, aceptar: boolean) => hacer('responder_amistad', { p_user: usuario, p_aceptar: aceptar }),
+  quitarAmigo: (usuario: string) => hacer('quitar_amigo', { p_user: usuario }),
+  guardarSuscripcion: (endpoint: string, p256dh: string, auth: string) =>
+    hacer('guardar_suscripcion', { p_endpoint: endpoint, p_p256dh: p256dh, p_auth: auth }),
+  quitarSuscripcion: (endpoint: string) => hacer('quitar_suscripcion', { p_endpoint: endpoint }),
+}
+
+/** Agregar a un amigo por su usuario de Discord. Devuelve cómo quedó, o el problema. */
+export async function pedirAmistadPorUsuario(usuario: string): Promise<{ nick?: string; estado?: 'enviada' | 'amigos'; error?: string }> {
+  const r = await rpc<{ nick: string; estado: 'enviada' | 'amigos' }>('pedir_amistad_por_usuario', { p_username: usuario })
+  return r.data ? r.data : { error: r.error ?? 'No pudimos mandar la solicitud. Probá de nuevo.' }
 }

@@ -100,7 +100,7 @@ try {
   await beto.boton('Enviar reporte').click()
   await beto.ver('Reporte enviado')
   // Sin las funciones nuevas en la base (falta ejecutar el SQL), la app lo dice claro.
-  const esperadas = ['mi_perfil', 'completar_registro', 'estado_cola', 'crear_busqueda', 'responder_aviso', 'responder_mensaje', 'marcar_entro', 'confirmar_match', 'reportar']
+  const esperadas = ['mi_perfil', 'completar_registro', 'estado', 'crear_busqueda', 'responder_aviso', 'responder_mensaje', 'marcar_entro', 'confirmar_match', 'reportar']
   const faltan = esperadas.filter((f) => !llamadas.has(f))
   if (faltan.length) throw new Error(`La app no llamó a: ${faltan.join(', ')}`)
   console.log('\nVersión publicada: todo bien.')

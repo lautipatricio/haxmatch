@@ -1,11 +1,26 @@
-// Configuración de Cloudflare: publica la carpeta dist/ como sitio estático.
-// "single-page-application" hace que cualquier dirección abra la app,
-// para que funcionen los links internos (/perfil, /clips, etc.).
+// Configuración de Cloudflare.
+// - La web son los archivos de dist/. "single-page-application" hace que
+//   cualquier dirección abra la app, para que funcionen los links internos
+//   (/perfil, /clips, etc.).
+// - worker/index.js atiende solo lo que empieza con /api/ (hoy, mandar las
+//   notificaciones). El resto se sirve directo desde dist/.
+// - Las claves de los avisos (VAPID_PUBLICA, VAPID_PRIVADA, PUSH_SECRETO) se
+//   cargan en el panel de Cloudflare como "Secret". No van en este archivo.
 {
   "name": "haxmatch",
+  "main": "worker/index.js",
   "compatibility_date": "2026-10-01",
+  // Lo que se cargue a mano en el panel no se borra al publicar.
+  "keep_vars": true,
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  // Datos públicos del proyecto de Supabase (los mismos de .env.production).
+  "vars": {
+    "SUPABASE_URL": "https://kinckqzqgbnplchyrvhj.supabase.co",
+    "SUPABASE_KEY": "sb_publishable_RDSaEKcPGpviQsKr0ks2-w_j5HCHyTW"
   }
 }

@@ -6,7 +6,8 @@ import {
 } from '../data/store'
 import { jugadoresPorEquipo } from '../domain/rules'
 import { FALTAN, type Busqueda } from '../domain/types'
-import { Avatar, Chips, Empty, Sheet, TabBar, mmss, useAhora } from '../ui'
+import { activarAvisos, tieneArreglo } from '../data/push'
+import { Chips, Empty, Persona, Sheet, TabBar, mmss, useAhora } from '../ui'
 
 const lista = (v: readonly string[] | null) => (v ?? []).join(', ')
 const faltan = (n: number | undefined) => `falta${n === 1 ? '' : 'n'} ${n ?? 1}`
@@ -39,16 +40,15 @@ export function FilaDisponible({ b, detalle }: { b: Busqueda; detalle?: string }
   const sumado = !!mia?.liderId
   return (
     <div className="card card--row">
-      <Avatar user={u} size="sm" />
-      <div className="grow">
-        <div className="strong cut">
+      <Persona user={u}>
+        <span className="strong cut">
           {u.username}{son > 1 && ` +${son - 1}`}
           {s.amigos.includes(u.id) && <span className="tag">AMIGO</span>}
           {/* Solo se marca cuando hay un grupo de por medio: con un jugador suelto no dice nada. */}
           {encajaJusto(s, b) && Math.max(somos, son) > 1 && <span className="tag">JUSTO</span>}
-        </div>
-        <div className="m cut">{noEntran ? motivo : detalle ?? `${nivelTexto(u)}${resumenBusqueda(b)}`}</div>
-      </div>
+        </span>
+        <span className="m cut">{noEntran ? motivo : detalle ?? `${nivelTexto(u)}${resumenBusqueda(b)}`}</span>
+      </Persona>
       {enviado?.estado === 'pendiente' ? (
         <button className="btn btn--sec" disabled>Enviado</button>
       ) : enviado?.estado === 'rechazado' ? (
@@ -166,11 +166,10 @@ function EnMiSala({ onEntro }: { onEntro: (uid: string) => void }) {
         if (adentro) {
           return (
             <div key={p.userId} className="card card--row">
-              <Avatar user={u} size="sm" />
-              <div className="grow">
-                <div className="strong cut">{u.username}</div>
-                <div className="m cut">{p.confirmadoAt ? 'Adentro · confirmó' : 'Adentro'}</div>
-              </div>
+              <Persona user={u}>
+                <span className="strong cut">{u.username}</span>
+                <span className="m cut">{p.confirmadoAt ? 'Adentro · confirmó' : 'Adentro'}</span>
+              </Persona>
               <button className="btn btn--sec" aria-label={`${u.username} se salió`} onClick={() => s.marcarSalio(p.userId)}>Se salió</button>
             </div>
           )
@@ -179,11 +178,10 @@ function EnMiSala({ onEntro }: { onEntro: (uid: string) => void }) {
         return (
           <div key={p.userId} className="card card--col card--accent" style={{ gap: 10 }}>
             <div className="row">
-              <Avatar user={u} size="sm" />
-              <div className="grow">
-                <div className="strong cut">{u.username}</div>
-                <div className="m cut">Aceptado · todavía no entró</div>
-              </div>
+              <Persona user={u}>
+                <span className="strong cut">{u.username}</span>
+                <span className="m cut">Aceptado · todavía no entró</span>
+              </Persona>
             </div>
             <div className="row">
               <button className="btn grow" aria-label={`Ya entró ${u.username} a la sala`} onClick={() => onEntro(p.userId)}>Ya entró</button>
@@ -219,6 +217,11 @@ export function Buscando() {
     return () => clearTimeout(t)
   }, [])
   const cargando = espera || !s.colaLista
+  // "Sí, avisarme": además de los avisos dentro de la app, activa las notificaciones de este celular.
+  const avisarme = async () => {
+    const problema = await activarAvisos()
+    if (tieneArreglo(problema)) useStore.setState((st) => ({ toasts: [...st.toasts, { id: `avisos-${Date.now()}`, texto: 'Avisos del celular sin activar', detalle: problema ?? '', to: '/perfil', toLabel: 'Ver' }].slice(-2) }))
+  }
   // Si alguien pospuesto deja la sala y después vuelve, su cartel aparece de nuevo.
   const enMiSala = enSala(miSala(s)).map((p) => p.userId).join(',')
   useEffect(() => {
@@ -308,7 +311,7 @@ export function Buscando() {
             ? 'Te avisamos cuando alguien se postule a tu sala. Mientras tanto, mirá clips.'
             : 'Te avisamos cuando se arme un partido para vos. Mientras tanto, mirá clips.'}
         </div>
-        <button className="btn" onClick={() => { s.responderAviso(true); nav('/clips') }}>Sí, avisarme y ver clips</button>
+        <button className="btn" onClick={() => { void avisarme(); s.responderAviso(true); nav('/clips') }}>Sí, avisarme y ver clips</button>
         <button className="btn btn--sec" onClick={() => s.responderAviso(false)}>No, gracias</button>
       </Sheet>
     )
@@ -338,11 +341,10 @@ export function Buscando() {
                 const con = m.con ?? []
                 return (
                   <div key={m.id} className="card card--row card--accent">
-                    <Avatar user={u} size="sm" />
-                    <div className="grow">
-                      <div className="strong cut">{u.username}{con.length > 0 && ` +${con.length}`}</div>
-                      <div className="m cut">{m.texto}</div>
-                    </div>
+                    <Persona user={u}>
+                      <span className="strong cut">{u.username}{con.length > 0 && ` +${con.length}`}</span>
+                      <span className="m cut">{m.texto}</span>
+                    </Persona>
                     <div className="acts">
                       <button className="btn" aria-label={`Aceptar a ${u.username}`} onClick={() => s.responderMensaje(m.id, true)}>Aceptar</button>
                       <button className="btn btn--sec" aria-label={`Rechazar a ${u.username}`} onClick={() => s.responderMensaje(m.id, false)}>No</button>
@@ -363,16 +365,15 @@ export function Buscando() {
                 const u = usuarioDe(s, uid)
                 return (
                   <div key={uid} className="card card--row card--accent">
-                    <Avatar user={u} size="sm" />
-                    <div className="grow">
-                      <div className="strong cut">
+                    <Persona user={u}>
+                      <span className="strong cut">
                         {u.username}
                         {s.amigos.includes(uid) && <span className="tag">AMIGO</span>}
-                      </div>
-                      <div className="m cut">
+                      </span>
+                      <span className="m cut">
                         {nivelTexto(u)}{uid === mia.liderId ? 'armó el grupo y maneja la búsqueda' : 'mismo reloj y misma búsqueda'}
-                      </div>
-                    </div>
+                      </span>
+                    </Persona>
                   </div>
                 )
               })}
