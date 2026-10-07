@@ -142,8 +142,8 @@ Pedido: saludo con el nombre en el Inicio, notificaciones con la app en segundo 
   - alguien se sumó a mi búsqueda;
   - un amigo se puso a buscar o abrió una sala;
   - me mandaron una solicitud de amistad, o aceptaron la mía.
-- **Con la app abierta y a la vista no se manda la notificación:** el aviso ya aparece adentro.
-- **Para que nadie moleste:** si alguien cancela y vuelve a buscar una y otra vez, a sus amigos se les avisa una vez cada 10 minutos y al dueño de una sala una vez cada 5. Una solicitud de amistad retirada y vuelta a mandar no avisa de nuevo ese día.
+- **Con la app abierta y a la vista no aparece la notificación:** el aviso ya se ve adentro. Lo decide el celular al recibirla, que es el único que sabe si la app está a la vista en ese momento. (Antes lo decidía el servidor según la última señal de la app, y se perdían los avisos de los primeros segundos después de salir.) En iPhone se muestra siempre, porque Apple lo exige.
+- **Para que nadie moleste:** si alguien cancela y vuelve a buscar una y otra vez, el dueño de una sala recibe hasta 4 avisos suyos en 10 minutos y sus amigos hasta 3. Una solicitud de amistad retirada y vuelta a mandar no avisa de nuevo ese día.
 - **Los avisos se activan en cada celular,** desde el Perfil o al tocar "Sí, avisarme" cuando se empieza a buscar. En iPhone hay que tener la app en la pantalla de inicio.
 - **"Mandar un aviso de prueba"** en el Perfil: manda una notificación al propio celular y dice si salió o qué falló.
 - **Con avisos activados, la búsqueda aguanta 30 minutos sin señales** (en lugar de 10), porque el usuario se entera por la notificación aunque tenga la app en segundo plano.

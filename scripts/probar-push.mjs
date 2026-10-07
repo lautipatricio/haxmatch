@@ -112,12 +112,8 @@ const conDespues = (cuerpo) => worker.fetch(new Request('https://haxmatch.ejempl
   method: 'POST', headers: { 'content-type': 'application/json', 'x-haxmatch-secreto': claves.secreto }, body: JSON.stringify(cuerpo),
 }), env, { waitUntil: (p) => pendientes.push(p) })
 r = await conDespues({ suscripciones: [tel.suscripcion], aviso })
-ok(r.status === 202 && pendientes.length === 1, 'le contesta enseguida a la base y entrega el aviso después')
-await Promise.all(pendientes)
-ok(salientes.length === 1 && JSON.parse(tel.descifrar(salientes[0].body).texto).titulo === aviso.titulo, 'y el aviso igual sale')
-pendientes.length = 0
-r = await conDespues({ suscripciones: [tel.suscripcion], aviso, esperar: true })
-ok(r.status === 200 && (await r.json()).enviados === 1 && !pendientes.length, 'en el aviso de prueba espera y cuenta cómo salió')
+ok(r.status === 200 && (await r.json()).enviados === 1 && pendientes.length === 1, 'entrega el aviso, cuenta cómo salió y se asegura de terminar aunque la base corte antes')
+ok(salientes.length === 1 && JSON.parse(tel.descifrar(salientes[0].body).texto).titulo === aviso.titulo, 'un aviso común sale igual que el de prueba')
 
 console.log('\nOtras direcciones')
 ok((await (await pedir('/api/push/clave')).json()).clave === claves.publica, '/api/push/clave entrega la clave pública')

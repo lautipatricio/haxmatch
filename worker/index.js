@@ -169,14 +169,11 @@ async function enviar(request, env, ctx) {
     }))
     return { enviados: resultados.filter((e) => e >= 200 && e < 300).length, resultados }
   }
-  // Lo normal es contestarle enseguida a la base y entregar los avisos después,
-  // para no tenerla esperando a los servicios de cada celular. En el aviso de
-  // prueba se espera, así se puede contar cómo salió.
-  if (pedido?.esperar !== true && ctx?.waitUntil) {
-    ctx.waitUntil(entregar())
-    return json({ aceptados: suscripciones.length }, 202)
-  }
-  return json(await entregar())
+  // Se espera a entregarlos antes de contestar, así la base guarda cómo salió
+  // cada uno. waitUntil hace que el envío termine aunque la base corte antes.
+  const entrega = entregar()
+  ctx?.waitUntil?.(entrega)
+  return json(await entrega)
 }
 
 // ---------- Página para configurar los avisos por primera vez ----------

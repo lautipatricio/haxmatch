@@ -36,7 +36,12 @@ self.addEventListener('fetch', (e) => {
   )
 })
 
-// Llegó un aviso: se muestra como notificación del celular.
+// Llegó un aviso: se muestra como notificación del celular. Si la app está
+// abierta y a la vista no hace falta, porque el aviso ya aparece adentro.
+// (En iPhone se muestra siempre: Apple exige una notificación por cada aviso.)
+const ES_IPHONE = /iphone|ipad|ipod/i.test(self.navigator.userAgent) ||
+  (/macintosh/i.test(self.navigator.userAgent) && self.navigator.maxTouchPoints > 1)
+
 self.addEventListener('push', (e) => {
   let aviso = {}
   try {
@@ -44,7 +49,7 @@ self.addEventListener('push', (e) => {
   } catch {
     aviso = {}
   }
-  e.waitUntil(self.registration.showNotification(aviso.titulo || 'HaxMatch', {
+  const mostrar = () => self.registration.showNotification(aviso.titulo || 'HaxMatch', {
     body: aviso.cuerpo || '',
     // Un aviso nuevo del mismo tipo reemplaza al anterior y vuelve a sonar.
     tag: aviso.tag || 'haxmatch',
@@ -52,7 +57,15 @@ self.addEventListener('push', (e) => {
     icon: '/icon-192.png',
     badge: '/icon-192.png',
     data: { url: typeof aviso.url === 'string' && aviso.url.startsWith('/') ? aviso.url : '/' },
-  }))
+  })
+  // El aviso de prueba se muestra siempre: es para comprobar que llega.
+  if (ES_IPHONE || aviso.tag === 'prueba') {
+    e.waitUntil(mostrar())
+    return
+  }
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+    .then((ventanas) => (ventanas.some((v) => v.visibilityState === 'visible') ? undefined : mostrar()))
+    .catch(mostrar))
 })
 
 // Tocaron la notificación: se abre la app en la pantalla que corresponde.

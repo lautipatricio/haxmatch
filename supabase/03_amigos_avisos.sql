@@ -8,8 +8,9 @@
 -- - Avisos: cada celular que los activa guarda acá su "suscripción". Cuando pasa
 --   algo que le importa a un usuario (le escriben, lo aceptan en una sala, un
 --   amigo se pone a buscar), la base le pide a la web de HaxMatch que le mande
---   la notificación. Si el usuario tiene la app abierta y a la vista, no se manda:
---   ya lo está viendo ahí.
+--   la notificación. Si justo tiene la app abierta y a la vista, el celular no la
+--   muestra (el aviso ya aparece adentro de la app); eso lo decide el celular,
+--   que es el único que sabe con certeza si la app está a la vista.
 -- - Nada de esto toca las reglas de la cola: los avisos salen de "disparadores"
 --   que miran lo que la cola va guardando.
 
@@ -169,10 +170,8 @@ begin
   if p_user = (select auth.uid()) and coalesce(current_setting('haxmatch.oculto', true), '') <> '1' then
     return;
   end if;
-  -- Si tiene la app abierta y a la vista, ya lo está viendo ahí.
-  if exists (select 1 from public.presencia where user_id = p_user and visto_at > now() - interval '12 seconds') then
-    return;
-  end if;
+  -- Se manda siempre. Si la persona tiene la app a la vista, es su celular el que
+  -- decide no mostrarla: desde acá no se puede saber a tiempo si acaba de salir.
   perform public._enviar_push(p_user, p_titulo, p_cuerpo, p_url, p_tag);
 exception when others then
   null;
@@ -243,11 +242,10 @@ declare
   v_sala boolean;
   v_mas int := coalesce(cardinality(new.con), 0);
 begin
-  -- Si hace un momento ya le llegó un aviso de esta misma persona, no se repite
-  -- (por ejemplo, alguien que cancela y vuelve a buscar una y otra vez).
-  if exists (
-    select 1 from public.mensajes
-    where de = new.de and a = new.a and id <> new.id and creado_at > now() - interval '5 minutes') then
+  -- Tope para que nadie moleste cancelando y volviendo a buscar una y otra vez:
+  -- hasta 4 avisos de la misma persona en 10 minutos.
+  if (select count(*) from public.mensajes
+      where de = new.de and a = new.a and id <> new.id and creado_at > now() - interval '10 minutes') >= 4 then
     return new;
   end if;
   v_sala := exists (select 1 from public.busquedas where user_id = new.a and estado = 'activa' and modo = 'sala');
@@ -333,10 +331,9 @@ returns trigger language plpgsql security definer set search_path = '' as $$
 declare
   f uuid;
 begin
-  -- Si viene de cancelar y volver a buscar, no se insiste.
-  if exists (
-    select 1 from public.busquedas
-    where user_id = new.user_id and id <> new.id and creada_at > now() - interval '10 minutes') then
+  -- Tope para quien cancela y vuelve a buscar muchas veces: hasta 3 avisos a sus amigos en 10 minutos.
+  if (select count(*) from public.busquedas
+      where user_id = new.user_id and id <> new.id and creada_at > now() - interval '10 minutes') >= 3 then
     return new;
   end if;
   foreach f in array public._amigos(new.user_id) loop

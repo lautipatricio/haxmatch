@@ -63,7 +63,9 @@ Se configuran una sola vez:
 
 Las claves no están en el repositorio ni las ve nadie más que quien las carga. `VAPID_PUBLICA` y `VAPID_PRIVADA` identifican a HaxMatch ante los servicios de avisos de los navegadores; `PUSH_SECRETO` la comparten la base y la web para que nadie más pueda pedir que se mande un aviso.
 
-Cómo viaja un aviso: algo cambia en la base (un mensaje, un lugar en una sala, un amigo que se pone a buscar) > un disparador decide a quién avisarle > la base le hace un pedido a `/api/push/enviar` > el Worker cifra el aviso para cada celular y se lo entrega al servicio de avisos del navegador > el service worker (`public/sw.js`) lo muestra. Si el usuario tiene la app abierta y a la vista, no se manda: lo ve ahí.
+Cómo viaja un aviso: algo cambia en la base (un mensaje, un lugar en una sala, un amigo que se pone a buscar) > un disparador decide a quién avisarle > la base le hace un pedido a `/api/push/enviar` > el Worker cifra el aviso para cada celular y se lo entrega al servicio de avisos del navegador > el service worker (`public/sw.js`) lo muestra. Si el usuario tiene la app abierta y a la vista, el service worker no la muestra (salvo en iPhone, donde Apple exige mostrarla): el aviso ya aparece adentro.
+
+Si algún aviso no llega, en Supabase > SQL Editor se puede ver qué contestó la web a los últimos pedidos: `select created, status_code, content, error_msg from net._http_response order by created desc limit 10;`
 
 En iPhone las notificaciones solo funcionan con la app agregada a la pantalla de inicio.
 
