@@ -19,16 +19,17 @@ Para verla en el celular en la misma red wifi: `npm run dev -- --host` y abrí l
 
 ## Publicación
 
-La web se publica con Cloudflare Pages, conectado a este repositorio: cada cambio en la rama `main` se publica solo.
+La web se publica en Cloudflare, conectado a este repositorio: cada cambio en la rama `main` se publica solo.
 
-| Ajuste en Cloudflare Pages | Valor |
+| Ajuste en Cloudflare | Valor |
 |---|---|
-| Framework preset | Vite (o "None") |
+| Nombre del proyecto | `haxmatch` (tiene que coincidir con `name` en `wrangler.jsonc`) |
 | Build command | `npm run build` |
-| Build output directory | `dist` |
+| Deploy command | `npx wrangler deploy` |
+| Preview command | `npx wrangler preview` |
 | Node | 22 (lo toma de `.nvmrc`) |
 
-`public/_redirects` hace que cualquier dirección abra la app (necesario para que funcionen los links internos).
+`wrangler.jsonc` le dice a Cloudflare que publique la carpeta `dist/` y que cualquier dirección abra la app.
 
 ## Cómo está armada
 
