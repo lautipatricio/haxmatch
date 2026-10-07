@@ -27,9 +27,9 @@ function MiSalaCompleta({ matchId }: { matchId: string }) {
     <div className="screen">
       <Head title={contado ? 'Amistoso confirmado' : todos ? 'Match listo' : 'Sala cerrada'} />
       <div className="scroll">
-        <div className="pad" style={{ gap: 12 }}>
-          <div className="check"><Icon name="check" size={48} stroke={3} /></div>
-          <div className="h center" style={{ fontSize: 26 }}>{todos ? 'Tu sala está completa' : 'Tu sala ya no busca'}</div>
+        <div className="pad">
+          <div className="check"><Icon name="check" size={38} stroke={3} /></div>
+          <div className="h center" style={{ fontSize: 30 }}>{todos ? 'Tu sala está completa' : 'Tu sala ya no busca'}</div>
           <div className="m center">
             Sala "{m.nombreSala}" · {todos ? 'ya entraron todos. La búsqueda terminó.' : 'la búsqueda terminó.'}
           </div>
@@ -71,7 +71,7 @@ function MiSalaCompleta({ matchId }: { matchId: string }) {
           <div className="chips" style={{ alignItems: 'center' }}>
             <span className="m">Reportar a</span>
             {otros.map((p) => (
-              <Link key={p.userId} className="chip" to={`/reportar/${p.userId}`} style={{ display: 'grid', placeItems: 'center', textDecoration: 'none' }}>
+              <Link key={p.userId} className="chip" to={`/reportar/${p.userId}`}>
                 {usuarioDe(s, p.userId).username}
               </Link>
             ))}
@@ -118,14 +118,14 @@ export function MatchListo() {
     <div className="screen">
       <Head title={contado ? 'Amistoso confirmado' : 'Match listo'} />
       <div className="scroll">
-        <div className="pad" style={{ gap: 12 }}>
-          <div className="check"><Icon name="check" size={48} stroke={3} /></div>
-          <div className="h center" style={{ fontSize: 26 }}>{titulo}</div>
+        <div className="pad">
+          <div className="check"><Icon name="check" size={38} stroke={3} /></div>
+          <div className="h center" style={{ fontSize: 30 }}>{titulo}</div>
 
           <div className="card card--col">
             <div className="m">Nombre de la sala en HaxBall</div>
             <div className="row">
-              <div className="h grow" style={{ fontSize: 24, textTransform: 'none', overflowWrap: 'anywhere' }}>{m.nombreSala}</div>
+              <div className="h grow" style={{ fontSize: 28, overflowWrap: 'anywhere' }}>{m.nombreSala}</div>
               <button className="btn btn--sec" onClick={async () => setCopiado(await copiar(m.nombreSala))}>
                 <Icon name="copiar" size={18} />{copiado ? 'Copiado' : 'Copiar'}
               </button>

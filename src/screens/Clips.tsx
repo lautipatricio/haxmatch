@@ -151,7 +151,7 @@ function Reproductor({ id, titulo }: { id: string; titulo: string }) {
           {arranco && (
             <button type="button" className={`reel__sonido${pedir && !yaSono ? ' reel__sonido--pedir' : ''}`}
               aria-label={mudo ? 'Activar el sonido' : 'Silenciar'} aria-pressed={!mudo} onClick={sonido}>
-              <Icon name={mudo ? 'mudo' : 'sonido'} size={20} />
+              <Icon name={mudo ? 'mudo' : 'sonido'} stroke={1.75} />
               {pedir && <span>{yaSono ? 'Tocá para el sonido' : 'Activar sonido'}</span>}
             </button>
           )}
@@ -304,6 +304,24 @@ export function Clips() {
             const reaccionar = () => (deMuestra
               ? setGustan((g) => (g.includes(r.id) ? g.filter((x) => x !== r.id) : [...g, r.id]))
               : s.reaccionar(r.id))
+            // Abajo de cada clip: quién lo subió, el título y la reacción.
+            const info = (
+              <div className="reel__info">
+                <div className="reel__autor">
+                  <Avatar user={autor} nombre={nombreDe(s, r.userId)} foto={mio ? s.perfil?.foto : null} size="sm" />
+                  <span className="strong cut">{nombreDe(s, r.userId)}</span>
+                  {nivel !== null && <span className="pill">Nivel {nivel}</span>}
+                </div>
+                <div className="titulo">{r.titulo}</div>
+                <div className="reel__pie">
+                  <button className="like num" aria-pressed={reaccione} aria-label={reaccione ? 'Quitar reacción' : 'Reaccionar'} onClick={reaccionar}>
+                    <Icon name="corazon" size={20} fill={reaccione} />{r.reacciones + (reaccione ? 1 : 0)}
+                  </button>
+                  <span className="m cut grow">{detalle}</span>
+                  {r.enlace && <a className="reel__enlace" href={r.enlace} target="_blank" rel="noopener noreferrer">Ver en TikTok</a>}
+                </div>
+              </div>
+            )
             return (
               <article key={r.id} data-id={r.id} className={`reel${r.tiktokId ? ' reel--video' : ''}`} style={{ '--tinte': autor?.color } as CSSProperties}
                 aria-label={`${r.titulo}, de ${nombreDe(s, r.userId)}`}>
@@ -313,43 +331,19 @@ export function Clips() {
                     {i === activo
                       ? <Reproductor key={r.tiktokId} id={r.tiktokId} titulo={r.titulo} />
                       : <div className="reel__video reel__video--espera"><Portada src={r.portada} /><span><Icon name="play" size={40} /></span></div>}
-                    <div className="reel__info reel__info--video">
-                      <div className="row" style={{ gap: 8 }}>
-                        <Avatar user={autor} nombre={nombreDe(s, r.userId)} foto={mio ? s.perfil?.foto : null} size="sm" />
-                        <div className="strong cut">@{nombreDe(s, r.userId)}{nivel !== null && ` · Nivel ${nivel}`}</div>
-                      </div>
-                      <div className="titulo">{r.titulo}</div>
-                      <div className="row" style={{ gap: 10 }}>
-                        <button className="like num" aria-pressed={reaccione} aria-label={reaccione ? 'Quitar reacción' : 'Reaccionar'} onClick={reaccionar}>
-                          <Icon name="corazon" size={26} fill={reaccione} />{r.reacciones + (reaccione ? 1 : 0)}
-                        </button>
-                        <span className="m cut">{detalle}</span>
-                        {r.enlace && <a className="m reel__enlace" href={r.enlace} target="_blank" rel="noopener noreferrer">Ver en TikTok</a>}
-                      </div>
-                    </div>
+                    {info}
                   </>
                 ) : (
                   <>
                     <div className="reel__play">
-                      <span><Icon name="play" size={40} /></span>
+                      <span><Icon name="play" size={36} /></span>
                       <span className="m">
                         {REAL
                           ? 'Clip de muestra. Cuando alguien vincule su TikTok, acá van a aparecer los clips de verdad.'
                           : 'Video de TikTok. En esta versión de prueba no se reproduce.'}
                       </span>
                     </div>
-                    <div className="reel__info">
-                      <div className="strong cut">@{nombreDe(s, r.userId)}{nivel !== null && ` · Nivel ${nivel}`}</div>
-                      <div className="titulo">{r.titulo}</div>
-                      <div className="m cut">{detalle}</div>
-                    </div>
-                    <div className="reel__acts">
-                      <Avatar user={autor} nombre={nombreDe(s, r.userId)} foto={mio ? s.perfil?.foto : null} />
-                      <button className="like like--col num" aria-pressed={reaccione} aria-label={reaccione ? 'Quitar reacción' : 'Reaccionar'}
-                        onClick={reaccionar}>
-                        <Icon name="corazon" size={30} fill={reaccione} />{r.reacciones + (reaccione ? 1 : 0)}
-                      </button>
-                    </div>
+                    {info}
                   </>
                 )}
                 {i === 0 && reels.length > 1 && <div className="reel__pista">Deslizá hacia arriba para ver el siguiente</div>}
@@ -402,8 +396,8 @@ function CuentaTikTok() {
     setOcupado(false)
   }
   return (
-    <div className={`card card--col${info?.error ? ' card--accent' : ''}`}>
-      <div className="row">
+    <div className={`card card--col${info?.error ? ' card--accent' : ''}`} style={{ gap: 12 }}>
+      <div className="row" style={{ gap: 12 }}>
         <Avatar nombre="T" />
         <div className="grow">
           <div className="strong cut">TikTok vinculado{info?.nombre ? `: ${info.nombre}` : ''}</div>

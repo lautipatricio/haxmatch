@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { YO, useStore } from '../data/store'
 import type { Notif } from '../domain/types'
 import { Empty, Head, Icon, TabBar, hace, useAhora } from '../ui'
@@ -31,19 +31,22 @@ export function Notificaciones() {
   const notifs = useStore((s) => s.notifs)
   const marcarLeidas = useStore((s) => s.marcarLeidas)
   const ahora = useAhora()
+  // La flecha vuelve a donde se tocó la campana (Inicio o Perfil).
+  const desde = (useLocation().state as { desde?: string } | null)?.desde
   // Se marcan como leídas al salir, así se alcanza a ver cuáles eran nuevas.
   useEffect(() => marcarLeidas, [marcarLeidas])
 
   return (
     <div className="screen">
-      <Head title="Notificaciones" back="/perfil" />
+      <Head title="Notificaciones" back={desde === '/' ? '/' : '/perfil'} />
       {notifs.length === 0 ? (
         <Empty title="Sin notificaciones" text="Te avisamos cuando te escriben, cuando entrás a una sala y cuando un amigo se pone a buscar." />
       ) : (
         <div className="scroll">
           <div className="pad">
             {notifs.map((n) => (
-              <div key={n.id} className="card card--row" style={n.leida ? undefined : { boxShadow: 'inset 0 0 0 1px var(--line)' }}>
+              <div key={n.id} className="card card--row">
+                {!n.leida && <span className="punto" role="img" aria-label="Nueva" />}
                 <div className="grow">
                   <div className="strong">{n.titulo}</div>
                   <div className="m">{n.detalle} · {hace(ahora - n.at)}</div>
@@ -55,7 +58,7 @@ export function Notificaciones() {
           </div>
         </div>
       )}
-      <TabBar on="perfil" />
+      <TabBar on={desde === '/' ? 'inicio' : 'perfil'} />
     </div>
   )
 }

@@ -31,7 +31,7 @@ export function Referir() {
           <div className="card">
             <div className="grow">
               <div className="m">Tu código</div>
-              <div className="h" style={{ fontSize: 30, letterSpacing: 2, userSelect: 'all' }}>{codigo}</div>
+              <div className="h num" style={{ fontSize: 34, letterSpacing: '.06em', userSelect: 'all', overflowWrap: 'anywhere' }}>{codigo}</div>
             </div>
             <button className="btn" onClick={() => copiarTexto(codigo, 'Código copiado.')}><Icon name="copiar" size={18} />Copiar</button>
           </div>
@@ -57,9 +57,9 @@ export function Referir() {
           </div>
           {aviso && <div className="ok" role="status">{aviso}</div>}
 
-          <div className="row" style={{ alignItems: 'stretch' }}>
-            <div className="card stat"><div className="h num">{completos}</div><div className="m">amigos referidos</div></div>
-            <div className="card stat"><div className="h num">{puntos}</div><div className="m">puntos ganados</div></div>
+          <div className="stats" style={{ marginTop: 8 }}>
+            <div className="stat"><div className="h num">{completos}</div><div className="m">amigos referidos</div></div>
+            <div className="stat"><div className="h num">{puntos}</div><div className="m">puntos ganados</div></div>
           </div>
 
           <h2 className="h sub">Tus referidos</h2>
@@ -72,7 +72,7 @@ export function Referir() {
           )}
           {s.referidos.map((r) => (
             <div key={r.userId} className="card card--row">
-              <Avatar user={s.usuarios[r.userId]} size="sm" />
+              <Avatar user={s.usuarios[r.userId]} />
               <div className="grow">
                 <div className="strong cut">{s.usuarios[r.userId]?.username ?? 'Jugador'}</div>
                 <div className="m">

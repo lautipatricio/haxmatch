@@ -32,7 +32,7 @@ export function Amigos() {
           <form className="row" onSubmit={(e) => void agregar(e)}>
             <input id="buscar-amigo" className="field grow" value={usuario} placeholder="Usuario de Discord" aria-label="Usuario de Discord"
               autoComplete="off" autoCapitalize="none" onChange={(e) => { setUsuario(e.target.value); setAviso(null) }} />
-            <button className="btn" type="submit" style={{ minHeight: 48 }} disabled={ocupado}>Agregar</button>
+            <button className="btn" type="submit" style={{ minHeight: 52 }} disabled={ocupado}>Agregar</button>
           </form>
           {aviso && <div className={aviso.ok ? 'ok' : 'err'} role="status">{aviso.texto}</div>}
           <div className="m">
@@ -74,7 +74,8 @@ export function Amigos() {
             <div className="m">Para escribirles, primero ponete a buscar partido desde el Inicio.</div>
           )}
 
-          <h2 className="h sub">Tus amigos</h2>
+          {/* Si todos los amigos ya están en "Disponibles ahora", no queda nada para listar acá. */}
+          {(resto.length > 0 || s.solicitudesEnviadas.length > 0 || s.amigos.length === 0) && <h2 className="h sub">Tus amigos</h2>}
           {s.amigos.length === 0 && s.solicitudesEnviadas.length === 0 && (
             <div className="m">Agregá amigos por su usuario de Discord. Te avisamos cuando se ponen a buscar partido.</div>
           )}
@@ -108,7 +109,7 @@ export function Amigos() {
                 const u = usuarioDe(s, id)
                 return (
                   <div key={id} className="card card--row">
-                    <Avatar user={u} size="sm" />
+                    <Avatar user={u} />
                     <div className="grow cut"><span className="strong">{u.username}</span></div>
                     <button className="btn btn--sec" onClick={() => s.alternarBloqueo(id)}>Desbloquear</button>
                   </div>

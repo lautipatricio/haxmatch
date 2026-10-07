@@ -1,7 +1,8 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useId, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { REAL } from '../config'
-import { YO, buscarMia, nombreDe, useStore, usuarioDe, type Toast } from '../data/store'
+import { YO, buscarMia, miRacha, misPuntos, nombreDe, useStore, usuarioDe, type Toast } from '../data/store'
+import { progresoNivel } from '../domain/rules'
 import type { Usuario } from '../domain/types'
 
 // ---------- Tiempo ----------
@@ -35,18 +36,19 @@ export function hace(ms: number): string {
 
 // ---------- Íconos (trazo, como en los mockups) ----------
 
-type IconName = 'inicio' | 'clips' | 'perfil' | 'campana' | 'atras' | 'check' | 'play' | 'x' | 'corazon' | 'copiar' | 'reloj' | 'camara' | 'sonido' | 'mudo'
+type IconName = 'inicio' | 'clips' | 'perfil' | 'campana' | 'atras' | 'flecha' | 'check' | 'play' | 'x' | 'corazon' | 'copiar' | 'reloj' | 'camara' | 'sonido' | 'mudo'
 
 const PATHS: Record<IconName, ReactNode> = {
-  inicio: <path d="M3 11l9-8 9 8v10H3z" />,
-  clips: <><rect x="3" y="4" width="18" height="16" rx="3" /><path d="M10 9l5 3-5 3z" /></>,
-  perfil: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-5 4-7 8-7s8 2 8 7" /></>,
-  campana: <path d="M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7zM10 20h4" />,
-  atras: <path d="M15 5l-7 7 7 7" />,
+  inicio: <path d="M4 11.5 12 4l8 7.5V20h-5.5v-5h-5v5H4z" />,
+  clips: <><rect x="3.5" y="4.5" width="17" height="15" rx="3" /><path d="m10.5 9.5 4.5 2.5-4.5 2.5z" /></>,
+  perfil: <><circle cx="12" cy="8.5" r="3.5" /><path d="M5 20c.6-3.6 3.4-5.5 7-5.5s6.4 1.9 7 5.5" /></>,
+  campana: <path d="M6.5 10a5.5 5.5 0 0 1 11 0c0 5 2 6.5 2 6.5h-15s2-1.5 2-6.5zM10 19.5h4" />,
+  atras: <path d="m15 6-6 6 6 6" />,
+  flecha: <path d="m9 6 6 6-6 6" />,
   check: <path d="M5 12l5 5 9-10" />,
   play: <path d="M8 5l11 7-11 7z" fill="currentColor" stroke="none" />,
-  sonido: <><path d="M4 9v6h4l5 4V5L8 9z" /><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" /></>,
-  mudo: <><path d="M4 9v6h4l5 4V5L8 9z" /><path d="M17 9.5l5 5M22 9.5l-5 5" /></>,
+  sonido: <><path d="M4 9.5v5h3.5L12 18V6L7.5 9.5z" /><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11" /></>,
+  mudo: <><path d="M4 9.5v5h3.5L12 18V6L7.5 9.5z" /><path d="m16 9.5 5 5M21 9.5l-5 5" /></>,
   x: <path d="M6 6l12 12M18 6L6 18" />,
   corazon: <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />,
   copiar: <><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V6a2 2 0 0 1 2-2h9" /></>,
@@ -90,7 +92,7 @@ export function Persona({ user, children }: { user: Usuario; children: ReactNode
   const abrir = useStore((s) => s.abrirFicha)
   return (
     <button type="button" className="persona grow" aria-label={`Ver a ${user.username}`} onClick={() => abrir(user.id)}>
-      <Avatar user={user} size="sm" />
+      <Avatar user={user} />
       <span className="grow">{children}</span>
     </button>
   )
@@ -117,7 +119,7 @@ export function FichaJugador() {
         <div className="row">
           <Avatar user={u} />
           <div className="grow">
-            <div className="h cut" style={{ textTransform: 'none' }}>{u.username}</div>
+            <div className="h cut">{u.username}</div>
             <div className="m cut">
               {u.discord ? `Discord: ${u.discord}` : 'Jugador de HaxMatch'}
               {amigo && ' · es tu amigo'}
@@ -158,10 +160,10 @@ export function FichaJugador() {
   )
 }
 
-export function Head({ title, back, children }: { title: string; back?: string | true; children?: ReactNode }) {
+export function Head({ title, back, chico, children }: { title: string; back?: string | true; chico?: boolean; children?: ReactNode }) {
   const nav = useNavigate()
   return (
-    <header className="head">
+    <header className={`head${chico ? ' head--chico' : ''}`}>
       {back && (
         <button className="back" aria-label="Volver" onClick={() => (back === true ? nav(-1) : nav(back))}>
           <Icon name="atras" />
@@ -234,17 +236,58 @@ export function TabBar({ on }: { on: 'inicio' | 'clips' | 'perfil' }) {
   return (
     <nav className="tabbar" aria-label="Secciones">
       <Link to="/" className={on === 'inicio' ? 'on' : ''} aria-current={on === 'inicio' ? 'page' : undefined}>
-        <Icon name="inicio" />Inicio
+        <Icon name="inicio" size={24} stroke={1.75} />Inicio
       </Link>
       <Link to="/clips" className={on === 'clips' ? 'on' : ''} aria-current={on === 'clips' ? 'page' : undefined}>
-        <Icon name="clips" />Clips
+        <Icon name="clips" size={24} stroke={1.75} />Clips
       </Link>
       <Link to="/perfil" className={on === 'perfil' ? 'on' : ''} aria-current={on === 'perfil' ? 'page' : undefined}>
-        <Icon name="perfil" />Perfil
+        <Icon name="perfil" size={24} stroke={1.75} />Perfil
         {sinLeer && <span className="dot" aria-label="Hay notificaciones sin leer" />}
       </Link>
     </nav>
   )
+}
+
+/** Acceso a las notificaciones, con el punto de "hay sin leer". `desde`: a dónde vuelve la flecha de esa pantalla. */
+export function Campana({ desde }: { desde?: string }) {
+  const sinLeer = useStore((s) => s.notifs.some((n) => !n.leida))
+  return (
+    <Link className="btn btn--sec btn--icon" to="/perfil/notificaciones" state={desde ? { desde } : undefined}
+      aria-label={sinLeer ? 'Notificaciones, hay sin leer' : 'Notificaciones'}>
+      <Icon name="campana" stroke={1.75} />
+      {sinLeer && <span className="dot" />}
+    </Link>
+  )
+}
+
+/** Nivel, racha y avance al próximo nivel. En el perfil es un enlace al detalle. */
+export function TarjetaNivel({ enlace }: { enlace?: boolean }) {
+  const s = useStore()
+  const ahora = useAhora()
+  const p = progresoNivel(misPuntos(s))
+  const racha = miRacha(s, ahora)
+  const avance = Math.round(p.avance * 100)
+  const idPuntos = useId()
+  const dentro = (
+    <>
+      <span className="nivel__t">
+        <span className="h num">Nivel {p.nivel}</span>
+        {racha > 0 && <span className="m num">{racha} {racha === 1 ? 'día seguido' : 'días seguidos'}</span>}
+      </span>
+      <span className="bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={avance} aria-label="Avance al próximo nivel">
+        <span style={{ width: `${avance}%` }} />
+      </span>
+      <span className="m num" id={idPuntos}>
+        {p.hasta === null
+          ? `${p.puntos} puntos · llegaste al nivel máximo`
+          : `${p.puntos} de ${p.hasta} puntos · te faltan ${p.hasta - p.puntos} para el Nivel ${p.nivel + 1}`}
+      </span>
+    </>
+  )
+  return enlace
+    ? <Link className="card card--col nivel" to="/perfil/nivel" aria-label={`Nivel ${p.nivel}. Ver detalle`} aria-describedby={idPuntos}>{dentro}</Link>
+    : <div className="card card--col nivel">{dentro}</div>
 }
 
 export function Sheet({ title, children, clear }: { title: string; children: ReactNode; clear?: boolean }) {
@@ -271,7 +314,7 @@ export function BannerBusqueda({ detalle }: { detalle?: string }) {
       <div className="banner" role="status">
         <Link to="/buscando" className="grow">
           <div className="strong">Tu sala está completa</div>
-          <div style={{ fontSize: 13 }}>Marcá quién ya entró para armar el match</div>
+          <div className="banner__d">Marcá quién ya entró para armar el match</div>
         </Link>
         <Link className="btn" to="/buscando">Ver</Link>
       </div>
@@ -281,9 +324,9 @@ export function BannerBusqueda({ detalle }: { detalle?: string }) {
     <div className="banner" role="status">
       <Link to="/buscando" className="grow">
         <div className="strong num">{texto} · {mmss(ahora - mia.creadaAt)}</div>
-        {detalle && <div style={{ fontSize: 13 }}>{detalle}</div>}
+        {detalle && <div className="banner__d">{detalle}</div>}
       </Link>
-      <button className="btn" onClick={cancelar}>Cancelar</button>
+      <button className="btn btn--sec" onClick={cancelar}>Cancelar</button>
     </div>
   )
 }
@@ -300,7 +343,7 @@ export function BannerMatch() {
     <div className="banner" role="status">
       <Link to={`/match/${m.id}`} className="grow">
         <div className="strong">Tenés un match con {nombreDe(s, m.creadoPor)}</div>
-        <div style={{ fontSize: 13 }}>Entrá a la sala y avisá cuando estés adentro</div>
+        <div className="banner__d">Entrá a la sala y avisá cuando estés adentro</div>
       </Link>
       <Link className="btn" to={`/match/${m.id}`}>Abrir</Link>
     </div>
@@ -311,7 +354,7 @@ export function Empty({ title, text, children }: { title: string; text: string; 
   return (
     <div className="empty">
       <div className="h">{title}</div>
-      <div className="m" style={{ maxWidth: 280 }}>{text}</div>
+      <div className="m" style={{ maxWidth: 300 }}>{text}</div>
       {children}
     </div>
   )

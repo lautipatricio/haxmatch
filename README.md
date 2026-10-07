@@ -155,13 +155,14 @@ Si alguien borra su cuenta y vuelve a entrar con el mismo Discord, una suspensi�
 | `supabase/` | SQL de la base de datos. |
 | `src/screens/` | Una pantalla por archivo. |
 | `src/ui/` | Piezas compartidas: botones, chips, barra inferior, carteles, avisos. |
-| `src/styles.css` | Colores, tipografías y componentes de la sección 8 de la especificación. |
+| `src/styles.css` | Colores, tipografías y componentes. Las reglas del diseño están en `docs/DISENO.md`. |
 | `public/` | Manifest, íconos, service worker de la PWA, y las páginas de Términos y Privacidad (se leen sin entrar a la app). |
 | `scripts/recorrido.mjs` | Recorrido automático por los flujos principales de la demostración, con capturas. |
 | `scripts/servidor-ensayo.mjs`, `scripts/ensayo.mjs`, `scripts/ensayo-produccion.mjs` | Servidor local y ensayos con varios usuarios a la vez. |
 | `scripts/probar-sql.mjs`, `scripts/supabase-local.mjs` | Pruebas de los SQL en una imitación local de Supabase. |
 | `scripts/probar-push.mjs`, `scripts/probar-tiktok.mjs`, `scripts/tiktok-falso.mjs` | Pruebas de la parte de servidor de la web: avisos y TikTok (con un TikTok de mentira). |
 | `docs/DECISIONES.md` | Decisiones tomadas sobre la especificación y puntos abiertos. |
+| `docs/DISENO.md` | El diseño de la app: colores, letras, piezas y reglas para que las pantallas nuevas queden iguales. |
 
 ## Qué es real y qué es de muestra
 

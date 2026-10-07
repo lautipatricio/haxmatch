@@ -117,6 +117,7 @@ async function abrir(nombre) {
     boton: (texto) => page.getByRole('button', { name: texto, exact: true }),
     link: (texto) => page.getByRole('link', { name: texto, exact: true }),
     fila: (texto) => page.locator('.card--row', { hasText: texto }),
+    tab: (texto) => page.locator('.tabbar a', { hasText: texto }),
     ver: (texto, timeout = 12000) => page.getByText(texto, { exact: false }).first().waitFor({ timeout }),
     noVer: async (texto) => { if (await page.getByText(texto, { exact: false }).count()) throw new Error(`${nombre} no debería ver: ${texto}`) },
     foto: (titulo) => page.screenshot({ path: `${dir}/${String(++n).padStart(2, '0')}-${nombre}-${titulo}.png` }),
@@ -182,7 +183,7 @@ try {
   await beto.page.reload()
   await beto.ver('Partido válido · +10 puntos')
   await ana.inicio()
-  await ana.link('Ver perfil').click()
+  await ana.tab('Perfil').click()
   await ana.ver('amistosos jugados')
   if ((await ana.page.locator('.stat .h').first().innerText()) !== '1') throw new Error('Ana debería tener 1 amistoso jugado')
   await ana.ver('100%'); await ana.foto('perfil')
@@ -271,7 +272,7 @@ try {
   // A Caro le queda el partido pendiente en el perfil.
   await caro.inicio()
   await caro.ver('Tenés un match con Ana'); await caro.foto('aviso-de-match')
-  await caro.link('Ver perfil').click()
+  await caro.tab('Perfil').click()
   await caro.ver('Por confirmar (1)'); await caro.foto('pendiente')
   await caro.boton('No lo jugué').click()
   await caro.page.waitForTimeout(800)
@@ -316,7 +317,7 @@ try {
   await fran.ver('Se liberó el lugar de Eva')
   await eva.ver('El partido te queda anotado')
   await eva.inicio()
-  await eva.link('Ver perfil').click()
+  await eva.tab('Perfil').click()
   if ((await eva.page.locator('.stat .h').first().innerText()) !== '1') throw new Error('A Eva el partido jugado le tiene que quedar')
   await fran.boton('Cerrar sala').or(fran.boton('Cancelar búsqueda')).click()
   await fran.ver('Quiero jugar un amistoso')
@@ -381,7 +382,7 @@ try {
   paso('Amigos: agregar desde la cola, aceptar, aviso cuando se pone a buscar, agregar por usuario y quitar')
   const lola = await abrir('lola')
   const mora = await abrir('mora')
-  await lola.ver('Bienvenido, Lola'); await lola.foto('saludo')
+  await lola.ver('Hola, Lola'); await lola.foto('saludo')
   await lola.buscar()
   await mora.buscar()
   await mora.page.getByRole('button', { name: 'Ver a Lola' }).click()
@@ -430,7 +431,7 @@ try {
   const pato = await abrir('pato')
   const golazo = servidor.tiktok.publicar('olga_tt', 'Golazo de media cancha #haxball #golazo', 3600)
   servidor.tiktok.publicar('olga_tt', 'Asado del domingo', 1800)
-  await olga.link('Ver clips').click()
+  await olga.tab('Clips').click()
   await olga.ver('Clip de muestra'); await olga.foto('clips-de-muestra')
   await olga.link('Vincular TikTok').click()
   await olga.ver('Vinculá tu cuenta de TikTok'); await olga.foto('vincular')
@@ -442,9 +443,9 @@ try {
   if (olga.page.url().includes('tiktok=')) throw new Error('El resultado de TikTok tendría que salir de la dirección')
   // Otro usuario ve el clip y lo reproduce.
   await pato.page.goto(`${URL}/clips`)
-  await pato.ver('Golazo de media cancha #haxball #golazo'); await pato.ver('@Olga')
+  await pato.ver('Golazo de media cancha #haxball #golazo')
   // El nivel de los demás ya se conoce: lo calcula el servidor.
-  await pato.ver('@Olga · Nivel 0')
+  await pato.page.locator('.reel__autor', { hasText: 'Olga' }).getByText('Nivel 0').waitFor()
   await pato.noVer('Asado del domingo'); await pato.noVer('Clip de muestra')
   // Arranca solo y, como este navegador lo permite, con sonido.
   const marco = pato.page.frameLocator('.reel__video iframe')
@@ -540,7 +541,7 @@ try {
   await pato.ver('No hay clips nuevos', 15000)
   // En el perfil: cuántos clips tiene, con su miniatura, y al tocar uno se abre ese clip.
   await olga.page.goto(`${URL}/perfil`)
-  await olga.ver('Tus clips (2)'); await olga.ver('Ver los 4 videos de tu TikTok')
+  await olga.ver('Tus clips · 2'); await olga.link('Ver los 4 videos').waitFor()
   await olga.page.waitForFunction(() => { const fotos = [...document.querySelectorAll('.clip-mini img.portada')]; return fotos.length === 2 && fotos.every((f) => f.complete && f.naturalWidth > 0) })
   await olga.foto('perfil-mis-clips')
   await olga.link('Ver el clip: Triple pared y adentro #haxmatch').click()
@@ -568,7 +569,7 @@ try {
   // -------------------------------------------------------------------------
   paso('Reportar a un jugador y cerrar sesión con una búsqueda abierta')
   await beto.inicio()
-  await beto.link('Ver perfil').click()
+  await beto.tab('Perfil').click()
   await ana.inicio()
   await ana.abrirSala('sala tres')
   await kira.inicio()
@@ -583,7 +584,7 @@ try {
   if (reportes.length !== 1 || reportes[0].motivo !== 'No apareció') throw new Error('El reporte no quedó guardado en el servidor')
   await juan.inicio()
   await juan.buscar()
-  await juan.page.goto(URL)
+  await juan.page.goto(`${URL}/perfil`)
   await juan.boton('Cerrar sesión').click()
   await juan.boton('Sí, cerrar sesión').click()
   await juan.ver('Entrar con Discord')
@@ -648,7 +649,7 @@ try {
   if (deBeto.length) throw new Error('Al borrar la cuenta, el perfil se tiene que ir del servidor')
   // A los demás no les rompe nada: Ana conserva su partido con Beto.
   await ana.inicio()
-  await ana.link('Ver perfil').click()
+  await ana.tab('Perfil').click()
   await ana.ver('amistosos jugados')
   if (Number(await ana.page.locator('.stat .h').first().innerText()) < 1) throw new Error('A Ana no se le tienen que ir los amistosos que jugó con Beto')
 

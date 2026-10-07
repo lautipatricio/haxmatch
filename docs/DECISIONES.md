@@ -38,7 +38,7 @@ Con varias opciones marcadas, el match se arma con la primera opción que les si
 | Canchas | Se agrega Real Soccer |
 | Textos de los formularios | "Modalidad" en lugar de "Formato" y "Quiero jugar de" en lugar de "Mi posición" |
 | Cuántos faltan | 1 a 7, sin "Más" |
-| Inicio | Se agregan "Ver perfil" y "Cerrar sesión" |
+| Inicio | Se agregan "Ver perfil" y "Cerrar sesión" (con el rediseño del 7/10 pasaron a la barra inferior y al Perfil) |
 | Cola | Dos listas: "Jugadores buscando partidos" y "Salas buscando jugadores" |
 | Jugador que acepta mi mensaje | Se suma a mi búsqueda y a mi reloj. No hay match todavía: seguimos buscando juntos |
 | Sala que acepta mi mensaje | Se genera el match, aunque la sala no coincida con lo que buscaba. Si busco en grupo, entra el grupo completo |
@@ -71,8 +71,8 @@ Qué decidí yo en esta ronda:
 
 ## Foto de perfil (6/10/2026)
 
-- Se elige desde el Perfil, tocando el círculo. Abre la galería del celular (no la cámara).
-- Después de elegirla se abre "Ajustar foto": se arrastra para moverla y se hace zoom (con el control, pellizcando o con la rueda), hasta 4 veces. El círculo muestra cómo va a quedar.
+- Se elige desde el Perfil, tocando el recuadro de la foto. Abre la galería del celular (no la cámara).
+- Después de elegirla se abre "Ajustar foto": se arrastra para moverla y se hace zoom (con el control, pellizcando o con la rueda), hasta 4 veces. El recuadro muestra cómo va a quedar.
 - Todas se guardan cuadradas y del mismo tamaño (256 px), así se ven parejas en toda la app.
 - Se puede quitar, y vuelve a mostrarse la inicial.
 - En esta versión de prueba se guarda en el dispositivo. Con backend va a Supabase Storage.
@@ -91,7 +91,7 @@ Qué decidí yo en esta ronda:
 ## Cerrar sesión (6/10/2026)
 
 - Pide confirmación antes de cerrar.
-- En el Inicio el botón es angosto y va centrado. Antes ocupaba todo el ancho, justo donde en las otras pantallas está la pestaña "Inicio": al tocarla dos veces seguidas, el segundo toque cerraba la sesión.
+- En el Inicio el botón es angosto y va centrado. Antes ocupaba todo el ancho, justo donde en las otras pantallas está la pestaña "Inicio": al tocarla dos veces seguidas, el segundo toque cerraba la sesión. (Con el rediseño del 7/10 el Inicio tiene la barra inferior y el botón quedó solo en el Perfil.)
 
 ## Cola real entre usuarios (6/10/2026)
 
@@ -132,7 +132,7 @@ Cómo se probó: 141 comprobaciones de las reglas sobre una copia local de la ba
 
 Pedido: saludo con el nombre en el Inicio, notificaciones con la app en segundo plano, poder tocar a quien está buscando para agregarlo como amigo, y TikTok real (hecho en la etapa siguiente, ver más abajo).
 
-- **Inicio:** en lugar de "Amistosos de HaxBall, sin vueltas" dice "Bienvenido, (nick)". El lema queda en la pantalla de ingreso.
+- **Inicio:** en lugar de "Amistosos de HaxBall, sin vueltas" dice "Bienvenido, (nick)" (desde el rediseño, "Hola, (nick)"). El lema queda en la pantalla de ingreso.
 - **Ficha del jugador:** tocando la foto o el nombre de cualquier jugador (en la cola, en "Buscan con vos", en "En tu sala", en "Te escribieron", en Match listo) se abre su ficha: nombre, usuario de Discord, "Agregar a amigos" y "Reportar o bloquear".
 - **Amigos:** se agregan desde la ficha o por usuario de Discord. Son solicitudes: el otro acepta o rechaza. Si los dos se piden amistad, quedan amigos. Hasta 300 amigos y 30 solicitudes por hora.
 - **Qué se avisa** (dentro de la app y, con la app cerrada, como notificación del celular):
@@ -214,6 +214,22 @@ Quedó anotado, sin cambiar: el tope de "3 con el mismo rival" mira al conjunto 
 - **Texto del reporte:** decía "varios reportes frenan la subida de nivel", que no era cierto. Ahora dice que una cuenta reportada puede quedar suspendida.
 
 Cómo se probó: 368 comprobaciones del servidor (70 nuevas), el ensayo con usuarios simultáneos (bloquear desde un celular y verlo en otro, suspender y levantar, borrar la cuenta) y una quinta revisión independiente. Esa revisión encontró un problema importante (el identificador de Discord se podía falsear, y con eso esquivar una suspensión) y varios medianos: bloqueos que se podían saltear armando un grupo, partidos de otros que se perdían al borrar una cuenta, suspendidos que podían reabrir una sala o aceptar amigos, y la app borrando la foto antes de saber si la cuenta se iba a poder borrar. Todos corregidos y con su prueba. Lo que no se pudo probar desde acá: borrar un usuario en el Supabase real (es el camino habitual, pero se confirma con la primera cuenta que se borre).
+
+## Rediseño "Cancha" (7/10/2026)
+
+Pedido: que la app se vea más profesional. Se mostraron tres propuestas y se eligió la A, que mantiene los colores y las letras y ordena todo lo demás. Las reglas quedaron en `docs/DISENO.md`. No cambia cómo funciona nada; lo que sí cambia de lugar o de forma:
+
+- **Inicio:** el nombre de la app va chico arriba, con la campana de notificaciones. El saludo pasa a "Hola, (nick)". Las dos entradas dicen para qué sirve cada una; la amarilla es "Quiero jugar un amistoso" (o la de la búsqueda que esté abierta). Abajo aparece **"Amigos buscando"** cuando hay alguno, con el botón "Mensaje" (con servidor, solo si uno también está buscando: es la regla que ya existía).
+- **Barra inferior también en el Inicio.** Reemplaza a "Ver clips" y "Ver perfil".
+- **Cerrar sesión** ya no está en el Inicio: queda en el Perfil, abajo de todo, con la confirmación de siempre.
+- **Búsqueda:** el reloj va grande y a la izquierda, con una barra que muestra cuánto falta para los 15 minutos (o una franja que se mueve, si la búsqueda no vence). Se agrega una flecha para volver al Inicio sin cancelar. "Cancelar búsqueda" es un texto rojo al final, no un botón rojo grande.
+- **Perfil:** la foto es un recuadro de esquinas redondeadas (y el encuadre al elegirla también). El nivel es un bloque con la racha y la barra de avance; al tocarlo abre el detalle. "Amigos" y "Referir amigos" son filas con flecha; "Amigos" avisa si hay solicitudes.
+- **Clips:** el autor va con su foto, su nombre y el nivel en una etiqueta; la reacción es un botón que se pone amarillo al tocarlo. Los clips de muestra usan el mismo armado que los reales.
+- **Aviso de búsqueda abierta:** bloque oscuro con borde amarillo, en lugar de todo amarillo, para que no compita con el botón principal.
+- **Notificaciones:** las nuevas se marcan con un punto amarillo. Si se entra desde el Inicio, la flecha vuelve al Inicio.
+- **Términos y Privacidad:** mismos títulos en minúscula que la app.
+
+Cómo se probó: el recorrido de la demostración, el ensayo con usuarios simultáneos, el ensayo de la versión que se publica y las pruebas del servidor, todos mirando las capturas; además, un celular chico (320 de ancho) y una pantalla de computadora, y una revisión independiente del cambio (encontró cuatro detalles menores, corregidos). Lo que no se pudo probar desde acá: cómo se siente en un celular de verdad (los toques, las animaciones de los carteles) y el reproductor real de TikTok con el diseño nuevo.
 
 ## Decisiones que tomé al construir (revisar)
 

@@ -7,7 +7,7 @@ import {
 import { jugadoresPorEquipo } from '../domain/rules'
 import { FALTAN, type Busqueda } from '../domain/types'
 import { activarAvisos, tieneArreglo } from '../data/push'
-import { Chips, Empty, Persona, Sheet, TabBar, mmss, useAhora } from '../ui'
+import { Chips, Empty, Head, Persona, Sheet, TabBar, mmss, useAhora } from '../ui'
 
 const lista = (v: readonly string[] | null) => (v ?? []).join(', ')
 const faltan = (n: number | undefined) => `falta${n === 1 ? '' : 'n'} ${n ?? 1}`
@@ -20,8 +20,11 @@ export function resumenBusqueda(b: Busqueda): string {
   return `${grupo}${lista(b.formato)} · ${lista(b.cancha)}`
 }
 
-/** Fila de un jugador, un grupo o una sala, con el botón para mandarle un mensaje. */
-export function FilaDisponible({ b, detalle }: { b: Busqueda; detalle?: string }) {
+/**
+ * Fila de un jugador, un grupo o una sala, con el botón para mandarle un mensaje.
+ * `soloVer`: sin el botón (en el Inicio, cuando todavía no estoy buscando).
+ */
+export function FilaDisponible({ b, detalle, soloVer }: { b: Busqueda; detalle?: string; soloVer?: boolean }) {
   const s = useStore()
   const ahora = useAhora()
   const u = usuarioDe(s, b.userId)
@@ -43,13 +46,13 @@ export function FilaDisponible({ b, detalle }: { b: Busqueda; detalle?: string }
       <Persona user={u}>
         <span className="strong cut">
           {u.username}{son > 1 && ` +${son - 1}`}
-          {s.amigos.includes(u.id) && <span className="tag">AMIGO</span>}
+          {s.amigos.includes(u.id) && <span className="tag tag--linea">AMIGO</span>}
           {/* Solo se marca cuando hay un grupo de por medio: con un jugador suelto no dice nada. */}
           {encajaJusto(s, b) && Math.max(somos, son) > 1 && <span className="tag">JUSTO</span>}
         </span>
         <span className="m cut">{noEntran ? motivo : detalle ?? `${nivelTexto(u)}${resumenBusqueda(b)}`}</span>
       </Persona>
-      {enviado?.estado === 'pendiente' ? (
+      {soloVer ? null : enviado?.estado === 'pendiente' ? (
         <button className="btn btn--sec" disabled>Enviado</button>
       ) : enviado?.estado === 'rechazado' ? (
         <button className="btn btn--sec" disabled>No puede</button>
@@ -62,7 +65,7 @@ export function FilaDisponible({ b, detalle }: { b: Busqueda; detalle?: string }
 
 function Vacio({ titulo, texto }: { titulo: string; texto: string }) {
   return (
-    <div className="card card--col center" style={{ padding: 20 }}>
+    <div className="vacio">
       <div className="strong">{titulo}</div>
       <div className="m">{texto}</div>
     </div>
@@ -176,7 +179,7 @@ function EnMiSala({ onEntro }: { onEntro: (uid: string) => void }) {
         }
         // Todavía no entró: o confirma que entró, o libera el lugar si no va a venir.
         return (
-          <div key={p.userId} className="card card--col card--accent" style={{ gap: 10 }}>
+          <div key={p.userId} className="card card--col card--accent" style={{ gap: 12 }}>
             <div className="row">
               <Persona user={u}>
                 <span className="strong cut">{u.username}</span>
@@ -193,7 +196,7 @@ function EnMiSala({ onEntro }: { onEntro: (uid: string) => void }) {
       <div className="chips" style={{ alignItems: 'center' }}>
         <span className="m">Reportar a</span>
         {otros.map((p) => (
-          <Link key={p.userId} className="chip" to={`/reportar/${p.userId}`} style={{ display: 'grid', placeItems: 'center', textDecoration: 'none' }}>
+          <Link key={p.userId} className="chip" to={`/reportar/${p.userId}`}>
             {usuarioDe(s, p.userId).username}
           </Link>
         ))}
@@ -240,7 +243,7 @@ export function Buscando() {
             <button className="btn" onClick={() => void s.refrescar()}>Reintentar</button>
           </Empty>
         ) : (
-          <div className="pad" style={{ paddingTop: 'calc(20px + var(--safe-top))' }} role="status" aria-label="Cargando">
+          <div className="pad" style={{ paddingTop: 'calc(24px + var(--safe-top))' }} role="status" aria-label="Cargando">
             <div className="skeleton" /><div className="skeleton" />
           </div>
         )}
@@ -263,6 +266,10 @@ export function Buscando() {
     : `${lista(mia.formato)} · ${lista(mia.region)} · Cancha: ${lista(mia.cancha)}`
   const esqueleto = <><div className="skeleton" /><div className="skeleton" /></>
   const vencida = mia.expiraAt !== null && mia.expiraAt <= ahora
+  /** Cuánto dura la búsqueda (si vence) y qué parte ya pasó. Vencida, la barra va llena. */
+  const duracion = mia.expiraAt !== null ? Math.round((mia.expiraAt - mia.creadaAt) / 1000) * 1000 : 0
+  const plazo = duracion > 0 ? duracion : null
+  const avance = vencida || !plazo ? 1 : Math.min(1, Math.max(0, (ahora - mia.creadaAt) / plazo))
 
   // Lo que me llegó y todavía no respondí. En mi sala se muestra como cartel; si busco partido, como lista.
   const recibidos = s.mensajes.filter((m) => m.a === YO && m.estado === 'pendiente')
@@ -320,17 +327,26 @@ export function Buscando() {
   return (
     <div className="screen">
       <div className="screen">
+      <Head chico back="/" title={completa ? 'Sala completa' : sala ? 'Buscando jugador' : 'Buscando partido'} />
       <div className="scroll">
-        <div className="pad" style={{ paddingTop: 'calc(20px + var(--safe-top))', gap: 8 }}>
-          <h1 className="h title">{completa ? 'Sala completa' : sala ? 'Buscando jugador' : 'Buscando partido'}</h1>
-          <div className="m">{datos}{sala && ` · Sala "${mia.nombreSala}"`}</div>
-          <div className={`ring${completa ? ' ring--quieto' : ''}`}>
-            <div className="h num" role="timer">{mmss((mia.completaAt ?? ahora) - mia.creadaAt)}</div>
-          </div>
-          <div className="m center num">
-            {completa ? 'Ya no se busca a nadie. Cuando entren todos, queda armado el match.'
-              : lider && vencida ? `Pasaron los 15 minutos. ${lider.username} decide cómo siguen.`
-              : mia.expiraAt ? `Vence en ${mmss(mia.expiraAt - ahora)}` : sala ? 'Sigue buscando hasta completarse' : 'Activa hasta conseguir partido'}
+        <div className="pad" style={{ paddingTop: 0 }}>
+          <div className="reloj">
+            <div className="reloj__fila">
+              <div className="h num reloj__t" role="timer">{mmss((mia.completaAt ?? ahora) - mia.creadaAt)}</div>
+              {plazo !== null && !completa && <div className="m num">de {mmss(plazo)}</div>}
+            </div>
+            {/* Con vencimiento, la barra muestra cuánto pasó; sin vencimiento, que se sigue buscando. */}
+            <div className={`espera${completa || mia.expiraAt !== null ? '' : ' espera--libre'}`} aria-hidden="true">
+              <div style={completa || mia.expiraAt === null ? undefined : { transform: `translateX(${Math.round((avance - 1) * 1000) / 10}%)` }} />
+            </div>
+            <div className="reloj__d">
+              <div className="m">{datos}{sala && ` · Sala "${mia.nombreSala}"`}</div>
+              <div className="m num">
+                {completa ? 'Ya no se busca a nadie. Cuando entren todos, queda armado el match.'
+                  : lider && vencida ? `Pasaron los 15 minutos. ${lider.username} decide cómo siguen.`
+                  : mia.expiraAt ? `Vence en ${mmss(mia.expiraAt - ahora)}` : sala ? 'Sigue buscando hasta completarse' : 'Activa hasta conseguir partido'}
+              </div>
+            </div>
           </div>
 
           {!sala && recibidos.length > 0 && (
@@ -368,7 +384,7 @@ export function Buscando() {
                     <Persona user={u}>
                       <span className="strong cut">
                         {u.username}
-                        {s.amigos.includes(uid) && <span className="tag">AMIGO</span>}
+                        {s.amigos.includes(uid) && <span className="tag tag--linea">AMIGO</span>}
                       </span>
                       <span className="m cut">
                         {nivelTexto(u)}{uid === mia.liderId ? 'armó el grupo y maneja la búsqueda' : 'mismo reloj y misma búsqueda'}
@@ -418,7 +434,7 @@ export function Buscando() {
             </>
           )}
 
-          <button className="btn btn--danger btn--block" style={{ marginTop: 8 }}
+          <button className="btn btn--quieto btn--block" style={{ marginTop: 8 }}
             onClick={() => { s.cancelarBusqueda(); nav('/') }}>
             {conGente ? 'Cerrar sala' : lider ? 'Salir del grupo' : 'Cancelar búsqueda'}
           </button>

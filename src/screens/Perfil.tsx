@@ -1,11 +1,11 @@
-import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useId, useRef, useState, type CSSProperties, type ChangeEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { PREVIEW, REAL } from '../config'
 import { cargarFoto, soltarFoto, type FotoElegida } from '../data/foto'
 import { TEXTO_AVISOS, activarAvisos, desactivarAvisos, estadoAvisos, probarAviso, type EstadoAvisos } from '../data/push'
-import { YO, buscarMia, misPuntos, rivalesDe, useStore } from '../data/store'
-import { DIAS_PENDIENTE, diasParaVencer, esPendiente, nivelDe } from '../domain/rules'
-import { Avatar, BorrarCuenta, CerrarSesion, Head, Icon, Portada, TabBar, hace, useAhora } from '../ui'
+import { YO, buscarMia, rivalesDe, useStore } from '../data/store'
+import { DIAS_PENDIENTE, PUNTOS, diasParaVencer, esPendiente } from '../domain/rules'
+import { Avatar, BorrarCuenta, Campana, CerrarSesion, Head, Icon, Portada, TabBar, TarjetaNivel, hace, useAhora } from '../ui'
 import { Recortador } from '../ui/Recortador'
 
 /** Partidos que el usuario todavía no confirmó. Se muestran como un aviso pendiente. */
@@ -19,14 +19,14 @@ function Pendientes() {
     <section className="card card--col card--accent" aria-label="Partidos por confirmar">
       <div className="row">
         <span style={{ color: 'var(--accent)', display: 'grid' }}><Icon name="reloj" /></span>
-        <div className="h grow" style={{ fontSize: 22, color: 'var(--accent)' }}>Por confirmar ({pendientes.length})</div>
+        <div className="h grow" style={{ fontSize: 24, color: 'var(--accent)' }}>Por confirmar ({pendientes.length})</div>
       </div>
       <div className="m">¿Jugaste estos partidos? Si los confirmás, cuentan. Vencen a los {DIAS_PENDIENTE} días.</div>
       {pendientes.map((m) => {
         const dias = diasParaVencer(m, ahora)
         const otroConfirmo = m.participantes.some((p) => p.userId !== YO && p.confirmadoAt !== null)
         return (
-          <div key={m.id} style={{ borderTop: '1px solid var(--line)', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div key={m.id} style={{ borderTop: '1px solid var(--line)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div>
               <div className="strong">{m.formato && m.formato !== 'Cualquiera' ? m.formato : 'Amistoso'} con {rivalesDe(s, m)}</div>
               <div className="m">
@@ -61,12 +61,16 @@ function MisClips() {
     pedida.current = true
     void actualizar()
   }, [vieja, actualizar])
-  if (!s.tiktok) return null
   return (
     <>
-      <h2 className="h sub">Tus clips ({enClips.length})</h2>
+      <div className="sub-fila">
+        <h2 className="h sub">Tus clips · {enClips.length}</h2>
+        <Link className="enlace" to="/clips/mis-videos">
+          {mios.length > enClips.length ? `Ver los ${mios.length} videos` : 'Administrar'}
+        </Link>
+      </div>
       {enClips.length === 0 ? (
-        <div className="card m">Todavía no tenés clips. Subí un video a TikTok con #haxball o #haxmatch y aparece acá.</div>
+        <div className="m">Todavía no tenés clips. Subí un video a TikTok con #haxball o #haxmatch y aparece acá.</div>
       ) : (
         <div className="clips-mini">
           {enClips.slice(0, 12).map((r) => (
@@ -78,9 +82,6 @@ function MisClips() {
           ))}
         </div>
       )}
-      <Link className="btn btn--outline" to="/clips/mis-videos">
-        {mios.length > enClips.length ? `Ver los ${mios.length} videos de tu TikTok` : 'Administrar mis videos'}
-      </Link>
     </>
   )
 }
@@ -120,7 +121,7 @@ function Avisos() {
   return (
     <div className="card card--col">
       <div className="row">
-        <span style={{ color: estado === 'activos' ? 'var(--accent)' : 'var(--fg2)', display: 'grid' }}><Icon name="campana" /></span>
+        <span style={{ color: estado === 'activos' ? 'var(--accent)' : 'var(--fg2)', display: 'grid' }}><Icon name="campana" stroke={1.75} /></span>
         <div className="grow">
           <div className="strong">Avisos en este celular</div>
           <div className="m">{TEXTO_AVISOS[estado]}</div>
@@ -168,7 +169,7 @@ function Instalar() {
   )
 }
 
-/** Avatar propio. Al tocarlo se abre la galería del celular; después se encuadra la foto elegida. */
+/** Foto propia. Al tocarla se abre la galería del celular; después se encuadra la foto elegida. */
 function FotoDePerfil({ onElegida, onError }: { onElegida: (f: FotoElegida) => void; onError: (texto: string | null) => void }) {
   const perfil = useStore((s) => s.perfil)
   const id = useId()
@@ -199,8 +200,6 @@ export function Perfil() {
   const s = useStore()
   const ahora = useAhora()
   const nav = useNavigate()
-  const nivel = nivelDe(misPuntos(s))
-  const sinLeer = s.notifs.some((n) => !n.leida)
   const [errorFoto, setErrorFoto] = useState<string | null>(null)
   /** Foto recién elegida de la galería, a la espera de que la encuadre. */
   const [porAjustar, setPorAjustar] = useState<FotoElegida | null>(null)
@@ -238,81 +237,93 @@ export function Perfil() {
 
   return (
     <div className="screen">
-      <Head title="Perfil">
-        <Link className="btn btn--sec btn--icon" to="/perfil/notificaciones" aria-label={sinLeer ? 'Notificaciones, hay sin leer' : 'Notificaciones'}
-          style={{ position: 'relative' }}>
-          <Icon name="campana" size={20} />
-          {sinLeer && <span className="dot" />}
-        </Link>
-      </Head>
+      <Head title="Perfil"><Campana /></Head>
       <div className="scroll">
-        <div className="pad">
-          <div className="card" style={{ gap: 14 }}>
-            <FotoDePerfil onElegida={setPorAjustar} onError={setErrorFoto} />
-            <div className="grow">
-              <div className="h cut" style={{ fontSize: 24, textTransform: 'none' }}>{s.perfil?.nick}</div>
-              <div className="m">Perfil público · {s.perfil?.region.join(', ')}</div>
-            </div>
-            <Link className="badge" to="/perfil/nivel" aria-label={`Nivel ${nivel}. Ver detalle`}>Nivel {nivel}</Link>
-          </div>
-          <div className="row">
-            <div className="m grow">
-              {guardandoFoto ? 'Guardando la foto…' : s.perfil?.foto ? 'Tocá tu foto para cambiarla.' : 'Tocá el círculo para elegir una foto de tu galería.'}
-            </div>
-            {s.perfil?.foto && (
-              <button className="btn btn--ghost" style={{ flex: 'none' }} disabled={guardandoFoto} onClick={() => void quitarFoto()}>Quitar foto</button>
-            )}
-          </div>
-          {errorFoto && <div className="err" role="alert">{errorFoto}</div>}
-
-          <Pendientes />
-          <Avisos />
-          <MisClips />
-
-          <h2 className="h sub sub--accent">Tus cuentas</h2>
-          <div className="card card--row">
-            <Avatar nombre="D" />
-            <div className="grow"><div className="strong">Discord</div><div className="m cut">Conectado como {s.perfil?.username}</div></div>
-            <span style={{ color: 'var(--accent)' }}><Icon name="check" /></span>
-          </div>
-          <div className="card card--row">
-            <Avatar nombre="T" />
-            <div className="grow"><div className="strong">TikTok</div><div className="m cut">{s.tiktok ? `Conectado${s.tiktokInfo?.nombre ? ` como ${s.tiktokInfo.nombre}` : ''}` : 'Sin vincular'}</div></div>
-            <Link className={`btn${s.tiktok ? ' btn--sec' : ''}`} to="/clips/mis-videos">{s.tiktok ? 'Mis videos' : 'Vincular'}</Link>
-          </div>
-          {['YouTube', 'Kick'].map((n) => (
-            <div key={n} className="card card--row">
-              <Avatar nombre={n} />
-              <div className="grow"><div className="strong">{n}</div><div className="m">Sin vincular</div></div>
-              <span className="pill">Pronto</span>
-            </div>
-          ))}
-
-          <div className="row">
-            <Link className="btn btn--outline grow" to="/perfil/amigos">Amigos</Link>
-            <Link className="btn btn--outline grow" to="/perfil/referir">Referir</Link>
-          </div>
-
-          <div className="row" style={{ alignItems: 'stretch' }}>
-            <div className="card stat"><div className="h num">{cuantosJugados}</div><div className="m">amistosos jugados</div></div>
-            <div className="card stat"><div className="h num">{asistencia}</div><div className="m">asistencia a partidos anotados</div></div>
-          </div>
-
-          <h2 className="h sub">Historial (público)</h2>
-          <div className="card card--row">
-            <Avatar user={masJugado ? s.usuarios[masJugado[0]] : undefined} size="sm" />
-            <div className="grow">
-              <div className="strong">Con quién más jugaste</div>
-              <div className="m">
-                {masJugado ? `${s.usuarios[masJugado[0]]?.username ?? 'Jugador'} · ${masJugado[1]} ${masJugado[1] === 1 ? 'amistoso' : 'amistosos'}${REAL ? ' esta semana' : ''}` : 'Todavía no jugaste amistosos'}
+        <div className="pad" style={{ '--gap': '20px' } as CSSProperties}>
+          <div className="lista">
+            <div className="row" style={{ gap: 14 }}>
+              <FotoDePerfil onElegida={setPorAjustar} onError={setErrorFoto} />
+              <div className="grow">
+                <div className="strong cut" style={{ fontSize: 22, lineHeight: 1.15 }}>{s.perfil?.nick}</div>
+                <div className="m cut">Perfil público · {s.perfil?.region.join(', ')}</div>
               </div>
             </div>
+            <div className="row">
+              <div className="m grow">
+                {guardandoFoto ? 'Guardando la foto…' : s.perfil?.foto ? 'Tocá tu foto para cambiarla.' : 'Tocá el recuadro para elegir una foto de tu galería.'}
+              </div>
+              {s.perfil?.foto && (
+                <button className="btn btn--ghost" style={{ flex: 'none' }} disabled={guardandoFoto} onClick={() => void quitarFoto()}>Quitar foto</button>
+              )}
+            </div>
+            {errorFoto && <div className="err" role="alert">{errorFoto}</div>}
           </div>
-          <div className="card card--row">
-            <Avatar size="sm" />
-            <div className="grow">
-              <div className="strong">Equipo al que más enfrentaste</div>
-              <div className="m">Todavía sin datos</div>
+
+          <Pendientes />
+          <TarjetaNivel enlace />
+
+          <div className="stats">
+            <div className="stat"><div className="h num">{cuantosJugados}</div><div className="m">amistosos jugados</div></div>
+            <div className="stat"><div className="h num">{asistencia}</div><div className="m">asistencia a partidos anotados</div></div>
+          </div>
+
+          {s.tiktok && <div className="lista"><MisClips /></div>}
+
+          <div className="lista">
+            <Link className="fila-enlace" to="/perfil/amigos">
+              <span>Amigos</span>
+              <span>
+                {s.solicitudes.length > 0 && <span className="punto" />}
+                {s.solicitudes.length > 0 ? `${s.solicitudes.length} ${s.solicitudes.length === 1 ? 'solicitud' : 'solicitudes'}` : s.amigos.length > 0 ? s.amigos.length : ''}
+                <Icon name="flecha" size={20} />
+              </span>
+            </Link>
+            <Link className="fila-enlace" to="/perfil/referir">
+              <span>Referir amigos</span>
+              <span>+{PUNTOS.referido} puntos<Icon name="flecha" size={20} /></span>
+            </Link>
+          </div>
+
+          <Avisos />
+
+          <div className="lista">
+            <h2 className="h sub">Tus cuentas</h2>
+            <div className="card card--row">
+              <Avatar nombre="D" />
+              <div className="grow"><div className="strong">Discord</div><div className="m cut">Conectado como {s.perfil?.username}</div></div>
+              <span style={{ color: 'var(--accent)' }}><Icon name="check" /></span>
+            </div>
+            <div className="card card--row">
+              <Avatar nombre="T" />
+              <div className="grow"><div className="strong">TikTok</div><div className="m cut">{s.tiktok ? `Conectado${s.tiktokInfo?.nombre ? ` como ${s.tiktokInfo.nombre}` : ''}` : 'Sin vincular'}</div></div>
+              <Link className={`btn${s.tiktok ? ' btn--sec' : ''}`} to="/clips/mis-videos">{s.tiktok ? 'Mis videos' : 'Vincular'}</Link>
+            </div>
+            {['YouTube', 'Kick'].map((n) => (
+              <div key={n} className="card card--row">
+                <Avatar nombre={n} />
+                <div className="grow"><div className="strong">{n}</div><div className="m">Sin vincular</div></div>
+                <span className="pill">Pronto</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="lista">
+            <h2 className="h sub">Historial (público)</h2>
+            <div className="card card--row">
+              <Avatar user={masJugado ? s.usuarios[masJugado[0]] : undefined} />
+              <div className="grow">
+                <div className="strong">Con quién más jugaste</div>
+                <div className="m">
+                  {masJugado ? `${s.usuarios[masJugado[0]]?.username ?? 'Jugador'} · ${masJugado[1]} ${masJugado[1] === 1 ? 'amistoso' : 'amistosos'}${REAL ? ' esta semana' : ''}` : 'Todavía no jugaste amistosos'}
+                </div>
+              </div>
+            </div>
+            <div className="card card--row">
+              <Avatar />
+              <div className="grow">
+                <div className="strong">Equipo al que más enfrentaste</div>
+                <div className="m">Todavía sin datos</div>
+              </div>
             </div>
           </div>
 
