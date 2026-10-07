@@ -3,8 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { REAL } from '../config'
 import { RESULTADO_TIKTOK, tiktokHabilitado } from '../data/clips'
 import { seedReels } from '../data/seed'
-import { YO, buscarMia, feed, nombreDe, useStore } from '../data/store'
-import { nivelDe, totalPuntos } from '../domain/rules'
+import { YO, buscarMia, feed, misPuntos, nombreDe, useStore } from '../data/store'
+import { nivelDe } from '../domain/rules'
 import type { Reel } from '../domain/types'
 import { Avatar, BannerBusqueda, Empty, Head, Icon, Portada, Sheet, TabBar, hace, useAhora } from '../ui'
 
@@ -174,7 +174,7 @@ export function Clips() {
   const muestras = useMemo(() => seedReels(Date.now()), [])
   const deMuestra = REAL && s.clipsListos && reales.length === 0
   const reels: Reel[] = deMuestra ? muestras : reales
-  const miNivel = nivelDe(totalPuntos(s.eventos, YO))
+  const miNivel = nivelDe(misPuntos(s))
   const lista = useRef<HTMLDivElement>(null)
   /** Clip que está en pantalla. Se guarda cuál es (no su posición): la lista puede cambiar mientras se mira. */
   const [enPantalla, setEnPantalla] = useState<string | null>(null)

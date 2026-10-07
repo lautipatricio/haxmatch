@@ -1,18 +1,18 @@
-import { YO, useStore } from '../data/store'
+import { miRacha, misPuntos, useStore, vecesDe } from '../data/store'
 import {
   AMISTOSOS_REFERIDO, NIVEL_SORTEO, NIVELES, PUNTOS, RACHAS, TOPES,
-  entraAlSorteo, progresoNivel, proximaRacha, rachaActual, totalPuntos,
+  entraAlSorteo, progresoNivel, proximaRacha,
 } from '../domain/rules'
 import type { TipoPunto } from '../domain/types'
 import { Head, TabBar, useAhora } from '../ui'
 
 export function Nivel() {
-  const eventos = useStore((s) => s.eventos)
+  const s = useStore()
   const ahora = useAhora()
-  const p = progresoNivel(totalPuntos(eventos, YO))
-  const racha = rachaActual(eventos, YO, ahora)
+  const p = progresoNivel(misPuntos(s))
+  const racha = miRacha(s, ahora)
   const proxima = proximaRacha(racha)
-  const veces = (tipo: TipoPunto) => eventos.filter((e) => e.userId === YO && e.tipo === tipo).length
+  const veces = (tipo: TipoPunto) => vecesDe(s, tipo)
 
   const filas: Array<[string, string, number]> = [
     ['Amistosos confirmados', `${PUNTOS.amistoso} puntos · hasta ${TOPES.amistososPorDia} por día, ${TOPES.mismoRivalPorDia} con el mismo rival`, veces('amistoso')],

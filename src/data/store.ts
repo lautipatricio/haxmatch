@@ -11,7 +11,7 @@ import {
 } from '../domain/rules'
 import type {
   Busqueda, Cancha, Duracion, EventoPuntos, Formato, Match, Mensaje, Modo, MotivoReporte,
-  Notif, Participante, Posicion, Reel, Referido, Region, Reporte, TipoNotif, TipoPunto, Usuario,
+  Notif, Participante, Posicion, PuntosServidor, Reel, Referido, Region, Reporte, TipoNotif, TipoPunto, Usuario,
 } from '../domain/types'
 import {
   codigoPendiente, completarRegistro, escucharSesion, guardarCodigoPendiente, ingresarConDiscord, miPerfil, quienInvita,
@@ -81,7 +81,10 @@ interface Datos {
   busquedas: Busqueda[]
   matches: Match[]
   mensajes: Mensaje[]
+  /** Con servidor: los movimientos de los últimos días. Sin servidor: todos. */
   eventos: EventoPuntos[]
+  /** Mis puntos según el servidor. null si los calcula el dispositivo (demostración, o base sin el paso 5). */
+  puntosServidor: PuntosServidor | null
   reels: Reel[]
   misReacciones: string[]
   tiktok: boolean
@@ -220,6 +223,7 @@ function datosIniciales(ahora: number): Datos {
     matches: REAL ? [] : seedMatches(ahora),
     mensajes: [],
     eventos: SEED_EVENTOS,
+    puntosServidor: null,
     // Con servidor los clips son los de TikTok de cada usuario; los de muestra se usan solo si no hay ninguno.
     reels: REAL ? [] : seedReels(ahora),
     misReacciones: [],
@@ -233,7 +237,7 @@ function datosIniciales(ahora: number): Datos {
 
 const CAMPOS: Array<keyof Datos> = [
   'perfil', 'cuentaId', 'resumen', 'offsetDias', 'usuarios', 'amigos', 'solicitudes', 'solicitudesEnviadas', 'bloqueados',
-  'busquedas', 'matches', 'mensajes', 'eventos', 'reels', 'misReacciones', 'tiktok', 'notifs',
+  'busquedas', 'matches', 'mensajes', 'eventos', 'puntosServidor', 'reels', 'misReacciones', 'tiktok', 'notifs',
   'referidos', 'reportes', 'programados',
 ]
 
@@ -673,19 +677,51 @@ function aplicarCola(s: Store, n: ColaLocal, primera: boolean): Cambio {
     }
   }
 
-  // Partidos que ya cuentan y todavía no sumaron puntos en este dispositivo.
-  const porSumar = n.matches
-    .filter((m) => m.contadoAt !== null && soyParte(m) && !st.eventos.some((e) => e.tipo === 'amistoso' && e.referencia === m.id))
-    .sort((a, b) => (a.contadoAt ?? 0) - (b.contadoAt ?? 0))
-  for (const m of porSumar) {
-    const cuando = m.contadoAt ?? ahora
-    const rival = rivalDe(m, YO)
-    const puntos = puntosAmistoso(st.eventos, YO, rival, cuando)
-    st = { ...st, ...sumar(st, cuando, 'amistoso', puntos, m.id, rival) }
-    if (!primera) {
-      toast(puntos > 0
-        ? { texto: `Amistoso confirmado · +${puntos} puntos` }
-        : { texto: 'Amistoso confirmado', detalle: 'Hoy ya llegaste al tope de puntos por amistosos.' })
+  if (n.puntos) {
+    // Los puntos los lleva el servidor: acá solo se avisa lo que sumó desde la última vez.
+    // La primera vez que llegan (al abrir la app, o al pasar del cálculo local al del servidor) no se avisa nada.
+    const estrenando = primera || s.puntosServidor === null
+    if (!estrenando) {
+      const vistos = new Set(s.eventos.map((e) => e.id))
+      for (const e of n.eventos) {
+        if (vistos.has(e.id)) continue
+        if (e.tipo === 'amistoso') {
+          toast(e.puntos > 0
+            ? { texto: `Amistoso confirmado · +${e.puntos} puntos` }
+            : { texto: 'Amistoso confirmado', detalle: 'Hoy ya llegaste al tope de puntos por amistosos.' })
+        } else if (e.tipo === 'reel') {
+          toast(e.puntos > 0
+            ? { texto: `Reel nuevo en Clips · +${e.puntos} puntos` }
+            : { texto: 'Reel nuevo en Clips', detalle: 'Hoy ya sumaste por un reel. Mañana vuelve a sumar.' })
+        } else if (e.tipo === 'racha') {
+          toast({ texto: `Racha de ${e.rival ?? ''} días · +${e.puntos} puntos` })
+        } else if (e.tipo === 'referido') {
+          const titulo = `${nombre(e.referencia)} completó ${AMISTOSOS_REFERIDO} amistosos`
+          const detalle = e.puntos > 0 ? `+${e.puntos} puntos de nivel` : 'Este mes ya llegaste al tope de referidos'
+          notif('referido', titulo, detalle, e.referencia)
+          toast({ texto: titulo, detalle, to: '/perfil/referir' })
+        }
+      }
+      const nivel = nivelDe(n.puntos.total)
+      if (nivel > nivelDe(s.puntosServidor?.total ?? 0)) notif('nivel', `Subiste a Nivel ${nivel}`, 'Seguí activo para llegar al próximo')
+    }
+    st = { ...st, eventos: n.eventos, puntosServidor: n.puntos, referidos: n.referidos }
+  } else if (s.puntosServidor === null) {
+    // La base todavía no lleva los puntos: partidos que ya cuentan y no sumaron en este dispositivo.
+    // (Si ya los llevaba y esta vez no vinieron, fue un tropiezo: se sigue mostrando lo último que mandó.)
+    const porSumar = n.matches
+      .filter((m) => m.contadoAt !== null && soyParte(m) && !st.eventos.some((e) => e.tipo === 'amistoso' && e.referencia === m.id))
+      .sort((a, b) => (a.contadoAt ?? 0) - (b.contadoAt ?? 0))
+    for (const m of porSumar) {
+      const cuando = m.contadoAt ?? ahora
+      const rival = rivalDe(m, YO)
+      const puntos = puntosAmistoso(st.eventos, YO, rival, cuando)
+      st = { ...st, ...sumar(st, cuando, 'amistoso', puntos, m.id, rival) }
+      if (!primera) {
+        toast(puntos > 0
+          ? { texto: `Amistoso confirmado · +${puntos} puntos` }
+          : { texto: 'Amistoso confirmado', detalle: 'Hoy ya llegaste al tope de puntos por amistosos.' })
+      }
     }
   }
 
@@ -700,6 +736,8 @@ function aplicarCola(s: Store, n: ColaLocal, primera: boolean): Cambio {
     solicitudesEnviadas: n.enviadas,
     desfaseMs: n.desfaseMs,
     eventos: st.eventos,
+    puntosServidor: st.puntosServidor,
+    referidos: st.referidos,
     notifs: st.notifs.slice(0, 50),
     toasts: st.toasts,
     colaLista: true,
@@ -867,7 +905,9 @@ export const useStore = create<Store>()((set, get) => {
     }
 
     // 2. Conexión del día y racha.
-    if (s.perfil?.onboarding && !conectoHoy(s.eventos, YO, ahora)) {
+    // Con puntos en el servidor, el ingreso del día y la racha los anota el servidor.
+    // Y hasta saber si el servidor los lleva (primera respuesta), no se suma nada acá.
+    if (s.perfil?.onboarding && !get().puntosServidor && (!REAL || get().colaLista) && !conectoHoy(s.eventos, YO, ahora)) {
       let st = get()
       aplicar(sumar(st, ahora, 'conexion', PUNTOS.conexion, `dia-${ahora}`))
       st = get()
@@ -1472,6 +1512,8 @@ export const useStore = create<Store>()((set, get) => {
     // Un video mío nuevo en Clips suma puntos (el primero de cada día). Los que vinieron al vincular, no.
     const apto = (h: string[]) => h.some((x) => x === 'haxball' || x === 'haxmatch')
     for (const reel of r.clips.reels) {
+      // Con puntos en el servidor, el video nuevo lo suma el servidor al importarlo.
+      if (st.puntosServidor || !st.colaLista) break
       if (reel.userId !== YO || reel.inicial || !reel.visible || !apto(reel.hashtags)) continue
       if (st.eventos.some((e) => e.tipo === 'reel' && e.referencia === reel.id)) continue
       const puntos = puntosReel(st.eventos, YO, reel.id, ahora)
@@ -1497,7 +1539,8 @@ export const useStore = create<Store>()((set, get) => {
     if (!marcar) {
       set({ misReacciones: s.misReacciones.filter((r) => r !== reelId) })
     } else {
-      const puntos = reel.userId === YO ? 0 : puntosReaccion(s.eventos, YO, reelId, ahora)
+      // Con puntos en el servidor, la reacción la suma el servidor.
+      const puntos = reel.userId === YO || s.puntosServidor || (REAL && !s.colaLista) ? 0 : puntosReaccion(s.eventos, YO, reelId, ahora)
       set({
         misReacciones: [...s.misReacciones, reelId],
         ...(puntos > 0 ? sumar(s, ahora, 'reaccion', puntos, reelId) : {}),
@@ -1808,6 +1851,21 @@ export function feed(s: Store): Reel[] {
 /** Datos de un usuario para mostrar. Si todavía no llegaron, devuelve uno genérico. */
 export function usuarioDe(s: Store, userId: string): Usuario {
   return s.usuarios[userId] ?? { id: userId, username: 'Jugador', nivel: null, color: '#5B6F8C' }
+}
+
+/** Mis puntos: los del servidor si los lleva; si no, la suma de lo guardado en el dispositivo. */
+export function misPuntos(s: Pick<Datos, 'eventos' | 'puntosServidor'>): number {
+  return s.puntosServidor ? s.puntosServidor.total : totalPuntos(s.eventos, YO)
+}
+
+/** Días seguidos entrando a la app. */
+export function miRacha(s: Pick<Datos, 'eventos' | 'puntosServidor'>, ahora: number): number {
+  return s.puntosServidor ? s.puntosServidor.racha : rachaActual(s.eventos, YO, ahora)
+}
+
+/** Cuántas veces sumé por cada cosa. */
+export function vecesDe(s: Pick<Datos, 'eventos' | 'puntosServidor'>, tipo: TipoPunto): number {
+  return s.puntosServidor ? s.puntosServidor.conteos[tipo] ?? 0 : s.eventos.filter((e) => e.userId === YO && e.tipo === tipo).length
 }
 
 /** "Nivel 4 · " para anteponer a un detalle. Vacío mientras el nivel de los demás no se conozca. */

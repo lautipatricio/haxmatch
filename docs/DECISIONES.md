@@ -180,6 +180,25 @@ Pedido: que se pueda vincular TikTok de verdad y empezar a importar los videos.
 
 Cómo se probó: 241 comprobaciones del servidor, 37 de la parte de la web que habla con TikTok (contra un TikTok de mentira que imita sus respuestas, incluidos permisos vencidos, quitados, fallas y respuestas rotas), el ensayo con usuarios simultáneos ampliado con todo el recorrido (vincular, ver, reproducir, reaccionar, video nuevo, ocultar, desvincular), las páginas fijas con el motor de Cloudflare en local, y una tercera revisión independiente. Esa revisión encontró un problema grave (si faltaba la clave compartida, las funciones protegidas quedaban abiertas) y 14 menores; todos corregidos y con su prueba. Lo que no se pudo probar desde acá: el TikTok real. Las direcciones, los nombres de los campos y las respuestas salen de su documentación, pero recién se confirma con la primera vinculación de verdad.
 
+## Puntos, niveles y referidos en el servidor (7/10/2026)
+
+Hasta acá los puntos se calculaban en cada celular: se perdían al cambiar de celular y cualquiera podía tocarlos. Ahora los da y los guarda el servidor.
+
+- **Qué suma y cuánto no cambió:** amistoso 10 (hasta 5 por día con puntos, 3 con el mismo rival), video nuevo en Clips 8 (1 por día), reacción a un clip de otro 1 (hasta 10 clips distintos por día), primer ingreso del día 2, racha de 3, 7, 14 y 30 días seguidos (+5, +15, +30, +60), referido que completa 5 amistosos 50 (hasta 10 por mes).
+- **Cada cosa suma una sola vez,** pase lo que pase: sacar y volver a poner una reacción, ocultar y mostrar un video, salir y volver a entrar a una sala, o volver a vincular TikTok no dan puntos de nuevo.
+- **El "día" es el de Buenos Aires para todos** (antes era el de cada celular). Queda resuelto ese punto abierto.
+- **Video "nuevo"** es el publicado después de vincular la cuenta. Uno viejo que desaparece y vuelve (por ejemplo, pasado a privado y de nuevo a público) no cuenta.
+- **Las reacciones suman solo sobre clips que están en Clips** (visibles y con #haxball o #haxmatch).
+- **Referidos:** la pantalla Referir ahora muestra de verdad a quién invitaste y cómo va ("Va 3 de 5 amistosos"). Para los 5 amistosos del referido cuentan también los que no le dieron puntos por tope. Al completarlos, a quien lo invitó le llega el aviso.
+- **Nivel de los demás:** como el nivel sale del servidor, ya se muestra el de los otros jugadores (en la cola, en los grupos y en Clips).
+- **Lo que ya estaba:** al ejecutar el paso 5 se reconstruyen los puntos de los partidos que contaron, los videos nuevos y las reacciones, con sus topes por día. **Los días de conexión anteriores no estaban guardados en el servidor**, así que esos puntos y la racha arrancan de nuevo: el total de cada uno puede bajar un poco respecto de lo que mostraba su celular.
+- **Mientras no se ejecute el paso 5,** la app sigue calculando los puntos en el celular como antes.
+- **La app no puede darse puntos:** no puede leer ni escribir la tabla de puntos ni el total del perfil, ni llamar a las funciones que los dan.
+
+Cómo se probó: 298 comprobaciones del servidor (43 nuevas, de puntos), el ensayo con usuarios simultáneos (puntos que se mantienen con el celular "vacío", referido que completa sus amistosos, subir de nivel, nivel de los demás) y una cuarta revisión independiente buscando formas de hacer trampa: no encontró fallas graves; marcó 8 puntos menores, de los que se corrigieron 6 (video viejo que volvía a contar, avisos viejos al reconstruir, reacciones a videos fuera de Clips, puntos locales antes de la primera respuesta del servidor, caída momentánea que bajaba el nivel, y el orden de los permisos).
+
+Quedó anotado, sin cambiar: el tope de "3 con el mismo rival" mira al conjunto de rivales de la sala, como estaba definido; con una tercera cuenta en la sala, dos amigos llegan igual al tope de 5 por día. Y un referido puede completar sus 5 amistosos jugando siempre con quien lo invitó. Las dos cosas respetan las reglas escritas; si se quieren endurecer, es una decisión de producto.
+
 ## Decisiones que tomé al construir (revisar)
 
 1. **El match siempre es con una sala.** Dos jugadores sin sala ya no generan match: se juntan en una misma búsqueda. Quien creó la sala ve "Ya entró X a la sala" y el que se une ve "Ya entré a la sala".
@@ -214,6 +233,7 @@ Cómo se probó: 241 comprobaciones del servidor, 37 de la parte de la web que h
 - **Cómo se arman los equipos de un 2v2, 3v3 o 4v4** dentro de la app (hoy un match son dos personas).
 - **Motivo de reporte "Resultado falso":** no hay resultados. ¿Se cambia por "Confirmó un partido que no se jugó"?
 - **Inicio sin barra inferior:** desde el Inicio no hay acceso directo al Perfil ni a las notificaciones (hay que pasar por Clips).
-- **Zona horaria del "día"** para topes y racha. Hoy es la del celular. En el backend hay que fijar una.
+- **Carga de los puntos:** cada consulta de estado cuenta los movimientos del usuario. Alcanza por mucho tiempo; con años de uso habrá que guardar los totales por tipo.
+- **Cuentas duplicadas para sumar referidos o partidos:** hoy no se detectan. Es parte de la moderación.
 - **Vencimiento de salas** y de pendientes (propuesta del documento: 7 días, es lo que está puesto).
 - Los pendientes de la sección 7 del documento siguen igual: sorteo y marca.

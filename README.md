@@ -2,7 +2,7 @@
 
 App para armar amistosos de HaxBall desde el celular. PWA en React.
 
-**Estado: cuenta, cola, partidos, amigos, avisos y clips reales.** El ingreso con Discord, el perfil, la cola, los mensajes, los grupos, las salas, los partidos y los amigos funcionan entre usuarios de verdad, con el servidor (Supabase) aplicando las reglas. Las notificaciones llegan con la app cerrada. La vinculación con TikTok y los clips están hechos, y empiezan a funcionar cuando se cargan las claves de la app de TikTok (ver "TikTok" más abajo). Los puntos y niveles todavía se calculan en cada dispositivo, y la lista de referidos sigue de muestra.
+**Estado: todo lo principal funciona con usuarios de verdad.** El ingreso con Discord, el perfil, la cola, los mensajes, los grupos, las salas, los partidos, los amigos, las notificaciones, los clips de TikTok, y los puntos, niveles y referidos: todo lo lleva el servidor (Supabase), que aplica las reglas. Cada paso se activa al ejecutar su archivo de `supabase/`; si falta uno, la app sigue andando con lo anterior.
 
 Publicada en https://haxmatch.lauti.workers.dev
 
@@ -14,7 +14,7 @@ Necesitás Node 20 o más nuevo.
 npm install
 npm run dev        # abre la app en http://localhost:5173, con el servidor real
 npm test           # tests de las reglas (puntos, niveles, validación)
-npm run test:sql   # prueba los SQL de supabase/ en una base local (249 comprobaciones)
+npm run test:sql   # prueba los SQL de supabase/ en una base local (298 comprobaciones)
 npm run test:push  # prueba el envío de notificaciones (worker/index.js)
 npm run test:tiktok  # prueba la vinculación con TikTok contra un TikTok de mentira (38 comprobaciones)
 npm run build      # versión para publicar, en dist/
@@ -103,6 +103,15 @@ Cómo funciona: la app le pide a la web (`/api/tiktok/entrar`) empezar una vincu
 | `supabase/02_cola.sql` | La cola: búsquedas, mensajes, grupos, salas con cupos, partidos, confirmaciones y reportes. La app no toca las tablas: todo pasa por funciones que aplican las reglas. Incluye la señal de tiempo real |
 | `supabase/03_amigos_avisos.sql` | Amigos (solicitudes, aceptar, quitar), las suscripciones de cada celular a los avisos, y los disparadores que deciden qué se avisa y a quién |
 | `supabase/04_clips.sql` | Clips: la cuenta de TikTok vinculada de cada usuario, la lista de sus videos, cuáles se muestran y las reacciones |
+| `supabase/05_puntos.sql` | Puntos, niveles y referidos: cada movimiento de puntos, el total de cada perfil, los disparadores que los dan y los topes. Al ejecutarlo reconstruye los puntos de lo que ya estaba guardado |
+
+### Cómo funcionan los puntos
+
+- Los da el servidor en el momento en que pasa lo que suma: un partido que cuenta, un video nuevo en Clips, una reacción, el primer ingreso del día, un referido que completa 5 amistosos. Cada cosa suma una sola vez.
+- Cada movimiento queda en la tabla `puntos` y el total en el perfil. El nivel sale del total.
+- El "día" de los topes y de la racha es el de Buenos Aires, para todos.
+- La app pide `estado_completo`, que trae la cola, los amigos, mis puntos, mis referidos y el nivel de los demás. Si la base no tiene el paso 5 pide `estado`, y si tampoco tiene el 3, `estado_cola`.
+- Para ver los puntos de alguien: Supabase > Table Editor > `puntos`.
 
 ### Cómo funciona la cola
 
@@ -143,9 +152,9 @@ Cómo funciona: la app le pide a la web (`/api/tiktok/entrar`) empezar una vincu
 En la web publicada:
 
 - **Real:** ingreso con Discord, perfil y foto, cola, mensajes, grupos, salas, partidos, confirmaciones, reportes, amigos, notificaciones, clips (vinculación con TikTok, videos, reacciones) y los totales de amistosos jugados y asistencia.
-- **En el dispositivo:** puntos, nivel y racha (se calculan en el celular con los partidos que confirma el servidor). Bloquear a un jugador también: lo oculta en ese dispositivo.
+- **Real también** (con `supabase/05_puntos.sql`): puntos, nivel, racha, lista de referidos y el nivel de los demás jugadores. Sin ese paso, los puntos se siguen calculando en el celular.
+- **En el dispositivo:** bloquear a un jugador (lo oculta en ese dispositivo) y la lista de notificaciones.
 - **De muestra:** mientras nadie haya vinculado un TikTok con videos de HaxBall, Clips muestra 6 videos inventados (no se reproducen) para que no quede vacío. Desaparecen cuando hay al menos un clip real.
-- **Todavía no:** lista de referidos y nivel de los demás jugadores.
 
 En modo demostración (`npm run probar`) todo está simulado:
 
@@ -159,6 +168,6 @@ Códigos de amigo de la demostración: `NICO23`, `MATI10`.
 
 ## Próximas etapas
 
-1. Puntos, niveles y referidos en el servidor.
-2. Revisión de la app de TikTok, para que pueda vincular cualquiera.
-3. Borrar la cuenta desde la app, bloqueos en el servidor y moderación.
+1. Revisión de la app de TikTok, para que pueda vincular cualquiera.
+2. Borrar la cuenta desde la app, bloqueos en el servidor y moderación.
+3. App de tienda (App Store / Play).

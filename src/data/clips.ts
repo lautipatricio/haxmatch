@@ -12,7 +12,7 @@ interface FilaReel {
   enlace: string | null; portada?: string | null; publicado_at: string; reacciones: number
 }
 interface EstadoClips {
-  feed: Array<FilaReel & { user_id: string; nick: string; username: string; foto: string | null; reaccione: boolean }>
+  feed: Array<FilaReel & { user_id: string; nick: string; username: string; foto: string | null; reaccione: boolean; nivel?: number | null }>
   mios: Array<FilaReel & { visible: boolean; inicial: boolean }>
   tiktok: { vinculada: boolean; nombre: string | null; sincronizada_at: string | null; error: string | null } | null
 }
@@ -39,8 +39,16 @@ function colorDe(id: string): string {
   return colores[n % colores.length]
 }
 
+let conNiveles = true
+let sinNiveles = 0
+
 export async function leerClips(miId: string): Promise<{ clips?: ClipsLocal; error?: string }> {
-  const r = await rpc<EstadoClips>('clips')
+  // Con el paso 5 viene además el nivel de cada autor. Sin él, los clips andan igual.
+  let r = conNiveles ? await rpc<EstadoClips>('clips_completo') : { error: SIN_BASE } as { data?: EstadoClips; error?: string }
+  if (r.error === SIN_BASE) {
+    conNiveles = ++sinNiveles % 10 === 0
+    r = await rpc<EstadoClips>('clips')
+  }
   if (!r.data) return { error: r.error }
   const e = r.data
   const id = (u: string) => (u === miId ? YO : u)
@@ -55,7 +63,7 @@ export async function leerClips(miId: string): Promise<{ clips?: ClipsLocal; err
     const foto = f.foto !== null && SUPABASE_URL
       ? `${SUPABASE_URL}/storage/v1/object/public/avatares/${f.user_id}/foto.jpg?v=${encodeURIComponent(f.foto)}`
       : null
-    usuarios[id(f.user_id)] = { id: id(f.user_id), username: f.nick, discord: f.username, nivel: null, color: colorDe(f.user_id), foto }
+    usuarios[id(f.user_id)] = { id: id(f.user_id), username: f.nick, discord: f.username, nivel: typeof f.nivel === 'number' ? f.nivel : null, color: colorDe(f.user_id), foto }
     // En pantalla se muestra "las de los demás + la mía", así que acá va sin la mía.
     porId.set(f.id, { ...base(f), userId: id(f.user_id), visible: true, reacciones: f.reacciones - (f.reaccione ? 1 : 0) })
   }

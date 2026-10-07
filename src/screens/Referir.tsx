@@ -12,7 +12,9 @@ export function Referir() {
   const invitacion = link
     ? `Sumate a HaxMatch para armar amistosos de HaxBall: ${link}`
     : `Sumate a HaxMatch para armar amistosos de HaxBall. Usá mi código ${codigo} al entrar.`
-  const puntos = s.eventos.filter((e) => e.userId === YO && e.tipo === 'referido').reduce((t, e) => t + e.puntos, 0)
+  const puntos = s.puntosServidor
+    ? s.puntosServidor.deReferidos
+    : s.eventos.filter((e) => e.userId === YO && e.tipo === 'referido').reduce((t, e) => t + e.puntos, 0)
   const completos = s.referidos.filter((r) => r.acreditado).length
 
   const copiarTexto = async (texto: string, ok: string) => {
@@ -63,31 +65,33 @@ export function Referir() {
           <h2 className="h sub">Tus referidos</h2>
           {s.referidos.length === 0 && (
             <div className="m">
-              {REAL
+              {REAL && !s.puntosServidor
                 ? 'Quien entre con tu código queda anotado como referido tuyo. La lista y los puntos se van a ver acá en una próxima actualización.'
-                : 'Todavía no referiste a nadie.'}
+                : 'Todavía no referiste a nadie. Quien entre con tu código o tu link aparece acá.'}
             </div>
           )}
           {s.referidos.map((r) => (
             <div key={r.userId} className="card card--row">
               <Avatar user={s.usuarios[r.userId]} size="sm" />
               <div className="grow">
-                <div className="strong cut">{s.usuarios[r.userId].username}</div>
+                <div className="strong cut">{s.usuarios[r.userId]?.username ?? 'Jugador'}</div>
                 <div className="m">
-                  {r.acreditado
-                    ? `Completó ${AMISTOSOS_REFERIDO} amistosos · +${PUNTOS.referido} puntos`
-                    : `Va ${r.amistosos} de ${AMISTOSOS_REFERIDO} amistosos · todavía no suma`}
+                  {!r.acreditado
+                    ? `Va ${r.amistosos} de ${AMISTOSOS_REFERIDO} amistosos · todavía no suma`
+                    : r.puntos === 0
+                      ? `Completó ${AMISTOSOS_REFERIDO} amistosos · ese mes ya habías llegado al tope`
+                      : `Completó ${AMISTOSOS_REFERIDO} amistosos · +${r.puntos ?? PUNTOS.referido} puntos`}
                 </div>
               </div>
             </div>
           ))}
 
-          {s.referidos.some((r) => !r.acreditado) && (
+          {!REAL && s.referidos.some((r) => !r.acreditado) && (
             <div className="demo">
               <div className="h">Herramienta de prueba</div>
               {s.referidos.filter((r) => !r.acreditado).map((r) => (
                 <button key={r.userId} className="btn btn--sec" onClick={() => s.simularAmistosoReferido(r.userId)}>
-                  Simular que {s.usuarios[r.userId].username} juega un amistoso
+                  Simular que {s.usuarios[r.userId]?.username ?? 'Jugador'} juega un amistoso
                 </button>
               ))}
             </div>

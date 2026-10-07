@@ -189,6 +189,38 @@ try {
   if (await ana.page.getByText('Herramientas de prueba').count()) throw new Error('Con servidor no van las herramientas de prueba')
 
   // -------------------------------------------------------------------------
+  paso('Puntos y referidos: los lleva el servidor, no el celular')
+  await ana.link('Nivel 0. Ver detalle').click()
+  // 10 del partido y 2 del ingreso del día.
+  await ana.ver('12 de 50 puntos'); await ana.foto('nivel')
+  // Con el celular "vacío" (como si fuera otro), los puntos son los mismos.
+  await ana.page.evaluate(() => localStorage.clear())
+  await ana.page.goto(`${URL}/?u=ana`)
+  await Promise.race([
+    ana.boton('Entrar con Discord').waitFor().then(() => ana.boton('Entrar con Discord').click()),
+    ana.ver('Quiero jugar un amistoso'),
+  ])
+  await ana.ver('Quiero jugar un amistoso')
+  await ana.page.goto(`${URL}/perfil/nivel`)
+  await ana.ver('12 de 50 puntos')
+  // Sara entró con el código de Ana: Ana la ve en su lista, y al quinto amistoso de Sara suma 50.
+  const sara = await abrir('sara')
+  await servidor.acceso.admin('update public.profiles set referido_por = $1 where id = $2', [servidor.usuario('ana').id, servidor.usuario('sara').id])
+  await ana.page.goto(`${URL}/perfil/referir`)
+  await ana.fila('Sara').waitFor(); await ana.ver('Va 0 de 5 amistosos')
+  for (let i = 0; i < 4; i++) await servidor.acceso.admin('select public._dar_amistoso($1, gen_random_uuid())', [servidor.usuario('sara').id])
+  await ana.ver('Va 4 de 5 amistosos')
+  await servidor.acceso.admin('select public._dar_amistoso($1, gen_random_uuid())', [servidor.usuario('sara').id])
+  await ana.ver('Sara completó 5 amistosos'); await ana.ver('Completó 5 amistosos · +50 puntos'); await ana.foto('referidos')
+  if ((await ana.page.locator('.stat .h').nth(1).innerText()) !== '50') throw new Error('Ana debería tener 50 puntos ganados por referidos')
+  await ana.page.goto(`${URL}/perfil/nivel`)
+  await ana.ver('Nivel 1'); await ana.ver('62 de 150 puntos')
+  await ana.page.goto(`${URL}/perfil/notificaciones`)
+  await ana.ver('Subiste a Nivel 1'); await ana.ver('Sara completó 5 amistosos')
+  await sara.page.context().close()
+  await ana.inicio()
+
+  // -------------------------------------------------------------------------
   paso('Sala de 2: rechazar, mensaje del jugador a la sala, "Todavía no", "Se salió" y cerrar la sala')
   const caro = await abrir('caro')
   await ana.inicio()
@@ -411,6 +443,8 @@ try {
   // Otro usuario ve el clip y lo reproduce.
   await pato.page.goto(`${URL}/clips`)
   await pato.ver('Golazo de media cancha #haxball #golazo'); await pato.ver('@Olga')
+  // El nivel de los demás ya se conoce: lo calcula el servidor.
+  await pato.ver('@Olga · Nivel 0')
   await pato.noVer('Asado del domingo'); await pato.noVer('Clip de muestra')
   // Arranca solo y, como este navegador lo permite, con sonido.
   const marco = pato.page.frameLocator('.reel__video iframe')
@@ -448,7 +482,7 @@ try {
   await pato.boton('Quitar reacción').waitFor()
   if ((await pato.page.locator('.like').innerText()).trim() !== '1') throw new Error('La reacción tendría que quedar guardada')
   // Olga publica un video nuevo en TikTok y actualiza.
-  const triple = servidor.tiktok.publicar('olga_tt', 'Triple pared y adentro #haxmatch', 30)
+  const triple = servidor.tiktok.publicar('olga_tt', 'Triple pared y adentro #haxmatch', 0)
   await olga.boton('Actualizar mis videos').click()
   await olga.ver('Triple pared y adentro', 15000); await olga.ver('Reel nuevo en Clips · +8 puntos')
   // En un iPhone: cada video arranca sin sonido y alcanza con tocarlo una vez. El cartel
@@ -482,7 +516,7 @@ try {
   await pato.ver('Triple pared y adentro')
   await pato.noVer('Golazo de media cancha')
   // Deslizar para actualizar: Olga sube otro video y Pato lo encuentra sin que ella haga nada.
-  servidor.tiktok.publicar('olga_tt', 'Atajadón sobre la línea #haxball', 12)
+  servidor.tiktok.publicar('olga_tt', 'Atajadón sobre la línea #haxball', 0)
   await servidor.acceso.admin(`update public.tiktok_cuentas set sincronizada_at = now() - interval '10 minutes', pedida_at = null`)
   await pato.page.locator('.feed').hover()
   await pato.page.mouse.wheel(0, -400)

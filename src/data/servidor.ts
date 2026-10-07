@@ -1,7 +1,7 @@
 // La cola real: qué pide la app al servidor y cómo traduce lo que recibe a la
 // forma que usan las pantallas. Las reglas viven en el servidor (supabase/02_cola.sql);
 // acá solo se llama a sus funciones.
-import type { Busqueda, Cancha, Formato, Match, Mensaje, Posicion, Region, Usuario } from '../domain/types'
+import type { Busqueda, Cancha, EventoPuntos, Formato, Match, Mensaje, Posicion, PuntosServidor, Referido, Region, TipoPunto, Usuario } from '../domain/types'
 import { YO } from './seed'
 import { SUPABASE_URL } from './supabase'
 import { SIN_BASE, rpc } from './transporte'
@@ -38,8 +38,15 @@ export interface EstadoCola {
   resumen: Resumen | null
   /** Amigos y solicitudes. relacion: amigo, enviada (la mandé yo) o recibida. */
   amigos?: Array<FilaUsuario & { relacion: 'amigo' | 'enviada' | 'recibida' }>
+  /** Mis puntos y mis referidos (paso 5). Si la base todavía no lo tiene, no viene. */
+  puntos?: {
+    total: number | null; racha: number; conteos: Partial<Record<TipoPunto, number>>; de_referidos: number
+    eventos: Array<{ id: number; tipo: TipoPunto; puntos: number; referencia: string; dato: string | null; creado_at: string }>
+    referidos: Array<FilaUsuario & { amistosos: number; puntos: number | null }>
+  }
 }
-interface FilaUsuario { id: string; nick: string; username: string; foto: string | null }
+/** nivel: solo viene con el paso 5. */
+interface FilaUsuario { id: string; nick: string; username: string; foto: string | null; nivel?: number | null }
 
 /** Totales del perfil: partidos que contaron y partidos anotados que no se jugaron. */
 export interface Resumen {
@@ -60,6 +67,11 @@ export interface ColaLocal {
   enviadas: string[]
   /** Diferencia entre el reloj del servidor y el del dispositivo. */
   desfaseMs: number
+  /** Puntos según el servidor. null si la base todavía no los lleva (entonces se calculan en el dispositivo). */
+  puntos: PuntosServidor | null
+  /** Movimientos de puntos de los últimos días. */
+  eventos: EventoPuntos[]
+  referidos: Referido[]
 }
 
 const ms = (t: string | null): number | null => (t ? Date.parse(t) : null)
@@ -83,12 +95,12 @@ export function aLocal(e: EstadoCola, miId: string): ColaLocal {
   const ahora = Date.parse(e.ahora)
 
   const usuarios: Record<string, Usuario> = {}
-  for (const u of [...e.usuarios, ...(e.amigos ?? [])]) {
+  for (const u of [...e.usuarios, ...(e.amigos ?? []), ...(e.puntos?.referidos ?? [])]) {
     // La dirección de la foto se arma acá, con la carpeta del usuario: del servidor solo llega la versión.
     const foto = u.foto !== null && SUPABASE_URL
       ? `${SUPABASE_URL}/storage/v1/object/public/avatares/${u.id}/foto.jpg?v=${encodeURIComponent(u.foto)}`
       : null
-    usuarios[id(u.id)] = { id: id(u.id), username: u.nick, discord: u.username, nivel: null, color: colorDe(u.id), foto }
+    usuarios[id(u.id)] = { id: id(u.id), username: u.nick, discord: u.username, nivel: typeof u.nivel === 'number' ? u.nivel : null, color: colorDe(u.id), foto }
   }
   const conRelacion = (r: 'amigo' | 'enviada' | 'recibida') => (e.amigos ?? []).filter((a) => a.relacion === r).map((a) => a.id)
 
@@ -166,22 +178,45 @@ export function aLocal(e: EstadoCola, miId: string): ColaLocal {
   }))
 
   const resumen = { jugados: Number(e.resumen?.jugados ?? 0), perdidos: Number(e.resumen?.perdidos ?? 0) }
+  const p = e.puntos
   return {
     usuarios, busquedas, mensajes, matches, resumen,
     amigos: conRelacion('amigo'), solicitudes: conRelacion('recibida'), enviadas: conRelacion('enviada'),
     desfaseMs: ahora - Date.now(),
+    puntos: p ? { total: Number(p.total ?? 0), racha: Number(p.racha ?? 0), conteos: p.conteos ?? {}, deReferidos: Number(p.de_referidos ?? 0) } : null,
+    eventos: (p?.eventos ?? []).map((x) => ({
+      id: `p${x.id}`, userId: YO, tipo: x.tipo, puntos: x.puntos, fecha: Date.parse(x.creado_at), referencia: x.referencia,
+      // En un amistoso, el dato es el rival; en una racha, cuántos días.
+      rival: x.dato ?? undefined,
+    })),
+    referidos: (p?.referidos ?? []).map((r) => ({
+      userId: r.id, amistosos: Number(r.amistosos), acreditado: r.puntos !== null, puntos: r.puntos ?? undefined,
+    })),
   }
 }
 
 // ---- Llamadas ----
 
+/** Las funciones que devuelven el estado, de la más completa a la más básica. */
+const ESTADOS = ['estado_completo', 'estado', 'estado_cola'] as const
+let desdeCual = 0
+let pedidosDeEstado = 0
+
 export async function leerCola(): Promise<{ estado?: EstadoCola; error?: string }> {
   // Se avisa si la app está a la vista: con la app en segundo plano, lo que pase llega como notificación.
   const visible = typeof document === 'undefined' || document.visibilityState === 'visible'
-  let r = await rpc<EstadoCola>('estado', { p_visible: visible })
-  // Si la base todavía no tiene el paso 3 (amigos y avisos), la cola sigue funcionando sin eso.
-  if (r.error === SIN_BASE) r = await rpc<EstadoCola>('estado_cola')
-  return r.data ? { estado: r.data } : { error: r.error }
+  // Se pide la versión más completa que tenga la base. Si le falta un paso (puntos, o
+  // amigos y avisos), la app sigue con lo que hay y cada tanto vuelve a probar la completa.
+  if (++pedidosDeEstado % 40 === 0) desdeCual = 0
+  for (;;) {
+    const nombre = ESTADOS[desdeCual]
+    const r = await rpc<EstadoCola>(nombre, nombre === 'estado_cola' ? {} : { p_visible: visible })
+    if (r.error === SIN_BASE && desdeCual < ESTADOS.length - 1) {
+      desdeCual++
+      continue
+    }
+    return r.data ? { estado: r.data } : { error: r.error }
+  }
 }
 
 /** Cada acción devuelve el texto del problema, o null si salió bien. */

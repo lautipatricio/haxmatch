@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { PREVIEW, REAL } from '../config'
 import { cargarFoto, soltarFoto, type FotoElegida } from '../data/foto'
 import { TEXTO_AVISOS, activarAvisos, desactivarAvisos, estadoAvisos, probarAviso, type EstadoAvisos } from '../data/push'
-import { YO, buscarMia, rivalesDe, useStore } from '../data/store'
-import { DIAS_PENDIENTE, diasParaVencer, esPendiente, nivelDe, totalPuntos } from '../domain/rules'
+import { YO, buscarMia, misPuntos, rivalesDe, useStore } from '../data/store'
+import { DIAS_PENDIENTE, diasParaVencer, esPendiente, nivelDe } from '../domain/rules'
 import { Avatar, CerrarSesion, Head, Icon, Portada, TabBar, hace, useAhora } from '../ui'
 import { Recortador } from '../ui/Recortador'
 
@@ -199,7 +199,7 @@ export function Perfil() {
   const s = useStore()
   const ahora = useAhora()
   const nav = useNavigate()
-  const nivel = nivelDe(totalPuntos(s.eventos, YO))
+  const nivel = nivelDe(misPuntos(s))
   const sinLeer = s.notifs.some((n) => !n.leida)
   const [errorFoto, setErrorFoto] = useState<string | null>(null)
   /** Foto recién elegida de la galería, a la espera de que la encuadre. */

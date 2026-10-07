@@ -156,6 +156,19 @@ export interface Referido {
   userId: string
   amistosos: number
   acreditado: boolean
+  /** Puntos que me sumó al completar (0 si ese mes ya había llegado al tope). Solo con servidor. */
+  puntos?: number
+}
+
+/** Mis puntos según el servidor. Los movimientos recientes van aparte, en "eventos". */
+export interface PuntosServidor {
+  total: number
+  /** Días seguidos entrando a la app. */
+  racha: number
+  /** Cuántas veces sumó cada cosa (también las que quedaron en 0 por tope). */
+  conteos: Partial<Record<TipoPunto, number>>
+  /** Puntos ganados por referidos. */
+  deReferidos: number
 }
 
 export const MOTIVOS_REPORTE = [
