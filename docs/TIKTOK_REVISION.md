@@ -40,18 +40,20 @@ Si quedó agregado algún otro producto (Share Kit, Content Posting API, Webhook
 
 ## 3. La explicación (se pega en "App review")
 
+El campo acepta hasta 1000 caracteres; este texto tiene 1005.
+
 ```
-HaxMatch (https://haxmatch.lauti.workers.dev) is a free web app for the HaxBall gaming community. Players sign in with Discord, find other players for friendly matches, and watch a feed of clips posted by the community. The site is in Spanish.
+HaxMatch (https://haxmatch.lauti.workers.dev) is a free web app for the HaxBall gaming community: players sign in with Discord, find friendly matches and watch community clips. The site is in Spanish.
 
-Login Kit: used only so that a signed-in HaxMatch user can link their own TikTok account (Clips > "Mis videos" > "Vincular TikTok"). Sign-in to HaxMatch itself is done with Discord, not with TikTok.
+Login Kit: lets a signed-in user link their own TikTok account (Clips > Mis videos > Vincular TikTok). Sign-in to HaxMatch itself uses Discord.
 
-user.info.basic: we read the display name to show the user which TikTok account is linked ("TikTok vinculado: <name>"), and the open_id to identify that account. Nothing else from the profile is requested.
+user.info.basic: we read the display name to show which TikTok account is linked ("TikTok vinculado: name") and the open_id to identify it.
 
-video.list: we read the list of the user's public videos (id, title/description, duration, creation time, share URL and cover image). The user sees that list in "Mis videos" and decides which videos appear in the community "Clips" feed: only videos tagged #haxball or #haxmatch are eligible, and each one has a switch to hide it. Videos are played from TikTok with the embedded player; we never download, store or re-upload video files, and we never post anything to the user's account.
+video.list: we read the user's public videos (id, description, duration, date, share URL, cover). The user sees them in "Mis videos"; those tagged #haxball or #haxmatch appear in the "Clips" feed, each with a switch to hide it. Videos play from TikTok's embedded player. We never download, store or post anything.
 
-The user can unlink at any time ("Desvincular TikTok"): we delete the stored tokens and the video list, and revoke the access token.
+Users can unlink anytime: we delete tokens and the video list and revoke access.
 
-The demo video shows, on the sandbox: the public home page, sign-in, linking a TikTok account (authorization screen), the linked account name (user.info.basic), the imported video list with its switches (video.list), a linked video playing in the Clips feed, and unlinking.
+The demo video (sandbox) shows the home page, sign-in, linking, account name, video list, a clip playing, and unlinking.
 ```
 
 ## 4. Grabar el video
