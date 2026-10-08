@@ -1,7 +1,7 @@
 import { useEffect, useId, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { REAL } from '../config'
-import { YO, buscarMia, miRacha, misPuntos, nombreDe, useStore, usuarioDe, type Toast } from '../data/store'
+import { YO, buscarMia, chatSinLeer, miRacha, misPuntos, nombreDe, useStore, usuarioDe, type Toast } from '../data/store'
 import { leerFicha } from '../data/servidor'
 import { progresoNivel } from '../domain/rules'
 import type { Usuario } from '../domain/types'
@@ -277,6 +277,7 @@ export function ChipsMulti<T extends string>({ label, options, value, onChange, 
 
 export function TabBar({ on }: { on: 'inicio' | 'chat' | 'clips' | 'perfil' }) {
   const sinLeer = useStore((s) => s.notifs.some((n) => !n.leida))
+  const chatNuevo = useStore(chatSinLeer)
   return (
     <nav className="tabbar" aria-label="Secciones">
       <Link to="/" className={on === 'inicio' ? 'on' : ''} aria-current={on === 'inicio' ? 'page' : undefined}>
@@ -284,6 +285,7 @@ export function TabBar({ on }: { on: 'inicio' | 'chat' | 'clips' | 'perfil' }) {
       </Link>
       <Link to="/chat" className={on === 'chat' ? 'on' : ''} aria-current={on === 'chat' ? 'page' : undefined}>
         <Icon name="chat" size={24} stroke={1.75} />Chat
+        {chatNuevo && on !== 'chat' && <span className="dot" aria-label="Hay mensajes sin leer en el chat" />}
       </Link>
       <Link to="/clips" className={on === 'clips' ? 'on' : ''} aria-current={on === 'clips' ? 'page' : undefined}>
         <Icon name="clips" size={24} stroke={1.75} />Clips

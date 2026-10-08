@@ -97,6 +97,8 @@ interface Datos {
   referidos: Referido[]
   reportes: Reporte[]
   programados: Programado[]
+  /** Hasta qué mensaje del chat general vi (su hora). Lo posterior de otros cuenta como sin leer. */
+  chatVistoAt: number
 }
 
 export interface NuevaBusqueda {
@@ -201,6 +203,8 @@ interface Acciones {
   borrarMensajeChat: (id: string) => Promise<string | null>
   /** Si los demás ven mi puntito verde. Devuelve el problema, o null. */
   cambiarMostrarConectado: (mostrar: boolean) => Promise<string | null>
+  /** Estoy mirando el chat: lo que hay hasta ahora queda leído. */
+  marcarChatVisto: () => void
 }
 
 interface Efimero {
@@ -266,6 +270,7 @@ function datosIniciales(ahora: number): Datos {
     puntosServidor: null,
     // Con servidor los clips son los de TikTok de cada usuario; los de muestra se usan solo si no hay ninguno.
     reels: REAL ? [] : seedReels(ahora),
+    chatVistoAt: 0,
     misReacciones: [],
     tiktok: false,
     notifs: REAL ? [] : seedNotifs(ahora),
@@ -278,7 +283,7 @@ function datosIniciales(ahora: number): Datos {
 const CAMPOS: Array<keyof Datos> = [
   'perfil', 'cuentaId', 'resumen', 'offsetDias', 'usuarios', 'amigos', 'solicitudes', 'solicitudesEnviadas', 'bloqueados', 'bloqueosEnServidor',
   'busquedas', 'matches', 'mensajes', 'eventos', 'puntosServidor', 'reels', 'misReacciones', 'tiktok', 'notifs',
-  'referidos', 'reportes', 'programados',
+  'referidos', 'reportes', 'programados', 'chatVistoAt',
 ]
 
 function leerGuardado(): Datos | null {
@@ -917,6 +922,15 @@ export const useStore = create<Store>()((set, get) => {
       }, 150)
     }
     const dejarDeEscuchar = alCambiar(pronto)
+    // El chat general: con cada mensaje nuevo se traen los mensajes, para marcar la solapa si hay sin leer.
+    let esperaChat: ReturnType<typeof setTimeout> | null = null
+    const dejarChat = alCambiarChat(() => {
+      if (esperaChat) return
+      esperaChat = setTimeout(() => {
+        esperaChat = null
+        void get().cargarChat()
+      }, 300)
+    })
     // Aunque no llegue ningún aviso, se pregunta cada tanto. También sirve de
     // señal de vida: el servidor saca de la cola a quien deja de aparecer.
     let vueltas = 0
@@ -938,8 +952,11 @@ export const useStore = create<Store>()((set, get) => {
     void sincronizarAvisos()
     void get().cargarClips()
     void get().cargarSeguridad()
+    void get().cargarChat()
     return () => {
       dejarDeEscuchar()
+      dejarChat()
+      if (esperaChat) clearTimeout(esperaChat)
       clearInterval(cada)
       if (espera) clearTimeout(espera)
       document.removeEventListener('visibilitychange', alVolver)
@@ -1914,23 +1931,19 @@ export const useStore = create<Store>()((set, get) => {
 
   conectarChat: () => {
     if (!REAL) return () => {}
-    let espera: ReturnType<typeof setTimeout> | null = null
-    const pronto = () => {
-      if (espera) return
-      espera = setTimeout(() => {
-        espera = null
-        void get().cargarChat()
-      }, 150)
-    }
-    const dejarDeEscuchar = alCambiarChat(pronto)
-    // Por si se pierde algún aviso del tiempo real.
+    // Los mensajes nuevos llegan solos mientras la app está abierta (ver conectarCola).
+    // Con la pantalla del chat abierta, además se pregunta cada tanto, por si se pierde algún aviso.
     const cada = setInterval(() => void get().cargarChat(), 15 * SEG)
     void get().cargarChat()
-    return () => {
-      dejarDeEscuchar()
-      clearInterval(cada)
-      if (espera) clearTimeout(espera)
-    }
+    return () => clearInterval(cada)
+  },
+
+  marcarChatVisto: () => {
+    const s = get()
+    const ultimo = s.chat.reduce((max, m) => Math.max(max, m.at), 0)
+    if (ultimo <= (s.chatVistoAt ?? 0)) return
+    set({ chatVistoAt: ultimo })
+    guardar(get())
   },
 
   escribirChat: async (texto) => {
@@ -2069,6 +2082,12 @@ export function usuarioDe(s: Store, userId: string): Usuario {
 /** Mis puntos: los del servidor si los lleva; si no, la suma de lo guardado en el dispositivo. */
 export function misPuntos(s: Pick<Datos, 'eventos' | 'puntosServidor'>): number {
   return s.puntosServidor ? s.puntosServidor.total : totalPuntos(s.eventos, YO)
+}
+
+/** Hay mensajes de otros en el chat general que todavía no vi. */
+export function chatSinLeer(s: Pick<Store, 'chat' | 'chatVistoAt' | 'bloqueados'>): boolean {
+  const visto = s.chatVistoAt ?? 0
+  return s.chat.some((m) => m.userId !== YO && m.at > visto && !s.bloqueados.includes(m.userId))
 }
 
 /** Mi nivel, para mostrarlo junto a mi nombre. */

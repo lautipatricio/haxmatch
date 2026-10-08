@@ -650,8 +650,15 @@ try {
   await caja(tere).fill('hola, ¿alguien para un 3v3?'); await tere.boton('Enviar').click()
   // Le llega a Ulises sin tocar nada.
   await enChat(ulises, 'hola, ¿alguien para un 3v3?').waitFor({ timeout: 8000 })
+  // Tere se va a otra solapa: cuando Ulises escribe, a ella se le marca el Chat.
+  await tere.tab('Inicio').click()
+  if (await tere.tab('Chat').locator('.dot').count()) throw new Error('Tere ya leyó todo: la solapa Chat no tiene que marcar nada')
   await caja(ulises).fill('yo! armá sala'); await caja(ulises).press('Enter')
+  await tere.tab('Chat').locator('.dot').waitFor({ timeout: 8000 })
+  if (await ulises.tab('Chat').locator('.dot').count()) throw new Error('Lo que escribe uno no le marca la solapa a sí mismo')
+  await tere.tab('Chat').click()
   await enChat(tere, 'yo! armá sala').waitFor({ timeout: 8000 })
+  if (await tere.tab('Chat').locator('.dot').count()) throw new Error('Al abrir el chat, el puntito se va')
   await puntito(ulises, 'Tere').waitFor({ timeout: 15000 }); await ulises.foto('chat')
   if (await ulises.page.getByRole('button', { name: 'Moderar' }).count()) throw new Error('Quien no administra no puede moderar')
   if (await enChat(ulises, 'hola, ¿alguien').getByRole('button', { name: 'Borrar mensaje' }).count()) throw new Error('No se puede borrar el mensaje de otro')

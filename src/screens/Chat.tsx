@@ -74,6 +74,10 @@ export function Chat() {
     if (el && abajo.current) el.scrollTop = el.scrollHeight
   }, [ultimo, s.chatListo])
 
+  // Lo que está en pantalla queda leído (también lo que llega mientras la tengo abierta).
+  const marcarVisto = s.marcarChatVisto
+  useEffect(() => { marcarVisto() }, [ultimo, s.chatListo, marcarVisto])
+
   useEffect(() => {
     if (!porBorrar) return
     const t = setTimeout(() => setPorBorrar(null), 4000)

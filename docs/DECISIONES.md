@@ -335,7 +335,8 @@ Pedido: una solapa de chat general, un puntito verde al lado del nombre de quien
 
 Puntos abiertos:
 
-- Sin notificaciones del chat ni contador de mensajes sin leer, para no molestar. Se puede agregar si la gente lo pide.
+- Sin notificaciones del chat, para no molestar.
+- **Sin leer (agregado el mismo día):** si llega un mensaje de otro mientras la app está abierta en otra pantalla, la solapa Chat muestra un puntito rojo hasta que se abre. Se guarda en el dispositivo hasta qué mensaje se vio, así que también marca lo que llegó con la app cerrada (dentro de las 24 horas). Con cada mensaje nuevo, cada app abierta vuelve a pedir el chat: alcanza para empezar; con mucha gente conviene que el servidor mande solo el último.
 - Los reportes por el chat usan los motivos que ya existían ("Comportamiento tóxico"); el reporte no guarda qué mensaje fue.
 
 ## Decisiones que tomé al construir (revisar)
