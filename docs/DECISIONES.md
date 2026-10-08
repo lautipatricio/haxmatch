@@ -323,6 +323,21 @@ Lauti consiguió prestada una cuenta de Google Play (personal, creada el 5/1/202
 - Falta, cuando Lauti genere el paquete: publicar `/.well-known/assetlinks.json` con las dos huellas (la del paquete y la de Google).
 - Google necesita una cuenta de Discord de prueba para revisar la app, porque no hay otra forma de entrar.
 
+## Chat general, conectados y panel (8/10/2026)
+
+Pedido: una solapa de chat general, un puntito verde al lado del nombre de quien está conectado, un panel para ver quiénes se registraron y un botón para colaborar. Lauti eligió: un solo chat para todos, mensajes de 24 horas, el puntito visible para todos con opción de ocultarlo, y el botón escondido hasta tener el link de Cafecito.
+
+- **Chat:** solapa nueva en la barra de abajo (Inicio, Chat, Clips, Perfil). Mensajes de hasta 300 letras, en una sola línea. Topes: 3 cada 10 segundos, 40 cada 10 minutos, y no repetir el mismo mensaje en un minuto. No se ven los mensajes de quien bloqueé ni de quien me bloqueó. Una cuenta suspendida no puede escribir. Cada uno borra los suyos con dos toques. Tocar un nombre abre su perfil (para agregarlo, reportarlo o bloquearlo). El chat no manda notificaciones.
+- **Conectado:** "conectado" quiere decir que tiene la app abierta y a la vista. Se calcula con la señal que la app ya mandaba cada 8 segundos; al pasar a segundo plano deja de figurar en el momento, y si se corta internet, a los 30 segundos. El puntito aparece en la cola, en Amigos, en el chat y en el perfil de cada jugador. Se apaga en Perfil > "Mostrar cuando estoy conectado". Con un bloqueo de por medio, ninguno ve al otro.
+- **Panel:** Perfil > Panel de administración. Solo lo ven las cuentas de la tabla `admins` (se anota desde el SQL Editor). Muestra registrados, nuevos, activos, conectados, buscando, amistosos y mensajes; los reportes de 30 días con su detalle; los suspendidos, y los últimos 50 registrados. Suspende (1, 3, 7, 30 días o sin fin, con motivo) y levanta suspensiones con las mismas funciones `mod_`. No se puede suspender a otro administrador. En el chat, "Moderar" muestra el tacho en todos los mensajes.
+- **Apoyo:** tarjeta "Apoyá HaxMatch" en el Perfil, que aparece cuando se completa `APOYO_URL` en `src/config.ts`.
+- **Textos:** Términos (reglas del chat y que moderación puede borrar mensajes y suspender) y Privacidad (qué ven los demás, el chat y el puntito) actualizados.
+
+Puntos abiertos:
+
+- Sin notificaciones del chat ni contador de mensajes sin leer, para no molestar. Se puede agregar si la gente lo pide.
+- Los reportes por el chat usan los motivos que ya existían ("Comportamiento tóxico"); el reporte no guarda qué mensaje fue.
+
 ## Decisiones que tomé al construir (revisar)
 
 1. **El match siempre es con una sala.** Dos jugadores sin sala ya no generan match: se juntan en una misma búsqueda. Quien creó la sala ve "Ya entró X a la sala" y el que se une ve "Ya entré a la sala".

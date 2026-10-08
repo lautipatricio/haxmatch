@@ -38,8 +38,8 @@ export function Reportar() {
               <div className="strong">Bloquear a {nombre}</div>
               <div className="m">
                 {s.bloqueosEnServidor
-                  ? 'No lo vas a ver en la cola ni en Clips, y no puede escribirte, invitarte a su sala ni agregarte. Se desbloquea desde Amigos.'
-                  : 'No lo vas a ver en la cola ni en Clips. Se desbloquea desde Amigos.'}
+                  ? 'No lo vas a ver en la cola, en el chat ni en Clips, y no puede escribirte, invitarte a su sala ni agregarte. Se desbloquea desde Amigos.'
+                  : 'No lo vas a ver en la cola, en el chat ni en Clips. Se desbloquea desde Amigos.'}
               </div>
             </div>
             <button className="switch" role="switch" aria-checked={bloqueado} aria-label={`Bloquear a ${nombre}`}

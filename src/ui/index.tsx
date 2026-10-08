@@ -37,10 +37,13 @@ export function hace(ms: number): string {
 
 // ---------- Íconos (trazo, como en los mockups) ----------
 
-type IconName = 'inicio' | 'clips' | 'perfil' | 'campana' | 'atras' | 'flecha' | 'abajo' | 'check' | 'play' | 'x' | 'corazon' | 'copiar' | 'reloj' | 'camara' | 'sonido' | 'mudo'
+type IconName = 'inicio' | 'chat' | 'basura' | 'enviar' | 'clips' | 'perfil' | 'campana' | 'atras' | 'flecha' | 'abajo' | 'check' | 'play' | 'x' | 'corazon' | 'copiar' | 'reloj' | 'camara' | 'sonido' | 'mudo'
 
 const PATHS: Record<IconName, ReactNode> = {
   inicio: <path d="M4 11.5 12 4l8 7.5V20h-5.5v-5h-5v5H4z" />,
+  chat: <path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 3.5V17.5H5A1.5 1.5 0 0 1 3.5 16V7A1.5 1.5 0 0 1 5 5.5z" />,
+  basura: <path d="M5 7h14M10 7V5h4v2M7 7l1 12.5h8L17 7M10.5 10.5v6M13.5 10.5v6" />,
+  enviar: <path d="M4.5 12 20 4.5 15.5 20l-3.5-6.5zM12 13.5 20 4.5" />,
   clips: <><rect x="3.5" y="4.5" width="17" height="15" rx="3" /><path d="m10.5 9.5 4.5 2.5-4.5 2.5z" /></>,
   perfil: <><circle cx="12" cy="8.5" r="3.5" /><path d="M5 20c.6-3.6 3.4-5.5 7-5.5s6.4 1.9 7 5.5" /></>,
   campana: <path d="M6.5 10a5.5 5.5 0 0 1 11 0c0 5 2 6.5 2 6.5h-15s2-1.5 2-6.5zM10 19.5h4" />,
@@ -84,6 +87,13 @@ export function Avatar({ user, nombre, size, foto }: { user?: Usuario; nombre?: 
       {imagen ? <img src={imagen} alt="" /> : n.replace(/[^a-zA-Z0-9]/g, '').slice(0, 1) || '?'}
     </div>
   )
+}
+
+/** Puntito verde al lado del nombre: tiene la app abierta ahora. */
+export function Conectado({ id }: { id: string }) {
+  const esta = useStore((s) => s.conectados.includes(id))
+  if (!esta) return null
+  return <span className="en-linea" role="img" aria-label="conectado" title="Conectado" />
 }
 
 /**
@@ -137,7 +147,7 @@ export function FichaJugador() {
         <div className="row" style={{ gap: 14 }}>
           <Avatar user={u} size="lg" />
           <div className="grow">
-            <div className="strong cut" style={{ fontSize: 22, lineHeight: 1.15 }}>{u.username}</div>
+            <div className="strong cut" style={{ fontSize: 22, lineHeight: 1.15 }}>{u.username}<Conectado id={u.id} /></div>
             <div className="m cut">
               {u.discord ? `Discord: ${u.discord}` : 'Jugador de HaxMatch'}
               {amigo && ' · es tu amigo'}
@@ -265,12 +275,15 @@ export function ChipsMulti<T extends string>({ label, options, value, onChange, 
   )
 }
 
-export function TabBar({ on }: { on: 'inicio' | 'clips' | 'perfil' }) {
+export function TabBar({ on }: { on: 'inicio' | 'chat' | 'clips' | 'perfil' }) {
   const sinLeer = useStore((s) => s.notifs.some((n) => !n.leida))
   return (
     <nav className="tabbar" aria-label="Secciones">
       <Link to="/" className={on === 'inicio' ? 'on' : ''} aria-current={on === 'inicio' ? 'page' : undefined}>
         <Icon name="inicio" size={24} stroke={1.75} />Inicio
+      </Link>
+      <Link to="/chat" className={on === 'chat' ? 'on' : ''} aria-current={on === 'chat' ? 'page' : undefined}>
+        <Icon name="chat" size={24} stroke={1.75} />Chat
       </Link>
       <Link to="/clips" className={on === 'clips' ? 'on' : ''} aria-current={on === 'clips' ? 'page' : undefined}>
         <Icon name="clips" size={24} stroke={1.75} />Clips

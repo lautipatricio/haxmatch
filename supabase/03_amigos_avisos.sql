@@ -76,6 +76,9 @@ create table if not exists public.config_privada (
 alter table public.presencia add column if not exists probo_at timestamptz;
 alter table public.presencia add column if not exists prueba_id bigint;
 
+-- Si los demás ven el puntito verde cuando tengo la app abierta. Se cambia desde el Perfil.
+alter table public.profiles add column if not exists mostrar_conectado boolean not null default true;
+
 alter table public.amistades enable row level security;
 alter table public.amistad_envios enable row level security;
 alter table public.presencia enable row level security;
@@ -94,6 +97,26 @@ returns text language sql immutable set search_path = '' as $$
     when p_url ~ ('/storage/v1/object/public/avatares/' || p_id::text || '/foto\.jpg(\?v=[0-9]+)?$')
     then coalesce(substring(p_url from '\?v=([0-9]+)$'), '0') end
 $$;
+
+-- Quiénes tienen la app abierta y a la vista ahora (la app avisa cada 8 segundos;
+-- al pasar a segundo plano, deja de contar en el momento). No figuran los que eligieron
+-- ocultarlo ni los que tienen un bloqueo con quien pregunta.
+create or replace function public._conectados(p_yo uuid)
+returns jsonb language plpgsql stable security definer set search_path = '' as $$
+begin
+  -- Los bloqueos llegan en el paso 6.
+  if to_regclass('public.bloqueos') is null then
+    return (select coalesce(jsonb_agg(x.id), '[]'::jsonb) from (
+      select p.id from public.presencia pr join public.profiles p on p.id = pr.user_id
+      where pr.visto_at > now() - interval '30 seconds' and p.onboarding and p.mostrar_conectado
+      order by pr.visto_at desc limit 500) x);
+  end if;
+  return (select coalesce(jsonb_agg(x.id), '[]'::jsonb) from (
+    select p.id from public.presencia pr join public.profiles p on p.id = pr.user_id
+    where pr.visto_at > now() - interval '30 seconds' and p.onboarding and p.mostrar_conectado
+      and not exists (select 1 from public.bloqueos b where (b.de = p_yo and b.a = p.id) or (b.a = p_yo and b.de = p.id))
+    order by pr.visto_at desc limit 500) x);
+end $$;
 
 create or replace function public._amigos(p_user uuid)
 returns uuid[] language sql stable security definer set search_path = '' as $$
@@ -423,7 +446,8 @@ begin
         select case when am.de = yo then am.a else am.de end as otro,
                case when am.estado = 'aceptada' then 'amigo' when am.de = yo then 'enviada' else 'recibida' end as relacion
         from public.amistades am where am.de = yo or am.a = yo) r
-      join public.profiles u on u.id = r.otro)
+      join public.profiles u on u.id = r.otro),
+    'conectados', public._conectados(yo)
   ))::json;
 end $$;
 
@@ -649,7 +673,7 @@ end $$;
 -- ---------------------------------------------------------------------------
 
 revoke all on function
-  public._foto_version(uuid, text), public._amigos(uuid), public._nick(uuid),
+  public._foto_version(uuid, text), public._amigos(uuid), public._nick(uuid), public._conectados(uuid),
   public._notificar(uuid, text, text, text, text), public._enviar_push(uuid, text, text, text, text, boolean),
   public._hay_red(), public._aguante(uuid), public._vencer(),
   public._al_crear_mensaje(), public._al_ocupar_lugar(), public._al_empezar_busqueda(),

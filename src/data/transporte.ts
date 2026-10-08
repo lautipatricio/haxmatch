@@ -94,6 +94,22 @@ export async function rpc<T>(nombre: string, args: Record<string, unknown> = {})
   }
 }
 
+/** Avisa cada vez que hay mensajes nuevos en el chat general. Devuelve cómo dejar de escuchar. */
+export function alCambiarChat(aviso: () => void): () => void {
+  if (ENSAYO) {
+    const fuente = new EventSource(`${ENSAYO_URL}/cambios`)
+    fuente.addEventListener('chat', aviso)
+    return () => fuente.close()
+  }
+  if (!supabase) return () => {}
+  const cliente = supabase
+  const canal = cliente
+    .channel('chat')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_senal' }, aviso)
+    .subscribe()
+  return () => { void cliente.removeChannel(canal) }
+}
+
 /** Avisa cada vez que algo cambió en el servidor. Devuelve cómo dejar de escuchar. */
 export function alCambiar(aviso: () => void): () => void {
   if (ENSAYO) {

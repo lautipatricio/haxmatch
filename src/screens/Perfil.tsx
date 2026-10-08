@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type ChangeEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { PREVIEW, REAL } from '../config'
+import { APOYO_URL, PREVIEW, REAL } from '../config'
 import { cargarFoto, soltarFoto, type FotoElegida } from '../data/foto'
 import { ACA, ES_COMPU, TEXTO_AVISOS, activarAvisos, desactivarAvisos, estadoAvisos, probarAviso, type EstadoAvisos } from '../data/push'
 import { YO, buscarMia, rivalesDe, useStore } from '../data/store'
@@ -139,6 +139,34 @@ function Avisos() {
           {estado === 'activos' ? 'Desactivar avisos' : 'Activar avisos'}
         </button>
       )}
+    </div>
+  )
+}
+
+/** Si los demás ven el puntito verde cuando tengo la app abierta. */
+function MostrarConectado() {
+  const mostrar = useStore((s) => s.mostrarConectado)
+  const cambiar = useStore((s) => s.cambiarMostrarConectado)
+  const [ocupado, setOcupado] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const id = useId()
+  const tocar = async () => {
+    setOcupado(true)
+    setError(await cambiar(!mostrar))
+    setOcupado(false)
+  }
+  return (
+    <div className="card card--col">
+      <div className="row">
+        <div className="grow">
+          <div className="strong" id={id}>Mostrar cuando estoy conectado</div>
+          <div className="m">{mostrar
+            ? 'Los demás ven un puntito verde al lado de tu nombre mientras tenés la app abierta.'
+            : 'Nadie ve si estás conectado.'}</div>
+        </div>
+        <button className="switch" role="switch" aria-checked={mostrar} aria-labelledby={id} disabled={ocupado} onClick={() => void tocar()} />
+      </div>
+      {error && <div className="err" role="alert">{error}</div>}
     </div>
   )
 }
@@ -286,8 +314,23 @@ export function Perfil() {
               <span>Referir amigos</span>
               <span>+{PUNTOS.referido} puntos<Icon name="flecha" size={20} /></span>
             </Link>
+            {s.admin && (
+              <Link className="fila-enlace" to="/admin">
+                <span>Panel de administración</span>
+                <span><Icon name="flecha" size={20} /></span>
+              </Link>
+            )}
           </div>
 
+          {APOYO_URL && (
+            <div className="card card--col">
+              <div className="strong">Apoyá HaxMatch</div>
+              <div className="m">HaxMatch es gratis. Si te sirve, podés colaborar con lo que quieras para mantenerlo funcionando.</div>
+              <a className="btn" href={APOYO_URL} target="_blank" rel="noopener noreferrer">Colaborar</a>
+            </div>
+          )}
+
+          <MostrarConectado />
           <Avisos />
 
           <div className="lista">

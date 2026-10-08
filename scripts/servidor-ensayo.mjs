@@ -89,11 +89,19 @@ export async function iniciarEnsayo(puerto = 8787, { conWeb = false } = {}) {
   }
 
   /** Si la señal de cambios se movió, les avisa a las apps abiertas (lo que en Supabase hace Realtime). */
+  let versionChat = null
   async function avisar() {
     const [{ version: v }] = await acceso.admin('select version from public.cambios where id = 1')
-    if (String(v) === String(version)) return
-    version = v
-    for (const r of oyentes) r.write(`data: ${v}\n\n`)
+    if (String(v) !== String(version)) {
+      version = v
+      for (const r of oyentes) r.write(`data: ${v}\n\n`)
+    }
+    // El chat tiene su propia señal: un mensaje no hace que todas las apps pidan la cola.
+    const [{ version: c }] = await acceso.admin('select version from public.chat_senal where id = 1')
+    if (String(c) !== String(versionChat)) {
+      versionChat = c
+      for (const r of oyentes) r.write(`event: chat\ndata: ${c}\n\n`)
+    }
   }
 
   const servidor = http.createServer(async (req, res) => {

@@ -1,7 +1,7 @@
 // La cola real: qué pide la app al servidor y cómo traduce lo que recibe a la
 // forma que usan las pantallas. Las reglas viven en el servidor (supabase/02_cola.sql);
 // acá solo se llama a sus funciones.
-import type { Busqueda, Cancha, EventoPuntos, Formato, Match, Mensaje, Posicion, PuntosServidor, Referido, Region, TipoPunto, Usuario } from '../domain/types'
+import type { Busqueda, Cancha, EventoPuntos, Formato, Match, Mensaje, MensajeChat, Posicion, PuntosServidor, Referido, Region, TipoPunto, Usuario } from '../domain/types'
 import { YO } from './seed'
 import { SUPABASE_URL } from './supabase'
 import { SIN_BASE, rpc } from './transporte'
@@ -48,6 +48,8 @@ export interface EstadoCola {
     eventos: Array<{ id: number; tipo: TipoPunto; puntos: number; referencia: string; dato: string | null; creado_at: string }>
     referidos: Array<FilaUsuario & { amistosos: number; puntos: number | null }>
   }
+  /** Quiénes tienen la app abierta ahora (paso 3 actualizado). */
+  conectados?: string[]
 }
 /** nivel: solo viene con el paso 5. */
 interface FilaUsuario { id: string; nick: string; username: string; foto: string | null; nivel?: number | null }
@@ -76,6 +78,7 @@ export interface ColaLocal {
   /** Movimientos de puntos de los últimos días. */
   eventos: EventoPuntos[]
   referidos: Referido[]
+  conectados: string[]
 }
 
 const ms = (t: string | null): number | null => (t ? Date.parse(t) : null)
@@ -90,6 +93,13 @@ function colorDe(id: string): string {
   return colores[n % colores.length]
 }
 
+/** La foto de otro usuario: del servidor solo llega la versión; la dirección se arma con su carpeta. */
+function fotoDe(id: string, version: string | null): string | null {
+  return version !== null && SUPABASE_URL
+    ? `${SUPABASE_URL}/storage/v1/object/public/avatares/${id}/foto.jpg?v=${encodeURIComponent(version)}`
+    : null
+}
+
 /**
  * Traduce el estado del servidor a la forma local. En las pantallas "yo" siempre
  * es el mismo id, así que el id real del usuario se reemplaza por ese.
@@ -100,10 +110,7 @@ export function aLocal(e: EstadoCola, miId: string): ColaLocal {
 
   const usuarios: Record<string, Usuario> = {}
   for (const u of [...e.usuarios, ...(e.amigos ?? []), ...(e.puntos?.referidos ?? [])]) {
-    // La dirección de la foto se arma acá, con la carpeta del usuario: del servidor solo llega la versión.
-    const foto = u.foto !== null && SUPABASE_URL
-      ? `${SUPABASE_URL}/storage/v1/object/public/avatares/${u.id}/foto.jpg?v=${encodeURIComponent(u.foto)}`
-      : null
+    const foto = fotoDe(u.id, u.foto)
     usuarios[id(u.id)] = { id: id(u.id), username: u.nick, discord: u.username, nivel: typeof u.nivel === 'number' ? u.nivel : null, color: colorDe(u.id), foto }
   }
   const conRelacion = (r: 'amigo' | 'enviada' | 'recibida') => (e.amigos ?? []).filter((a) => a.relacion === r).map((a) => a.id)
@@ -197,6 +204,7 @@ export function aLocal(e: EstadoCola, miId: string): ColaLocal {
     referidos: (p?.referidos ?? []).map((r) => ({
       userId: r.id, amistosos: Number(r.amistosos), acreditado: r.puntos !== null, puntos: r.puntos ?? undefined,
     })),
+    conectados: (e.conectados ?? []).map(id),
   }
 }
 
@@ -231,7 +239,7 @@ export async function leerSeguridad(): Promise<{ bloqueados: Usuario[]; suspensi
   return {
     bloqueados: (r.data.bloqueados ?? []).map((u) => ({
       id: u.id, username: u.nick, discord: u.username, nivel: null, color: colorDe(u.id),
-      foto: u.foto !== null && SUPABASE_URL ? `${SUPABASE_URL}/storage/v1/object/public/avatares/${u.id}/foto.jpg?v=${encodeURIComponent(u.foto)}` : null,
+      foto: fotoDe(u.id, u.foto),
     })),
     suspension: r.data.suspension ?? null,
   }
@@ -284,6 +292,100 @@ export const cola = {
   guardarSuscripcion: (endpoint: string, p256dh: string, auth: string) =>
     hacer('guardar_suscripcion', { p_endpoint: endpoint, p_p256dh: p256dh, p_auth: auth }),
   quitarSuscripcion: (endpoint: string) => hacer('quitar_suscripcion', { p_endpoint: endpoint }),
+}
+
+// ---- Chat general (paso 8) ----
+
+interface FilaChat {
+  id: number; user_id: string; texto: string; creado_at: string
+  nick: string; username: string; foto: string | null; nivel: number | null
+}
+
+/** Los mensajes de las últimas 24 horas, con sus autores. */
+export async function leerChat(miId: string): Promise<{ mensajes?: MensajeChat[]; usuarios?: Record<string, Usuario>; error?: string }> {
+  const r = await rpc<FilaChat[]>('chat_leer')
+  if (!r.data) return { error: r.error === SIN_BASE ? 'El chat todavía no está habilitado.' : r.error }
+  const id = (u: string) => (u === miId ? YO : u)
+  const usuarios: Record<string, Usuario> = {}
+  for (const f of r.data) {
+    usuarios[id(f.user_id)] = { id: id(f.user_id), username: f.nick, discord: f.username, nivel: f.nivel ?? null, color: colorDe(f.user_id), foto: fotoDe(f.user_id, f.foto) }
+  }
+  return {
+    mensajes: r.data.map((f) => ({ id: String(f.id), userId: id(f.user_id), texto: f.texto, at: Date.parse(f.creado_at) })),
+    usuarios,
+  }
+}
+
+export const chat = {
+  enviar: (texto: string) => hacer('chat_enviar', { p_texto: texto }),
+  borrar: (id: string) => hacer('chat_borrar', { p_id: Number(id) }),
+}
+
+// ---- Ajustes propios y panel de administración (paso 8) ----
+
+/** Si administro y si muestro que estoy conectado. null si la base todavía no tiene el paso 8. */
+export async function leerAjustes(): Promise<{ admin: boolean; mostrarConectado: boolean } | null> {
+  const r = await rpc<{ admin: boolean; mostrar_conectado: boolean }>('mis_ajustes')
+  return r.data ? { admin: r.data.admin === true, mostrarConectado: r.data.mostrar_conectado !== false } : null
+}
+
+export const guardarMostrarConectado = (mostrar: boolean) => hacer('guardar_mostrar_conectado', { p_mostrar: mostrar })
+
+export interface PersonaPanel { id: string; nick: string; username: string; foto?: string | null; conectado?: boolean; creadoAt?: number }
+export interface Panel {
+  registrados: number; nuevosHoy: number; nuevos7: number; activosHoy: number; activos7: number
+  conectados: number; buscando: number; amistososHoy: number; amistosos: number; mensajesChat: number
+  ultimos: PersonaPanel[]
+  reportados: Array<PersonaPanel & {
+    reportes: number; deDistintos: number; motivos: string; ultimo: number; suspendidoHasta: number | null
+    detalle: Array<{ cuando: number; motivo: string; detalle: string }>
+  }>
+  suspendidos: Array<PersonaPanel & { hasta: number; motivo: string | null }>
+}
+
+interface FilaPanel {
+  registrados: number; nuevos_hoy: number; nuevos_7_dias: number; activos_hoy: number; activos_7_dias: number
+  conectados: number; buscando: number; amistosos_hoy: number; amistosos: number; mensajes_chat: number
+  ultimos: Array<{ id: string; nick: string; username: string; creado_at: string; foto: string | null; conectado: boolean }>
+  reportados: Array<{
+    id: string; nick: string; username: string; reportes: number; de_distintos: number; motivos: string; ultimo: string
+    suspendido_hasta: string | null; detalle: Array<{ cuando: string; motivo: string; detalle: string }>
+  }>
+  suspendidos: Array<{ id: string; nick: string; username: string; hasta: string; motivo: string | null }>
+}
+
+/** Los números y las listas del panel. Solo responde si administro. */
+export async function leerPanel(): Promise<{ panel?: Panel; error?: string }> {
+  const r = await rpc<FilaPanel>('admin_resumen')
+  if (!r.data) return { error: r.error === SIN_BASE ? 'Falta el paso 8 de la base de datos.' : r.error }
+  const d = r.data
+  // "infinity" (suspensión sin fecha de fin) no es una fecha: queda como Infinity.
+  const fecha = (t: string) => (t === 'infinity' ? Infinity : Date.parse(t))
+  return {
+    panel: {
+      registrados: Number(d.registrados), nuevosHoy: Number(d.nuevos_hoy), nuevos7: Number(d.nuevos_7_dias),
+      activosHoy: Number(d.activos_hoy), activos7: Number(d.activos_7_dias), conectados: Number(d.conectados),
+      buscando: Number(d.buscando), amistososHoy: Number(d.amistosos_hoy), amistosos: Number(d.amistosos),
+      mensajesChat: Number(d.mensajes_chat),
+      ultimos: d.ultimos.map((u) => ({ id: u.id, nick: u.nick, username: u.username, foto: fotoDe(u.id, u.foto), conectado: u.conectado, creadoAt: Date.parse(u.creado_at) })),
+      reportados: d.reportados.map((u) => ({
+        id: u.id, nick: u.nick, username: u.username, reportes: Number(u.reportes), deDistintos: Number(u.de_distintos),
+        motivos: u.motivos, ultimo: Date.parse(u.ultimo), suspendidoHasta: u.suspendido_hasta ? fecha(u.suspendido_hasta) : null,
+        detalle: u.detalle.map((x) => ({ cuando: Date.parse(x.cuando), motivo: x.motivo, detalle: x.detalle })),
+      })),
+      suspendidos: d.suspendidos.map((u) => ({ id: u.id, nick: u.nick, username: u.username, hasta: fecha(u.hasta), motivo: u.motivo })),
+    },
+  }
+}
+
+export async function suspenderDesdePanel(userId: string, dias: number, motivo: string): Promise<{ texto?: string; error?: string }> {
+  const r = await rpc<string>('admin_suspender', { p_user: userId, p_dias: dias, p_motivo: motivo })
+  return r.error ? { error: r.error } : { texto: r.data ?? 'Listo.' }
+}
+
+export async function levantarDesdePanel(userId: string): Promise<{ texto?: string; error?: string }> {
+  const r = await rpc<string>('admin_levantar', { p_user: userId })
+  return r.error ? { error: r.error } : { texto: r.data ?? 'Listo.' }
 }
 
 /** Agregar a un amigo por su usuario de Discord. Devuelve cómo quedó, o el problema. */

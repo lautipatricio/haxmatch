@@ -278,10 +278,57 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
 .err { color: var(--danger); font-size: 14px; }
 .ok { color: var(--accent); font-size: 14px; }
 
+/* ---------- Conectado ---------- */
+
+/* Puntito verde al lado del nombre: tiene la app abierta ahora. */
+.en-linea {
+  display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--vivo);
+  margin-left: 6px; vertical-align: middle; flex: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--vivo) 25%, transparent);
+}
+
+/* ---------- Chat ---------- */
+
+.chat { --gap: 0px; padding-bottom: 12px; }
+.chat__nota { margin: 0 0 12px; font-size: 14px; }
+.chat__lista { display: flex; flex-direction: column; }
+.chat__msg { padding-left: 44px; }
+.chat__msg--primero { margin-top: 14px; }
+.chat__autor {
+  display: flex; align-items: center; gap: 8px; min-height: 36px; margin-left: -44px;
+  background: none; border: 0; padding: 0; color: var(--fg); text-align: left; font: inherit; max-width: calc(100% + 44px);
+}
+.chat__autor .strong { min-width: 0; }
+.chat__autor .en-linea { margin-left: -2px; }
+.chat__hora { font-size: 13px; flex: none; }
+.chat__linea { display: flex; align-items: flex-start; gap: 4px; }
+.chat__texto { margin: 0; flex: 1; min-width: 0; padding: 2px 0; line-height: 1.4; overflow-wrap: anywhere; white-space: pre-wrap; }
+.chat__msg--primero .chat__texto { margin-top: -4px; }
+.chat__borrar { width: 32px; height: 32px; margin-top: -4px; opacity: .55; }
+.chat__borrar-si { flex: none; min-height: 32px; padding: 0 10px; color: var(--danger); margin-top: -4px; }
+.chat__escribir {
+  flex: none; display: flex; flex-direction: column; gap: 6px;
+  padding: 10px var(--gutter); border-top: 1px solid var(--mute); background: var(--bg);
+}
+.chat__escribir .row { gap: 8px; }
+.chat__escribir .field { min-height: 48px; }
+.chat__escribir .btn--icon { height: 48px; width: 48px; }
+.chat__quedan { font-size: 13px; }
+
+/* ---------- Panel de administración ---------- */
+
+.panel-numeros { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; }
+.panel-numeros > div { border-top: 1px solid var(--mute); padding: 10px 0 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.panel-numeros .h { font-size: 32px; line-height: 1; margin: 0; }
+.reportado { display: flex; flex-direction: column; gap: 10px; }
+.reportado ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.reportado .acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+.reportado .acciones .btn { flex: 1 1 auto; }
+
 /* ---------- Barra inferior ---------- */
 
 .tabbar {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); flex: none;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); flex: none;
   border-top: 1px solid var(--mute);
   padding: 8px 12px calc(10px + var(--safe-bottom));
   background: var(--bg);
@@ -580,6 +627,8 @@ a.nivel:active { transform: scale(.98); }
 /* Con mouse (computadora): lo que se puede tocar lo avisa al pasar por encima. En el celular no,
    para que no quede "pegado" después de un toque. */
 @media (hover: hover) and (pointer: fine) {
+  button.chat__autor:hover .strong { text-decoration: underline; text-underline-offset: 3px; }
+  .chat__borrar:hover { opacity: 1; }
   .btn--sec:hover:not(:disabled) { background: var(--line); }
   .btn--icon.btn--sec:hover { background: var(--mute); }
   .btn--ghost:hover:not(:disabled) { color: var(--fg); }

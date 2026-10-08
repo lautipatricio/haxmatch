@@ -27,6 +27,14 @@ export interface Usuario {
   jugados?: number
 }
 
+/** Un mensaje del chat general. Duran 24 horas. */
+export interface MensajeChat {
+  id: string
+  userId: string
+  texto: string
+  at: number
+}
+
 export interface Busqueda {
   id: string
   userId: string

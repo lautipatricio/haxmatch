@@ -1,6 +1,6 @@
 // Datos de prueba. Todo lo que hay acá es inventado para poder recorrer la app
 // sin backend. Se reemplaza por Supabase en las etapas siguientes.
-import type { Busqueda, EventoPuntos, Match, Notif, Reel, Referido, Usuario } from '../domain/types'
+import type { Busqueda, EventoPuntos, Match, MensajeChat, Notif, Reel, Referido, Usuario } from '../domain/types'
 
 const MIN = 60 * 1000
 const HORA = 60 * MIN
@@ -109,3 +109,18 @@ export const SEED_AMIGOS = ['u_mati', 'u_nico', 'u_lucho', 'u_marce']
 export const SEED_SOLICITUDES = ['u_tobi']
 export const SEED_REFERIDOS: Referido[] = [{ userId: 'u_marce', amistosos: 2, acreditado: false }]
 export const SEED_EVENTOS: EventoPuntos[] = []
+
+/** Quiénes figuran conectados en la demostración. */
+export const SEED_CONECTADOS = ['u_mati', 'u_nico', 'u_tobi', 'u_cami']
+
+/** Charla de muestra en el chat general. */
+export function seedChat(ahora: number): MensajeChat[] {
+  const m = (id: string, userId: string, hace: number, texto: string): MensajeChat => ({ id, userId, texto, at: ahora - hace })
+  return [
+    m('c1', 'u_cami', 3 * HORA, 'buenas! alguien para un 3v3 en big a la noche?'),
+    m('c2', 'u_tobi', 3 * HORA - 4 * MIN, 'yo juego, avisá cuando armes'),
+    m('c3', 'u_lucho', 50 * MIN, 'qué buena la app, ya jugué dos amistosos hoy'),
+    m('c4', 'u_nico', 12 * MIN, 'armé sala "nico 3v3 amistoso", me faltan 2'),
+    m('c5', 'u_mati', 6 * MIN, 'voy'),
+  ]
+}

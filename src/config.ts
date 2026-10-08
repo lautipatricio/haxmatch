@@ -26,3 +26,9 @@ export const REF_INICIAL: string = (() => {
     return ''
   }
 })()
+
+/**
+ * Link para apoyar a HaxMatch con una colaboración (Cafecito, Ko-fi…). Vacío: el botón no aparece.
+ * Para activarlo, poné acá el link completo, por ejemplo 'https://cafecito.app/haxmatch'.
+ */
+export const APOYO_URL: string = ''

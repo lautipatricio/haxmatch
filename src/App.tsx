@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { useStore } from './data/store'
 import { Ingresar, Onboarding } from './screens/Acceso'
+import { Admin } from './screens/Admin'
 import { Amigos } from './screens/Amigos'
 import { Buscando } from './screens/Buscando'
+import { Chat } from './screens/Chat'
 import { Clips, MisVideos } from './screens/Clips'
 import { FormSala } from './screens/Formularios'
 import { Inicio } from './screens/Inicio'
@@ -116,6 +118,8 @@ export function App() {
           <Route path="/sala" element={<FormSala />} />
           <Route path="/buscando" element={<Buscando />} />
           <Route path="/match/:id" element={<MatchListo />} />
+          <Route path="/chat" element={<Chat />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="/clips" element={<Clips />} />
           <Route path="/clips/mis-videos" element={<MisVideos />} />
           <Route path="/perfil" element={<Perfil />} />

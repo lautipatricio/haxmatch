@@ -10,7 +10,7 @@ import {
   rachaActual, rivalDe, totalPuntos,
 } from '../domain/rules'
 import type {
-  Busqueda, Cancha, Duracion, EventoPuntos, Formato, Match, Mensaje, Modo, MotivoReporte,
+  Busqueda, Cancha, Duracion, EventoPuntos, Formato, Match, Mensaje, MensajeChat, Modo, MotivoReporte,
   Notif, Participante, Posicion, PuntosServidor, Reel, Referido, Region, Reporte, TipoNotif, TipoPunto, Usuario,
 } from '../domain/types'
 import {
@@ -19,12 +19,15 @@ import {
 } from './cuenta'
 import { clipsApi, irATikTok, leerClips, type TikTokInfo } from './clips'
 import { sincronizarAvisos, soltarAvisos } from './push'
-import { GRACIA_MS, aLocal, cola, leerCola, leerSeguridad, pedirAmistadPorUsuario, type ColaLocal, type Resumen } from './servidor'
-import { REAL } from './supabase'
-import { alCambiar } from './transporte'
 import {
-  BOT, CODIGOS, SEED_AMIGOS, SEED_EVENTOS, SEED_REFERIDOS, SEED_SOLICITUDES, USUARIOS, YO,
-  seedBusquedas, seedMatches, seedMisVideos, seedNotifs, seedReels,
+  GRACIA_MS, aLocal, chat as chatServidor, cola, guardarMostrarConectado, leerAjustes, leerChat, leerCola, leerSeguridad,
+  pedirAmistadPorUsuario, type ColaLocal, type Resumen,
+} from './servidor'
+import { REAL } from './supabase'
+import { alCambiar, alCambiarChat } from './transporte'
+import {
+  BOT, CODIGOS, SEED_AMIGOS, SEED_CONECTADOS, SEED_EVENTOS, SEED_REFERIDOS, SEED_SOLICITUDES, USUARIOS, YO,
+  seedBusquedas, seedChat, seedMatches, seedMisVideos, seedNotifs, seedReels,
 } from './seed'
 
 const SEG = 1000
@@ -187,6 +190,17 @@ interface Acciones {
 
   marcarLeidas: () => void
   simularAmistosoReferido: (userId: string) => void
+
+  /** Chat general: trae los mensajes de las últimas 24 horas. */
+  cargarChat: () => Promise<void>
+  /** Mientras la pantalla del chat está abierta, lo mantiene al día. Devuelve cómo cortar. */
+  conectarChat: () => () => void
+  /** Devuelve el problema, o null si se mandó. */
+  escribirChat: (texto: string) => Promise<string | null>
+  /** El mensaje propio, o cualquiera si administro. Devuelve el problema, o null. */
+  borrarMensajeChat: (id: string) => Promise<string | null>
+  /** Si los demás ven mi puntito verde. Devuelve el problema, o null. */
+  cambiarMostrarConectado: (mostrar: boolean) => Promise<string | null>
 }
 
 interface Efimero {
@@ -210,6 +224,20 @@ interface Efimero {
   tiktokInfo: TikTokInfo | null
   /** Si mi cuenta está suspendida: el texto que explica hasta cuándo y por qué. */
   suspension: string | null
+  /** Quiénes tienen la app abierta ahora (el puntito verde). */
+  conectados: string[]
+  /** Chat general: los mensajes de las últimas 24 horas, del más viejo al más nuevo. */
+  chat: MensajeChat[]
+  /** Ya llegaron los mensajes del chat por primera vez. */
+  chatListo: boolean
+  /** No se pudo leer el chat: texto del problema. */
+  errorChat: string | null
+  /** Administro HaxMatch: veo el panel y puedo borrar cualquier mensaje del chat. */
+  admin: boolean
+  /** Ya se sabe si administro (con servidor llega un momento después de abrir la app). */
+  ajustesListos: boolean
+  /** Los demás ven mi puntito verde cuando tengo la app abierta. */
+  mostrarConectado: boolean
 }
 
 export type Store = Datos & Efimero & Acciones
@@ -763,6 +791,7 @@ function aplicarCola(s: Store, n: ColaLocal, primera: boolean): Cambio {
     notifs: st.notifs.slice(0, 50),
     toasts: st.toasts,
     llamada: st.llamada,
+    conectados: n.conectados,
     colaLista: true,
     errorCola: null,
     ...(irA ? { irA } : {}),
@@ -821,6 +850,14 @@ export const useStore = create<Store>()((set, get) => {
   ...inicial,
   toasts: [],
   llamada: null,
+  conectados: REAL ? [] : [...SEED_CONECTADOS, YO],
+  chat: REAL ? [] : seedChat(Date.now()),
+  chatListo: !REAL,
+  errorChat: null,
+  // En la demostración se puede recorrer el panel.
+  admin: !REAL,
+  ajustesListos: !REAL,
+  mostrarConectado: true,
   irA: null,
   ficha: null,
   clipsListos: !REAL,
@@ -1145,7 +1182,10 @@ export const useStore = create<Store>()((set, get) => {
     if (REAL) {
       const buscaba = !!miBusqueda(get())
       canceleAt = Date.now()
-      set({ perfil: null, toasts: [], busquedas: [], mensajes: [], colaLista: false, ficha: null, reels: [], misReacciones: [], tiktok: false, tiktokInfo: null, clipsListos: false, suspension: null })
+      set({
+        perfil: null, toasts: [], busquedas: [], mensajes: [], colaLista: false, ficha: null, reels: [], misReacciones: [], tiktok: false, tiktokInfo: null, clipsListos: false, suspension: null,
+        conectados: [], chat: [], chatListo: false, errorChat: null, admin: false, ajustesListos: false, mostrarConectado: true,
+      })
       guardar(get())
       // La búsqueda se cancela antes de salir: después ya no hay sesión para pedirlo.
       void (async () => {
@@ -1174,6 +1214,11 @@ export const useStore = create<Store>()((set, get) => {
   cargarSeguridad: async () => {
     const miId = get().perfil?.id
     if (!REAL || !miId || !get().perfil?.onboarding) return
+    // Si administro y si muestro que estoy conectado (paso 8 de la base; sin él, nada cambia).
+    void leerAjustes().then((a) => {
+      if (get().perfil?.id !== miId) return
+      set(a ? { admin: a.admin, mostrarConectado: a.mostrarConectado, ajustesListos: true } : { ajustesListos: true })
+    })
     let seg = await leerSeguridad()
     if (!seg || get().perfil?.id !== miId) return
     // La primera vez, lo que estaba bloqueado solo en este dispositivo pasa al servidor.
@@ -1850,6 +1895,82 @@ export const useStore = create<Store>()((set, get) => {
 
   // ----- Notificaciones y referidos -----
 
+  cargarChat: async () => {
+    if (!REAL) return set({ chatListo: true })
+    const miId = get().perfil?.id
+    if (!miId) return
+    const r = await leerChat(miId)
+    if (get().perfil?.id !== miId) return
+    if (!r.mensajes) return set({ errorChat: r.error ?? 'No pudimos cargar el chat.', chatListo: true })
+    const nuevos = r.usuarios ?? {}
+    set((s) => ({
+      chat: r.mensajes!,
+      chatListo: true,
+      errorChat: null,
+      // Los autores quedan conocidos: así se puede abrir su perfil desde el chat.
+      usuarios: { ...s.usuarios, ...Object.fromEntries(Object.entries(nuevos).map(([k, u]) => [k, { ...s.usuarios[k], ...u, nivel: u.nivel ?? s.usuarios[k]?.nivel ?? null }])) },
+    }))
+  },
+
+  conectarChat: () => {
+    if (!REAL) return () => {}
+    let espera: ReturnType<typeof setTimeout> | null = null
+    const pronto = () => {
+      if (espera) return
+      espera = setTimeout(() => {
+        espera = null
+        void get().cargarChat()
+      }, 150)
+    }
+    const dejarDeEscuchar = alCambiarChat(pronto)
+    // Por si se pierde algún aviso del tiempo real.
+    const cada = setInterval(() => void get().cargarChat(), 15 * SEG)
+    void get().cargarChat()
+    return () => {
+      dejarDeEscuchar()
+      clearInterval(cada)
+      if (espera) clearTimeout(espera)
+    }
+  },
+
+  escribirChat: async (texto) => {
+    const limpio = texto.trim().replace(/\s+/g, ' ')
+    if (!limpio) return 'Escribí un mensaje'
+    if (limpio.length > 300) return 'El mensaje puede tener hasta 300 letras'
+    if (REAL) {
+      const error = await chatServidor.enviar(limpio)
+      if (!error) await get().cargarChat()
+      return error
+    }
+    if (get().chat.some((m) => m.userId === YO && m.texto.toLowerCase() === limpio.toLowerCase() && get().ahora() - m.at < 60 * SEG)) {
+      return 'Ya mandaste ese mensaje.'
+    }
+    set((s) => ({ chat: [...s.chat, { id: id('c'), userId: YO, texto: limpio, at: s.ahora() }] }))
+    return null
+  },
+
+  borrarMensajeChat: async (mensajeId) => {
+    if (REAL) {
+      const error = await chatServidor.borrar(mensajeId)
+      await get().cargarChat()
+      return error
+    }
+    set((s) => ({ chat: s.chat.filter((m) => m.id !== mensajeId) }))
+    return null
+  },
+
+  cambiarMostrarConectado: async (mostrar) => {
+    if (REAL) {
+      const error = await guardarMostrarConectado(mostrar)
+      if (error) return error
+      set({ mostrarConectado: mostrar })
+      await get().refrescar()
+      return null
+    }
+    set((s) => ({ mostrarConectado: mostrar, conectados: mostrar ? [...new Set([...s.conectados, YO])] : s.conectados.filter((u) => u !== YO) }))
+    return null
+  },
+
   marcarLeidas: () => {
     set((s) => ({ notifs: s.notifs.map((n) => (n.leida ? n : { ...n, leida: true })) }))
     guardar(get())
@@ -1948,6 +2069,11 @@ export function usuarioDe(s: Store, userId: string): Usuario {
 /** Mis puntos: los del servidor si los lleva; si no, la suma de lo guardado en el dispositivo. */
 export function misPuntos(s: Pick<Datos, 'eventos' | 'puntosServidor'>): number {
   return s.puntosServidor ? s.puntosServidor.total : totalPuntos(s.eventos, YO)
+}
+
+/** Mi nivel, para mostrarlo junto a mi nombre. */
+export function miNivelUsuario(s: Pick<Datos, 'eventos' | 'puntosServidor'>): number {
+  return nivelDe(misPuntos(s))
 }
 
 /** Días seguidos entrando a la app. */

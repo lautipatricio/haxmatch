@@ -14,7 +14,7 @@ Necesitás Node 20 o más nuevo.
 npm install
 npm run dev        # abre la app en http://localhost:5173, con el servidor real
 npm test           # tests de las reglas (puntos, niveles, validación) y del aviso de prueba
-npm run test:sql   # prueba los SQL de supabase/ en una base local (390 comprobaciones)
+npm run test:sql   # prueba los SQL de supabase/ en una base local (442 comprobaciones)
 npm run test:push  # prueba el envío de notificaciones (worker/index.js)
 npm run test:tiktok  # prueba la vinculación con TikTok contra un TikTok de mentira (38 comprobaciones)
 npm run build      # versión para publicar, en dist/
@@ -106,10 +106,17 @@ Cómo funciona: la app le pide a la web (`/api/tiktok/entrar`) empezar una vincu
 | `supabase/05_puntos.sql` | Puntos, niveles y referidos: cada movimiento de puntos, el total de cada perfil, los disparadores que los dan y los topes. Al ejecutarlo reconstruye los puntos de lo que ya estaba guardado |
 | `supabase/06_cuenta.sql` | Borrar la cuenta desde la app, bloqueos guardados en el servidor y suspensión de cuentas (funciones `mod_`, solo desde el SQL Editor) |
 | `supabase/07_ficha.sql` | El perfil de otro jugador: cuántos amistosos jugó y su nivel (lo que la app muestra al tocarlo en la cola) |
+| `supabase/08_chat_y_panel.sql` | Chat general (mensajes de 24 horas, con topes y respetando los bloqueos), la opción de ocultar el puntito de conectado y el panel de administración (solo para quienes estén en la tabla `admins`) |
 
 ### Moderación (reportes y suspensiones)
 
-Se hace desde Supabase > SQL Editor, pegando una línea y dándole Run. La app no puede llamar a estas funciones.
+Lo más cómodo es el **panel de administración** de la app (Perfil > Panel de administración): números, últimos registrados, reportes con su detalle, suspender y levantar suspensiones. En el chat, el botón "Moderar" deja borrar cualquier mensaje. Solo lo ven las cuentas anotadas en la tabla `admins`:
+
+```sql
+insert into public.admins (user_id) select id from public.profiles where username = 'usuario_de_discord';
+```
+
+También se puede hacer desde Supabase > SQL Editor, pegando una línea y dándole Run. La app no puede llamar a estas funciones.
 
 | Para | Línea |
 |---|---|
@@ -177,6 +184,8 @@ En la web publicada:
 - **Real también** (con `supabase/05_puntos.sql`): puntos, nivel, racha, lista de referidos y el nivel de los demás jugadores. Sin ese paso, los puntos se siguen calculando en el celular.
 - **Real también** (con `supabase/06_cuenta.sql`): borrar la cuenta, bloqueos y suspensiones. Sin ese paso, bloquear solo oculta al jugador en ese dispositivo.
 - **Real también** (con `supabase/07_ficha.sql`): los amistosos jugados en el perfil de otro jugador. Sin ese paso, su perfil muestra solo el nivel.
+- **Real también** (con `supabase/08_chat_y_panel.sql` y `03` actualizado): chat general, puntito verde de conectado y panel de administración.
+- **Botón "Apoyá HaxMatch":** aparece en el Perfil cuando se completa `APOYO_URL` en `src/config.ts`.
 - **En el dispositivo:** la lista de notificaciones.
 - **De muestra:** mientras nadie haya vinculado un TikTok con videos de HaxBall, Clips muestra 6 videos inventados (no se reproducen) para que no quede vacío. Desaparecen cuando hay al menos un clip real.
 
