@@ -181,9 +181,21 @@ export function FichaJugador() {
             )}
           </div>
         )}
-        {canal && (
-          <a className={`btn${canal.enVivo ? '' : ' btn--sec'}`} href={enlaceKick(canal.slug)} target="_blank" rel="noopener noreferrer">
-            {canal.enVivo ? `Ver el directo en Kick${canal.titulo ? ` · ${canal.titulo}` : ''}` : `Ver su canal en Kick (${canal.usuario})`}
+        {canal?.enVivo ? (
+          // En vivo: un bloque que se toca entero y lleva a su directo.
+          <a className="vivo-kick" href={enlaceKick(canal.slug)} target="_blank" rel="noopener noreferrer"
+            aria-label={`${u.username} está en vivo en Kick. Ver el directo`}>
+            <span className="row" style={{ gap: 8 }}>
+              <EtiquetaKick id={id} />
+              <span className="strong grow">Está en vivo en Kick</span>
+              <Icon name="flecha" size={20} />
+            </span>
+            {canal.titulo && <span className="vivo-kick__titulo">{canal.titulo}</span>}
+            <span className="m">Tocá para ver el directo · kick.com/{canal.slug}</span>
+          </a>
+        ) : canal && (
+          <a className="btn btn--sec" href={enlaceKick(canal.slug)} target="_blank" rel="noopener noreferrer">
+            Ver su canal en Kick ({canal.usuario})
           </a>
         )}
         {error && <div className="err" role="alert">{error}</div>}

@@ -301,6 +301,17 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
 @keyframes kick-latido { 50% { opacity: .25; } }
 @media (prefers-reduced-motion: reduce) { .kick__punto { animation: none; } }
 
+/* Perfil de alguien que está en vivo: bloque que lleva a su directo. */
+.vivo-kick {
+  display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: var(--fg);
+  padding: 14px 16px; border-radius: 16px; background: var(--card);
+  box-shadow: inset 0 0 0 1.5px #53FC18;
+  transition: transform 120ms var(--ease-out);
+}
+.vivo-kick:active { transform: scale(.98); }
+.vivo-kick .kick { margin-left: 0; }
+.vivo-kick__titulo { font-size: 15px; line-height: 1.35; white-space: pre-line; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
 /* ---------- Chat ---------- */
 
 .chat { --gap: 0px; padding-bottom: 12px; }

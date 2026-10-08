@@ -5,7 +5,7 @@
 //                         la dirección de Kick donde da el permiso.
 //   2. /api/kick/volver   Kick devuelve al usuario con un código; se cambia por una
 //                         llave, se lee quién es, se anula la llave y queda vinculado.
-//   3. Cada 2 minutos (programado en wrangler.jsonc) se le pregunta a Kick qué
+//   3. Cada minuto (programado en wrangler.jsonc) se le pregunta a Kick qué
 //      canales vinculados están en vivo.
 //
 // De Kick se pide solo el permiso user:read (quién es). El canal y si está en vivo

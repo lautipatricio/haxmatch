@@ -167,7 +167,7 @@ export async function iniciarEnsayo(puerto = 8787, { conWeb = false } = {}) {
     tiktok,
     kick,
     empujes,
-    /** Lo que la web hace cada 2 minutos: preguntarle a Kick quién está en vivo. */
+    /** Lo que la web hace cada minuto: preguntarle a Kick quién está en vivo. */
     revisarKick: async () => {
       const espera = []
       await worker.scheduled({}, entorno, { waitUntil: (p) => espera.push(p) })

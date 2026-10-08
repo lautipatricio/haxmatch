@@ -255,6 +255,13 @@ if (!(await page.getByRole('link', { name: 'Ver el directo de Nico en Kick' }).g
 await tab('Chat').click()
 await page.locator('.chat__autor', { hasText: 'Cami_DC' }).first().locator('.kick', { hasText: /^K$/ }).waitFor()
 await page.locator('.chat__autor', { hasText: 'Nico' }).first().locator('.kick', { hasText: 'EN VIVO' }).waitFor()
+// Tocar a quien está en vivo: su perfil muestra el directo, y tocándolo se va a su Kick.
+await page.getByRole('button', { name: 'Ver a Nico' }).first().click()
+const directo = page.getByRole('link', { name: 'Nico está en vivo en Kick. Ver el directo' })
+await directo.getByText('Amistosos 3v3 con la comunidad').waitFor()
+if (await directo.getAttribute('href') !== 'https://kick.com/nico_hax' || await directo.getAttribute('target') !== '_blank') throw new Error('El directo tiene que abrir su canal de Kick')
+await page.waitForTimeout(500); await foto('perfil-en-vivo')
+await boton('Cerrar').click()
 await tab('Perfil').click()
 const filaKick = page.locator('.card--row', { hasText: 'Kick' }).filter({ hasText: /Mostrá tu canal|Conectado como/ })
 await filaKick.getByRole('button', { name: 'Vincular' }).click()

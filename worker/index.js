@@ -235,7 +235,7 @@ export default {
     return env.ASSETS.fetch(request)
   },
 
-  // Programado en wrangler.jsonc: cada 2 minutos, quién está en vivo en Kick.
+  // Programado en wrangler.jsonc: cada minuto, quién está en vivo en Kick.
   async scheduled(_evento, env, ctx) {
     ctx.waitUntil(revisarVivos(env).catch(() => {}))
   },

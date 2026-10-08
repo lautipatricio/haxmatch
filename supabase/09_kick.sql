@@ -5,7 +5,7 @@
 -- - Cada jugador puede vincular su cuenta de Kick. De Kick se guarda solo su número
 --   de usuario, su nombre y la dirección de su canal. Las llaves de acceso no se
 --   guardan: se usan una vez para saber quién es y se anulan.
--- - La web de HaxMatch pregunta a Kick cada 2 minutos qué canales vinculados están
+-- - La web de HaxMatch pregunta a Kick cada minuto qué canales vinculados están
 --   en vivo y lo anota acá. Los demás ven la etiqueta KICK al lado del nombre y,
 --   mientras transmite, que está EN VIVO.
 -- - Las funciones que llama la web están protegidas con la clave compartida de los

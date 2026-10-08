@@ -962,9 +962,9 @@ export const useStore = create<Store>()((set, get) => {
     void get().cargarClips()
     void get().cargarSeguridad()
     void get().cargarChat()
-    // Quién está en vivo en Kick: la web lo revisa cada 2 minutos; acá se pregunta cada minuto.
+    // Quién está en vivo en Kick: la web lo revisa cada minuto; acá se pregunta cada 30 segundos.
     void get().cargarKick()
-    const cadaKick = setInterval(() => void get().cargarKick(), 60 * SEG)
+    const cadaKick = setInterval(() => void get().cargarKick(), 30 * SEG)
     return () => {
       clearInterval(cadaKick)
       dejarDeEscuchar()

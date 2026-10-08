@@ -99,7 +99,7 @@ Cómo funciona: la app le pide a la web (`/api/tiktok/entrar`) empezar una vincu
 3. Cargar en Cloudflare, como *Secret*, `KICK_CLIENT_ID` y `KICK_CLIENT_SECRET` (los da Kick al crear la app) y publicar.
 4. `https://haxmatch.lauti.workers.dev/api/kick/estado` tiene que decir `{"configurado":true}`. Ahí funciona "Vincular" en Perfil > Tus cuentas > Kick.
 
-Cómo funciona: la app le pide a la web (`/api/kick/entrar`) empezar una vinculación > el usuario da el permiso en Kick > Kick lo devuelve a `/api/kick/volver` > el Worker usa la llave una sola vez para saber quién es, la anula y guarda su número de usuario, su nombre y su canal. Cada 2 minutos (programado en `wrangler.jsonc`) el Worker le pregunta a Kick, con la llave de la propia app, qué canales vinculados están en vivo. La app pregunta cada minuto y muestra una K verde (o EN VIVO) al lado del nombre y la sección "En vivo en Kick" en el Inicio. Si hace más de 10 minutos que Kick no contesta por un canal, deja de figurar en vivo.
+Cómo funciona: la app le pide a la web (`/api/kick/entrar`) empezar una vinculación > el usuario da el permiso en Kick > Kick lo devuelve a `/api/kick/volver` > el Worker usa la llave una sola vez para saber quién es, la anula y guarda su número de usuario, su nombre y su canal. Cada minuto (programado en `wrangler.jsonc`) el Worker le pregunta a Kick, con la llave de la propia app, qué canales vinculados están en vivo. La app pregunta cada 30 segundos y muestra una K verde (o EN VIVO) al lado del nombre y la sección "En vivo en Kick" en el Inicio. Si hace más de 10 minutos que Kick no contesta por un canal, deja de figurar en vivo.
 
 ## Servidor (Supabase)
 
@@ -116,7 +116,7 @@ Cómo funciona: la app le pide a la web (`/api/kick/entrar`) empezar una vincula
 | `supabase/05_puntos.sql` | Puntos, niveles y referidos: cada movimiento de puntos, el total de cada perfil, los disparadores que los dan y los topes. Al ejecutarlo reconstruye los puntos de lo que ya estaba guardado |
 | `supabase/06_cuenta.sql` | Borrar la cuenta desde la app, bloqueos guardados en el servidor y suspensión de cuentas (funciones `mod_`, solo desde el SQL Editor) |
 | `supabase/07_ficha.sql` | El perfil de otro jugador: cuántos amistosos jugó y su nivel (lo que la app muestra al tocarlo en la cola) |
-| `supabase/09_kick.sql` | Cuentas de Kick vinculadas y quién está en vivo (lo anota la web cada 2 minutos) |
+| `supabase/09_kick.sql` | Cuentas de Kick vinculadas y quién está en vivo (lo anota la web cada minuto) |
 | `supabase/08_chat_y_panel.sql` | Chat general (mensajes de 24 horas, con topes y respetando los bloqueos), la opción de ocultar el puntito de conectado y el panel de administración (solo para quienes estén en la tabla `admins`) |
 
 ### Moderación (reportes y suspensiones)
