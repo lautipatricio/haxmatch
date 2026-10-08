@@ -1,6 +1,6 @@
 // Reglas de producto de HaxMatch (especificación v1, sección 3).
 // Funciones puras: no leen ni guardan nada. El backend tiene que aplicar las mismas.
-import type { EventoPuntos, Match } from './types'
+import { POSICIONES, type Cancha, type EventoPuntos, type Match, type Posicion } from './types'
 
 export const PUNTOS = { amistoso: 10, reel: 8, reaccion: 1, conexion: 2, referido: 50 } as const
 
@@ -178,4 +178,34 @@ export function diasParaVencer(m: Match, ahora: number): number {
 
 export function entraAlSorteo(nivel: number): boolean {
   return nivel >= NIVEL_SORTEO
+}
+
+// ---------- Salas: qué se puede pedir según la cancha ----------
+
+export type CanchaSala = Exclude<Cancha, 'Cualquiera'>
+
+/** Canchas para abrir una sala, en el orden en que se muestran. */
+export const CANCHAS_SALA: CanchaSala[] = ['Classic', 'Big', 'Big Easy', 'Futsal', 'Real Futsal', 'Real Soccer']
+
+/**
+ * Cuántos pueden faltar como mucho y qué posiciones tiene cada cancha.
+ * Classic es 1 contra 1: falta uno y no hay posiciones para elegir.
+ */
+export const REGLAS_CANCHA: Record<CanchaSala, { maxFaltan: number; posiciones: Posicion[] }> = {
+  Classic: { maxFaltan: 1, posiciones: [] },
+  Big: { maxFaltan: 2, posiciones: ['Polifuncional', 'GK', 'MC', 'DC'] },
+  'Big Easy': { maxFaltan: 3, posiciones: ['Polifuncional', 'GK', 'DFC', 'MC', 'DC'] },
+  Futsal: { maxFaltan: 6, posiciones: [...POSICIONES] },
+  'Real Futsal': { maxFaltan: 6, posiciones: [...POSICIONES] },
+  'Real Soccer': { maxFaltan: 3, posiciones: ['Polifuncional', 'GK', 'DFC', 'MC', 'DC'] },
+}
+
+/** Al cambiar de cancha, lo que ya estaba elegido se acomoda a lo que esa cancha permite. */
+export function ajustarSala(cancha: CanchaSala, faltan: number, posicion: Posicion[]): { faltan: number; posicion: Posicion[] } {
+  const r = REGLAS_CANCHA[cancha]
+  const quedan = posicion.filter((p) => r.posiciones.includes(p))
+  return {
+    faltan: Math.min(Math.max(1, faltan), r.maxFaltan),
+    posicion: quedan.length > 0 ? quedan : ['Polifuncional'],
+  }
 }

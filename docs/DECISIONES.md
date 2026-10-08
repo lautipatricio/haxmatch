@@ -351,6 +351,22 @@ Pedido: vincular Kick, con una insignia al lado del nombre y aviso de quién est
 - **No aparece** quien tiene un bloqueo conmigo ni una cuenta suspendida.
 - Textos legales actualizados (Privacidad, Términos y Cómo borrar tu cuenta).
 
+## Formulario de sala por cancha (8/10/2026)
+
+Pedido de Lauti: en "Necesito un jugador", primero se elige la cancha, y de ella depende el resto. Se sacó "Cualquiera" de la cancha de las salas (los jugadores que buscan partido siguen con cualquier cancha).
+
+| Cancha | Cuántos faltan | Posiciones |
+|---|---|---|
+| Classic | 1 (no se pregunta) | ninguna (no se pregunta) |
+| Big | hasta 2 | Polifuncional, GK, MC, DC |
+| Big Easy | hasta 3 | Polifuncional, GK, DFC, MC, DC |
+| Futsal y Real Futsal | hasta 6 | todas |
+| Real Soccer | hasta 3 | Polifuncional, GK, DFC, MC, DC |
+
+- La cancha es una sola. Hasta elegirla, no aparece el resto y "Buscar jugador" está apagado.
+- Al cambiar de cancha, lo ya elegido se acomoda: si faltaban más de los que entran, queda el máximo; las posiciones que esa cancha no tiene se sacan (si no queda ninguna, Polifuncional).
+- Las reglas viven en la app (`src/domain/rules.ts`). El servidor sigue aceptando de 1 a 7: alcanza, porque el formulario no deja otra cosa.
+
 ## Decisiones que tomé al construir (revisar)
 
 1. **El match siempre es con una sala.** Dos jugadores sin sala ya no generan match: se juntan en una misma búsqueda. Quien creó la sala ve "Ya entró X a la sala" y el que se une ve "Ya entré a la sala".

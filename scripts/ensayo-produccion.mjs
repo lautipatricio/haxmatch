@@ -75,6 +75,7 @@ try {
   const ana = await abrir('ana')
   const beto = await abrir('beto')
   await ana.link('Necesito un jugador').click()
+  await ana.boton('Futsal').click()
   await ana.boton('Buscar jugador').click()
   await ana.ver('Escribí el nombre de la sala')
   await ana.page.getByLabel('Nombre de la sala').fill('sala de ana')

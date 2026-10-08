@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  bonusRacha, esPendiente, matchCuenta, nivelDe,
+  REGLAS_CANCHA, ajustarSala, bonusRacha, esPendiente, matchCuenta, nivelDe,
   progresoNivel, puntosAmistoso, puntosReaccion, puntosReel, puntosReferido, rachaActual, rivalDe,
 } from './rules'
 import type { EventoPuntos, Match, Participante } from './types'
@@ -124,4 +124,22 @@ describe('partidos pendientes', () => {
   it('queda pendiente si no confirmé', () => expect(esPendiente(m, 'yo', HOY + DIA)).toBe(true))
   it('vence a los 7 días', () => expect(esPendiente(m, 'yo', HOY + 7 * DIA)).toBe(false))
   it('no es pendiente para quien ya confirmó', () => expect(esPendiente(m, 'rival', HOY)).toBe(false))
+})
+
+describe('salas según la cancha', () => {
+  it('cada cancha tiene su máximo de lugares', () => {
+    expect(Object.fromEntries(Object.entries(REGLAS_CANCHA).map(([c, r]) => [c, r.maxFaltan]))).toEqual({
+      Classic: 1, Big: 2, 'Big Easy': 3, Futsal: 6, 'Real Futsal': 6, 'Real Soccer': 3,
+    })
+  })
+  it('Classic: falta uno y no hay posiciones', () => {
+    expect(ajustarSala('Classic', 4, ['GK', 'DC'])).toEqual({ faltan: 1, posicion: ['Polifuncional'] })
+  })
+  it('Big no tiene defensores', () => {
+    expect(ajustarSala('Big', 5, ['GK', 'DFC'])).toEqual({ faltan: 2, posicion: ['GK'] })
+    expect(ajustarSala('Big', 1, ['DFC'])).toEqual({ faltan: 1, posicion: ['Polifuncional'] })
+  })
+  it('Futsal deja todas las posiciones y hasta 6', () => {
+    expect(ajustarSala('Futsal', 6, ['LD', 'EI'])).toEqual({ faltan: 6, posicion: ['LD', 'EI'] })
+  })
 })

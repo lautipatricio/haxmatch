@@ -134,8 +134,9 @@ async function abrir(nombre) {
       await u.ver('Jugadores buscando partidos')
     },
     /** `marcar`: opciones del formulario a tocar (una posición, una cancha). */
-    async abrirSala(sala, faltan = 1, marcar = []) {
+    async abrirSala(sala, faltan = 1, marcar = [], cancha = 'Futsal') {
       await u.link('Necesito un jugador').click()
+      await u.boton(cancha).click()
       await page.getByLabel('Nombre de la sala').fill(sala)
       if (faltan !== 1) await u.boton(String(faltan)).click()
       for (const opcion of marcar) await u.boton(opcion).click()
@@ -189,7 +190,7 @@ try {
   await enOtraVentana(ana); await enOtraVentana(beto)
   await ana.fila('Beto').getByRole('button', { name: 'Invitar' }).click()
   await ana.fila('Beto').getByRole('button', { name: 'Invitado' }).waitFor()
-  await beto.ver('Te invitan a jugar'); await beto.ver('"sala de ana" está necesitando un jugador. ¿Querés jugar?')
+  await beto.ver('Te invitan a jugar'); await beto.ver('"sala de ana" está necesitando un jugador en la cancha Futsal. ¿Querés jugar?')
   await titila(beto, 'Ana te invita a su sala'); await quieta(ana)
   await vuelve(beto); await quieta(beto)
   await beto.ver('Sala de Ana · Nivel 0'); await beto.ver('Si aceptás, entrás directo'); await beto.foto('invitacion')
@@ -252,7 +253,7 @@ try {
   const caro = await abrir('caro')
   await ana.inicio()
   await beto.inicio()
-  await ana.abrirSala('sala dos', 2, ['GK', 'Big'])
+  await ana.abrirSala('sala dos', 2, ['GK'], 'Big')
   await beto.buscar()
   // Antes de invitarlo, Ana toca su nombre y ve su perfil: jugó 1 amistoso (el de recién, con ella).
   await ana.page.getByRole('button', { name: 'Ver a Beto' }).click()
