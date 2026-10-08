@@ -341,11 +341,11 @@ Puntos abiertos:
 
 ## Kick (8/10/2026)
 
-Pedido: vincular Kick, con una insignia al lado del nombre y aviso de quién está en vivo. Lauti eligió una etiqueta verde con la palabra KICK (no se usa el logo de Kick) y que el "en vivo" se vea solo en la app, sin notificaciones.
+Pedido: vincular Kick, con una insignia al lado del nombre y aviso de quién está en vivo. Lauti eligió una etiqueta verde con texto (no se usa el logo de Kick) y que el "en vivo" se vea solo en la app, sin notificaciones.
 
 - **Vincular:** Perfil > Tus cuentas > Kick > Vincular. Se pide a Kick solo `user:read`. La llave se usa una vez para saber quién es y se anula (también la de renovación). Se guardan su número de usuario, su nombre y la dirección de su canal; el mail que manda Kick se descarta. Una cuenta de Kick no puede estar vinculada a dos jugadores.
 - **En vivo:** la web le pregunta a Kick cada 2 minutos qué canales vinculados están en vivo (con la llave de la propia app, que solo ve datos públicos). No se usan los webhooks de Kick: con 2 minutos alcanza y no hace falta configurar nada más. La app pregunta cada minuto. Si Kick deja de contestar por un canal más de 10 minutos, ese jugador deja de figurar en vivo.
-- **Dónde se ve:** etiqueta KICK al lado del nombre en la cola, el chat, Amigos y el perfil; mientras transmite dice EN VIVO. En el Inicio, sección "En vivo en Kick" con botón "Ver" que abre su canal. En el perfil de cada jugador, botón para ir a su canal.
+- **Dónde se ve:** una K verde al lado (primero decía KICK; Lauti prefirió la K) del nombre en la cola, el chat, Amigos y el perfil; mientras transmite dice EN VIVO. En el Inicio, sección "En vivo en Kick" con botón "Ver" que abre su canal. En el perfil de cada jugador, botón para ir a su canal.
 - **No aparece** quien tiene un bloqueo conmigo ni una cuenta suspendida.
 - Textos legales actualizados (Privacidad, Términos y Cómo borrar tu cuenta).
 

@@ -296,6 +296,7 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
   background: #53FC18; color: #0B0F0D;
   font: 700 11px/1.4 var(--display); letter-spacing: .06em;
 }
+.kick--k { padding: 1px 0; width: 18px; justify-content: center; font-size: 12px; letter-spacing: 0; }
 .kick__punto { width: 6px; height: 6px; border-radius: 50%; background: #0B0F0D; animation: kick-latido 1.4s ease-in-out infinite; }
 @keyframes kick-latido { 50% { opacity: .25; } }
 @media (prefers-reduced-motion: reduce) { .kick__punto { animation: none; } }

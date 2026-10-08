@@ -97,13 +97,13 @@ export function Conectado({ id }: { id: string }) {
   return <span className="en-linea" role="img" aria-label="conectado" title="Conectado" />
 }
 
-/** Etiqueta verde de Kick al lado del nombre. Mientras transmite dice EN VIVO. */
+/** Etiqueta verde de Kick al lado del nombre (una K). Mientras transmite dice EN VIVO. */
 export function EtiquetaKick({ id }: { id: string }) {
   const canal = useStore((s) => s.kick[id])
   if (!canal) return null
   return canal.enVivo
     ? <span className="kick kick--vivo" title={`En vivo en Kick: ${canal.usuario}`}><span className="kick__punto" aria-hidden="true" />EN VIVO</span>
-    : <span className="kick" title={`Kick: ${canal.usuario}`}>KICK</span>
+    : <span className="kick kick--k" role="img" aria-label={`Kick: ${canal.usuario}`} title={`Kick: ${canal.usuario}`}>K</span>
 }
 
 /**
