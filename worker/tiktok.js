@@ -22,7 +22,7 @@ const CAMPOS = 'id,title,video_description,duration,create_time,share_url,cover_
 /** Cuántas páginas de 20 videos se traen como mucho por vez. */
 const PAGINAS = 10
 
-const json = (cuerpo, estado = 200, extra = {}) => new Response(JSON.stringify(cuerpo), {
+export const json = (cuerpo, estado = 200, extra = {}) => new Response(JSON.stringify(cuerpo), {
   status: estado, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...extra },
 })
 
@@ -33,7 +33,7 @@ const secreto = (env) => String(env.TIKTOK_CLIENT_SECRET ?? "").trim()
 export const tiktokConfigurado = (env) =>
   !!(env.TIKTOK_CLIENT_KEY && env.TIKTOK_CLIENT_SECRET && env.PUSH_SECRETO && env.SUPABASE_URL && env.SUPABASE_KEY)
 
-async function iguales(a, b) {
+export async function iguales(a, b) {
   const t = new TextEncoder()
   const [x, y] = await Promise.all([a, b].map((v) => crypto.subtle.digest('SHA-256', t.encode(String(v)))))
   const p = new Uint8Array(x)
@@ -44,7 +44,7 @@ async function iguales(a, b) {
 }
 
 /** Llama a una función de la base con la clave compartida. */
-async function base(env, funcion, args) {
+export async function base(env, funcion, args) {
   try {
     const r = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/${funcion}`, {
       method: 'POST',

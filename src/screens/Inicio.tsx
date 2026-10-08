@@ -1,8 +1,9 @@
 import { useId, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { REAL } from '../config'
-import { buscarMia, nivelTexto, useStore } from '../data/store'
-import { BannerBusqueda, BannerMatch, Campana, Icon, TabBar, hace, useAhora } from '../ui'
+import { YO, buscarMia, nivelTexto, useStore, usuarioDe } from '../data/store'
+import { enlaceKick } from '../data/kick'
+import { BannerBusqueda, BannerMatch, Campana, Conectado, EtiquetaKick, Icon, Persona, TabBar, hace, useAhora } from '../ui'
 import { FilaDisponible, resumenBusqueda } from './Buscando'
 
 /** Lo que va adentro de cada una de las dos entradas: el título es su nombre y el renglón de abajo, su descripción. */
@@ -72,6 +73,30 @@ function BotonSala() {
   )
 }
 
+/** Jugadores de HaxMatch transmitiendo en Kick ahora. */
+function EnVivo() {
+  const s = useStore()
+  const vivos = Object.values(s.kick).filter((c) => c.enVivo && c.userId !== YO && !s.bloqueados.includes(c.userId))
+  if (vivos.length === 0) return null
+  return (
+    <section className="lista" aria-label="En vivo en Kick">
+      <h2 className="h sub">En vivo en Kick</h2>
+      {vivos.map((c) => {
+        const u = usuarioDe(s, c.userId)
+        return (
+          <div key={c.userId} className="card card--row">
+            <Persona user={u}>
+              <span className="strong cut">{u.username}<Conectado id={u.id} /><EtiquetaKick id={u.id} /></span>
+              <span className="m cut">{c.titulo ?? `kick.com/${c.slug}`}</span>
+            </Persona>
+            <a className="btn btn--sec" href={enlaceKick(c.slug)} target="_blank" rel="noopener noreferrer" aria-label={`Ver el directo de ${u.username} en Kick`}>Ver</a>
+          </div>
+        )
+      })}
+    </section>
+  )
+}
+
 /** Amigos que están buscando ahora. Para escribirles hay que estar buscando también. */
 function AmigosBuscando() {
   const s = useStore()
@@ -132,6 +157,7 @@ export function Inicio() {
             <BotonSala />
             {error && !suspension && <div className="err" role="alert">{error}</div>}
           </div>
+          <EnVivo />
           <AmigosBuscando />
         </div>
       </div>

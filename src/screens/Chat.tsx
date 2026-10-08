@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react'
 import { YO, miNivelUsuario, useStore, usuarioDe } from '../data/store'
 import type { MensajeChat, Usuario } from '../domain/types'
-import { Avatar, Campana, Conectado, Head, Icon, TabBar } from '../ui'
+import { Avatar, Campana, Conectado, EtiquetaKick, Head, Icon, TabBar } from '../ui'
 
 const MAX = 300
 /** Mensajes seguidos de la misma persona, con menos de esto entre uno y otro, van juntos bajo un solo nombre. */
@@ -17,6 +17,7 @@ function Autor({ u, at, mio }: { u: Usuario; at: number; mio: boolean }) {
       <Avatar user={u} size="sm" />
       <span className="strong cut">{u.username}</span>
       <Conectado id={u.id} />
+      <EtiquetaKick id={u.id} />
       {u.nivel !== null && <span className="pill">Nivel {u.nivel}</span>}
       <span className="m chat__hora">{hora(at)}</span>
     </>

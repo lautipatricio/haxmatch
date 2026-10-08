@@ -287,6 +287,19 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--vivo) 25%, transparent);
 }
 
+/* ---------- Kick ---------- */
+
+/* Etiqueta al lado del nombre de quien vinculó su Kick. Verde de Kick, letras oscuras. */
+.kick {
+  display: inline-flex; align-items: center; gap: 4px; vertical-align: middle; flex: none;
+  margin-left: 6px; padding: 1px 6px; border-radius: 6px;
+  background: #53FC18; color: #0B0F0D;
+  font: 700 11px/1.4 var(--display); letter-spacing: .06em;
+}
+.kick__punto { width: 6px; height: 6px; border-radius: 50%; background: #0B0F0D; animation: kick-latido 1.4s ease-in-out infinite; }
+@keyframes kick-latido { 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .kick__punto { animation: none; } }
+
 /* ---------- Chat ---------- */
 
 .chat { --gap: 0px; padding-bottom: 12px; }

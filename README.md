@@ -17,6 +17,7 @@ npm test           # tests de las reglas (puntos, niveles, validación) y del av
 npm run test:sql   # prueba los SQL de supabase/ en una base local (442 comprobaciones)
 npm run test:push  # prueba el envío de notificaciones (worker/index.js)
 npm run test:tiktok  # prueba la vinculación con TikTok contra un TikTok de mentira (38 comprobaciones)
+npm run test:kick    # prueba la vinculación con Kick y el "en vivo" contra un Kick de mentira (34 comprobaciones)
 npm run build      # versión para publicar, en dist/
 npm run probar     # versión de demostración, sin servidor, en http://localhost:4173
 npm run ensayo     # ensayo con varios usuarios a la vez contra una base local
@@ -91,6 +92,15 @@ Mientras la app de TikTok esté en modo *Sandbox* solo pueden vincular las cuent
 
 Cómo funciona: la app le pide a la web (`/api/tiktok/entrar`) empezar una vinculación > el usuario da el permiso en la página de TikTok > TikTok lo devuelve a `/api/tiktok/volver` > el Worker cambia ese permiso por las llaves de acceso, las guarda en la base (en una tabla que la app no puede leer) y trae la lista de videos. De TikTok se guarda solo la lista (título, fecha, duración y enlace): los videos se reproducen desde TikTok. En Clips aparecen los que tienen `#haxball` o `#haxmatch` y que su dueño no ocultó. La lista se actualiza al abrir "Mis videos", con el botón "Actualizar", al deslizar hacia abajo en el primer clip (ahí se piden los videos nuevos de todas las cuentas vinculadas), y cada 6 horas si el proyecto de Supabase tiene `pg_cron`. Al desvincular se borran las llaves y los videos, y se le pide a TikTok que anule el permiso.
 
+### Kick
+
+1. Ejecutar `supabase/09_kick.sql` en el SQL Editor.
+2. En Kick (con la verificación en dos pasos activada): Configuración > Developer > crear una app con la URL de redirección `https://haxmatch.lauti.workers.dev/api/kick/volver` y solo el permiso `user:read`. Los webhooks quedan apagados: no hacen falta.
+3. Cargar en Cloudflare, como *Secret*, `KICK_CLIENT_ID` y `KICK_CLIENT_SECRET` (los da Kick al crear la app) y publicar.
+4. `https://haxmatch.lauti.workers.dev/api/kick/estado` tiene que decir `{"configurado":true}`. Ahí funciona "Vincular" en Perfil > Tus cuentas > Kick.
+
+Cómo funciona: la app le pide a la web (`/api/kick/entrar`) empezar una vinculación > el usuario da el permiso en Kick > Kick lo devuelve a `/api/kick/volver` > el Worker usa la llave una sola vez para saber quién es, la anula y guarda su número de usuario, su nombre y su canal. Cada 2 minutos (programado en `wrangler.jsonc`) el Worker le pregunta a Kick, con la llave de la propia app, qué canales vinculados están en vivo. La app pregunta cada minuto y muestra la etiqueta KICK (o EN VIVO) al lado del nombre y la sección "En vivo en Kick" en el Inicio. Si hace más de 10 minutos que Kick no contesta por un canal, deja de figurar en vivo.
+
 ## Servidor (Supabase)
 
 - Los datos del proyecto están en `.env.production` y `.env.development`. Son públicos: la dirección y la clave "publishable". **Nunca** van ahí la clave `sb_secret_`, la contraseña de la base ni el Client Secret de Discord.
@@ -106,6 +116,7 @@ Cómo funciona: la app le pide a la web (`/api/tiktok/entrar`) empezar una vincu
 | `supabase/05_puntos.sql` | Puntos, niveles y referidos: cada movimiento de puntos, el total de cada perfil, los disparadores que los dan y los topes. Al ejecutarlo reconstruye los puntos de lo que ya estaba guardado |
 | `supabase/06_cuenta.sql` | Borrar la cuenta desde la app, bloqueos guardados en el servidor y suspensión de cuentas (funciones `mod_`, solo desde el SQL Editor) |
 | `supabase/07_ficha.sql` | El perfil de otro jugador: cuántos amistosos jugó y su nivel (lo que la app muestra al tocarlo en la cola) |
+| `supabase/09_kick.sql` | Cuentas de Kick vinculadas y quién está en vivo (lo anota la web cada 2 minutos) |
 | `supabase/08_chat_y_panel.sql` | Chat general (mensajes de 24 horas, con topes y respetando los bloqueos), la opción de ocultar el puntito de conectado y el panel de administración (solo para quienes estén en la tabla `admins`) |
 
 ### Moderación (reportes y suspensiones)
@@ -185,6 +196,7 @@ En la web publicada:
 - **Real también** (con `supabase/06_cuenta.sql`): borrar la cuenta, bloqueos y suspensiones. Sin ese paso, bloquear solo oculta al jugador en ese dispositivo.
 - **Real también** (con `supabase/07_ficha.sql`): los amistosos jugados en el perfil de otro jugador. Sin ese paso, su perfil muestra solo el nivel.
 - **Real también** (con `supabase/08_chat_y_panel.sql` y `03` actualizado): chat general, puntito verde de conectado y panel de administración.
+- **Real también** (con `supabase/09_kick.sql` y las claves de Kick en Cloudflare): vincular Kick, la etiqueta al lado del nombre y quién está en vivo.
 - **Botón "Apoyá HaxMatch":** aparece en el Perfil cuando se completa `APOYO_URL` en `src/config.ts`.
 - **En el dispositivo:** la lista de notificaciones.
 - **De muestra:** mientras nadie haya vinculado un TikTok con videos de HaxBall, Clips muestra 6 videos inventados (no se reproducen) para que no quede vacío. Desaparecen cuando hay al menos un clip real.

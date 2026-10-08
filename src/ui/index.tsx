@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { REAL } from '../config'
 import { YO, buscarMia, chatSinLeer, miRacha, misPuntos, nombreDe, useStore, usuarioDe, type Toast } from '../data/store'
 import { leerFicha } from '../data/servidor'
+import { enlaceKick } from '../data/kick'
 import { progresoNivel } from '../domain/rules'
 import type { Usuario } from '../domain/types'
 
@@ -96,6 +97,15 @@ export function Conectado({ id }: { id: string }) {
   return <span className="en-linea" role="img" aria-label="conectado" title="Conectado" />
 }
 
+/** Etiqueta verde de Kick al lado del nombre. Mientras transmite dice EN VIVO. */
+export function EtiquetaKick({ id }: { id: string }) {
+  const canal = useStore((s) => s.kick[id])
+  if (!canal) return null
+  return canal.enVivo
+    ? <span className="kick kick--vivo" title={`En vivo en Kick: ${canal.usuario}`}><span className="kick__punto" aria-hidden="true" />EN VIVO</span>
+    : <span className="kick" title={`Kick: ${canal.usuario}`}>KICK</span>
+}
+
 /**
  * Foto y nombre de otro jugador. Al tocarlo se abre su ficha, para agregarlo
  * como amigo o reportarlo.
@@ -137,6 +147,7 @@ export function FichaJugador() {
   const cerrar = s.cerrarFicha
   const agregar = async () => setError(await s.pedirAmistad(id))
   // Con servidor, los números son los que acaba de mandar; en la demostración, los de muestra.
+  const canal = s.kick[id]
   const delServidor = datos && datos.id === id ? datos : null
   const jugados = REAL ? delServidor?.jugados : u.jugados
   const nivel = delServidor?.nivel ?? u.nivel
@@ -147,7 +158,7 @@ export function FichaJugador() {
         <div className="row" style={{ gap: 14 }}>
           <Avatar user={u} size="lg" />
           <div className="grow">
-            <div className="strong cut" style={{ fontSize: 22, lineHeight: 1.15 }}>{u.username}<Conectado id={u.id} /></div>
+            <div className="strong cut" style={{ fontSize: 22, lineHeight: 1.15 }}>{u.username}<Conectado id={u.id} /><EtiquetaKick id={u.id} /></div>
             <div className="m cut">
               {u.discord ? `Discord: ${u.discord}` : 'Jugador de HaxMatch'}
               {amigo && ' · es tu amigo'}
@@ -169,6 +180,11 @@ export function FichaJugador() {
               </div>
             )}
           </div>
+        )}
+        {canal && (
+          <a className={`btn${canal.enVivo ? '' : ' btn--sec'}`} href={enlaceKick(canal.slug)} target="_blank" rel="noopener noreferrer">
+            {canal.enVivo ? `Ver el directo en Kick${canal.titulo ? ` · ${canal.titulo}` : ''}` : `Ver su canal en Kick (${canal.usuario})`}
+          </a>
         )}
         {error && <div className="err" role="alert">{error}</div>}
         {amigo ? (

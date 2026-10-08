@@ -1,11 +1,12 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type ChangeEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { APOYO_URL, PREVIEW, REAL } from '../config'
 import { cargarFoto, soltarFoto, type FotoElegida } from '../data/foto'
+import { RESULTADO_KICK } from '../data/kick'
 import { ACA, ES_COMPU, TEXTO_AVISOS, activarAvisos, desactivarAvisos, estadoAvisos, probarAviso, type EstadoAvisos } from '../data/push'
 import { YO, buscarMia, rivalesDe, useStore } from '../data/store'
 import { DIAS_PENDIENTE, PUNTOS, diasParaVencer, esPendiente } from '../domain/rules'
-import { Avatar, BorrarCuenta, Campana, CerrarSesion, Head, Icon, Portada, TabBar, TarjetaNivel, hace, useAhora } from '../ui'
+import { Avatar, BorrarCuenta, Campana, CerrarSesion, EtiquetaKick, Head, Icon, Portada, TabBar, TarjetaNivel, hace, useAhora } from '../ui'
 import { Recortador } from '../ui/Recortador'
 
 /** Partidos que el usuario todavía no confirmó. Se muestran como un aviso pendiente. */
@@ -140,6 +141,51 @@ function Avisos() {
         </button>
       )}
     </div>
+  )
+}
+
+/** Kick: vincular, ver con qué cuenta y desvincular. Al volver de Kick muestra cómo salió. */
+function CuentaKick() {
+  const canal = useStore((s) => s.kick[YO])
+  const vincular = useStore((s) => s.vincularKick)
+  const desvincular = useStore((s) => s.desvincularKick)
+  const [parametros, setParametros] = useSearchParams()
+  const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null)
+  const [ocupado, setOcupado] = useState(false)
+  const [seguro, setSeguro] = useState(false)
+  useEffect(() => {
+    const r = parametros.get('kick')
+    if (!r) return
+    setAviso(RESULTADO_KICK[r] ?? RESULTADO_KICK.error)
+    parametros.delete('kick')
+    setParametros(parametros, { replace: true })
+  }, [parametros, setParametros])
+  const tocar = async () => {
+    setOcupado(true)
+    setAviso(null)
+    const error = canal ? await desvincular() : await vincular()
+    setOcupado(false)
+    setSeguro(false)
+    if (error) setAviso({ ok: false, texto: error })
+  }
+  return (
+    <>
+      <div className="card card--row">
+        <Avatar nombre="Kick" />
+        <div className="grow">
+          <div className="strong">Kick{canal && <EtiquetaKick id={YO} />}</div>
+          <div className="m cut">{canal ? `Conectado como ${canal.usuario}` : 'Mostrá tu canal y avisá cuando estás en vivo'}</div>
+        </div>
+        {canal ? (
+          seguro
+            ? <button className="btn btn--danger" disabled={ocupado} onClick={() => void tocar()}>Desvincular</button>
+            : <button className="btn btn--sec" onClick={() => setSeguro(true)}>Quitar</button>
+        ) : (
+          <button className="btn" disabled={ocupado} onClick={() => void tocar()}>Vincular</button>
+        )}
+      </div>
+      {aviso && <div className={aviso.ok ? 'ok' : 'err'} role={aviso.ok ? 'status' : 'alert'}>{aviso.texto}</div>}
+    </>
   )
 }
 
@@ -345,13 +391,12 @@ export function Perfil() {
               <div className="grow"><div className="strong">TikTok</div><div className="m cut">{s.tiktok ? `Conectado${s.tiktokInfo?.nombre ? ` como ${s.tiktokInfo.nombre}` : ''}` : 'Sin vincular'}</div></div>
               <Link className={`btn${s.tiktok ? ' btn--sec' : ''}`} to="/clips/mis-videos">{s.tiktok ? 'Mis videos' : 'Vincular'}</Link>
             </div>
-            {['YouTube', 'Kick'].map((n) => (
-              <div key={n} className="card card--row">
-                <Avatar nombre={n} />
-                <div className="grow"><div className="strong">{n}</div><div className="m">Sin vincular</div></div>
-                <span className="pill">Pronto</span>
-              </div>
-            ))}
+            <CuentaKick />
+            <div className="card card--row">
+              <Avatar nombre="YouTube" />
+              <div className="grow"><div className="strong">YouTube</div><div className="m">Sin vincular</div></div>
+              <span className="pill">Pronto</span>
+            </div>
           </div>
 
           <div className="lista">

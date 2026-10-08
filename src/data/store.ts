@@ -18,6 +18,7 @@ import {
   quitarFoto, salir, subirFoto, type FilaPerfil,
 } from './cuenta'
 import { clipsApi, irATikTok, leerClips, type TikTokInfo } from './clips'
+import { desvincularKick, irAKick, leerKick, type CanalKick } from './kick'
 import { sincronizarAvisos, soltarAvisos } from './push'
 import {
   GRACIA_MS, aLocal, chat as chatServidor, cola, guardarMostrarConectado, leerAjustes, leerChat, leerCola, leerSeguridad,
@@ -26,7 +27,7 @@ import {
 import { REAL } from './supabase'
 import { alCambiar, alCambiarChat } from './transporte'
 import {
-  BOT, CODIGOS, SEED_AMIGOS, SEED_CONECTADOS, SEED_EVENTOS, SEED_REFERIDOS, SEED_SOLICITUDES, USUARIOS, YO,
+  BOT, CODIGOS, SEED_AMIGOS, SEED_CONECTADOS, SEED_KICK, SEED_EVENTOS, SEED_REFERIDOS, SEED_SOLICITUDES, USUARIOS, YO,
   seedBusquedas, seedChat, seedMatches, seedMisVideos, seedNotifs, seedReels,
 } from './seed'
 
@@ -205,6 +206,11 @@ interface Acciones {
   cambiarMostrarConectado: (mostrar: boolean) => Promise<string | null>
   /** Estoy mirando el chat: lo que hay hasta ahora queda leído. */
   marcarChatVisto: () => void
+  /** Quién tiene Kick vinculado y quién está en vivo. */
+  cargarKick: () => Promise<void>
+  /** Con servidor manda al usuario a Kick a dar el permiso. Devuelve el problema, si no se pudo empezar. */
+  vincularKick: () => Promise<string | null>
+  desvincularKick: () => Promise<string | null>
 }
 
 interface Efimero {
@@ -242,6 +248,8 @@ interface Efimero {
   ajustesListos: boolean
   /** Los demás ven mi puntito verde cuando tengo la app abierta. */
   mostrarConectado: boolean
+  /** Jugadores con Kick vinculado (también yo), con su canal y si están en vivo. */
+  kick: Record<string, CanalKick>
 }
 
 export type Store = Datos & Efimero & Acciones
@@ -863,6 +871,7 @@ export const useStore = create<Store>()((set, get) => {
   admin: !REAL,
   ajustesListos: !REAL,
   mostrarConectado: true,
+  kick: REAL ? {} : SEED_KICK,
   irA: null,
   ficha: null,
   clipsListos: !REAL,
@@ -953,7 +962,11 @@ export const useStore = create<Store>()((set, get) => {
     void get().cargarClips()
     void get().cargarSeguridad()
     void get().cargarChat()
+    // Quién está en vivo en Kick: la web lo revisa cada 2 minutos; acá se pregunta cada minuto.
+    void get().cargarKick()
+    const cadaKick = setInterval(() => void get().cargarKick(), 60 * SEG)
     return () => {
+      clearInterval(cadaKick)
       dejarDeEscuchar()
       dejarChat()
       if (esperaChat) clearTimeout(esperaChat)
@@ -1201,7 +1214,7 @@ export const useStore = create<Store>()((set, get) => {
       canceleAt = Date.now()
       set({
         perfil: null, toasts: [], busquedas: [], mensajes: [], colaLista: false, ficha: null, reels: [], misReacciones: [], tiktok: false, tiktokInfo: null, clipsListos: false, suspension: null,
-        conectados: [], chat: [], chatListo: false, errorChat: null, admin: false, ajustesListos: false, mostrarConectado: true,
+        conectados: [], chat: [], chatListo: false, errorChat: null, admin: false, ajustesListos: false, mostrarConectado: true, kick: {},
       })
       guardar(get())
       // La búsqueda se cancela antes de salir: después ya no hay sesión para pedirlo.
@@ -1936,6 +1949,36 @@ export const useStore = create<Store>()((set, get) => {
     const cada = setInterval(() => void get().cargarChat(), 15 * SEG)
     void get().cargarChat()
     return () => clearInterval(cada)
+  },
+
+  cargarKick: async () => {
+    if (!REAL) return
+    const miId = get().perfil?.id
+    if (!miId) return
+    const r = await leerKick(miId)
+    if (!r || get().perfil?.id !== miId) return
+    set((s) => ({
+      kick: r.canales,
+      usuarios: { ...s.usuarios, ...Object.fromEntries(Object.entries(r.usuarios).map(([k, u]) => [k, { ...s.usuarios[k], ...u, nivel: u.nivel ?? s.usuarios[k]?.nivel ?? null }])) },
+    }))
+  },
+
+  vincularKick: async () => {
+    if (REAL) return irAKick()
+    const nick = get().perfil?.nick ?? 'jugador'
+    const usuario = `${nick.replace(/[^A-Za-z0-9_]/g, '').toLowerCase() || 'jugador'}_kick`
+    set((s) => ({ kick: { ...s.kick, [YO]: { userId: YO, usuario, slug: usuario, enVivo: false, titulo: null, vivoDesde: null } } }))
+    return null
+  },
+
+  desvincularKick: async () => {
+    if (REAL) {
+      const error = await desvincularKick()
+      if (!error) await get().cargarKick()
+      return error
+    }
+    set((s) => ({ kick: Object.fromEntries(Object.entries(s.kick).filter(([k]) => k !== YO)) }))
+    return null
   },
 
   marcarChatVisto: () => {

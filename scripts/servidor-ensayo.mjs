@@ -8,6 +8,7 @@
 import http from 'node:http'
 import { pathToFileURL } from 'node:url'
 import { crearAcceso, crearBase } from './supabase-local.mjs'
+import { crearKickFalso } from './kick-falso.mjs'
 import { crearTikTokFalso } from './tiktok-falso.mjs'
 
 const CORS = {
@@ -31,6 +32,7 @@ export async function iniciarEnsayo(puerto = 8787, { conWeb = false } = {}) {
   let worker = null
   let entorno = null
   const tiktok = crearTikTokFalso()
+  const kick = crearKickFalso()
   /** Notificaciones que la web quiso mandar a los celulares. */
   const empujes = []
   if (conWeb) {
@@ -41,6 +43,7 @@ export async function iniciarEnsayo(puerto = 8787, { conWeb = false } = {}) {
       VAPID_PUBLICA: claves.publica, VAPID_PRIVADA: claves.privada, PUSH_SECRETO: claves.secreto,
       SUPABASE_URL: `http://localhost:${puerto}`, SUPABASE_KEY: 'clave-publica-de-ensayo',
       TIKTOK_CLIENT_KEY: 'clave-de-prueba', TIKTOK_CLIENT_SECRET: 'secreto-de-prueba',
+      KICK_CLIENT_ID: 'kick-id-de-prueba', KICK_CLIENT_SECRET: 'kick-secreto-de-prueba',
       ASSETS: { fetch: async () => new Response('', { status: 404 }) },
     }
     // La base "llama" a la web por esta dirección; acá los pedidos se entregan a mano (ver despachar).
@@ -51,6 +54,8 @@ export async function iniciarEnsayo(puerto = 8787, { conWeb = false } = {}) {
       const destino = String(url instanceof Request ? url.url : url)
       const deTikTok = tiktok.atender(destino, opciones)
       if (deTikTok) return deTikTok
+      const deKick = await kick.atender(destino, opciones)
+      if (deKick) return deKick
       if (/^https:\/\/(fcm\.googleapis\.com|[a-z0-9-]+\.push\.apple\.com|updates\.push\.services\.mozilla\.com)\//.test(destino)) {
         empujes.push({ url: destino, ...opciones })
         return new Response(null, { status: 201 })
@@ -160,7 +165,14 @@ export async function iniciarEnsayo(puerto = 8787, { conWeb = false } = {}) {
     acceso,
     avisar,
     tiktok,
+    kick,
     empujes,
+    /** Lo que la web hace cada 2 minutos: preguntarle a Kick quién está en vivo. */
+    revisarKick: async () => {
+      const espera = []
+      await worker.scheduled({}, entorno, { waitUntil: (p) => espera.push(p) })
+      await Promise.all(espera)
+    },
     /** Atiende un pedido a /api/... como lo haría la web publicada. */
     web: (request) => worker.fetch(request, entorno, {}),
     /** Espera a que la web termine de atender lo que le pidió la base. */

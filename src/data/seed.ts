@@ -1,5 +1,6 @@
 // Datos de prueba. Todo lo que hay acá es inventado para poder recorrer la app
 // sin backend. Se reemplaza por Supabase en las etapas siguientes.
+import type { CanalKick } from './kick'
 import type { Busqueda, EventoPuntos, Match, MensajeChat, Notif, Reel, Referido, Usuario } from '../domain/types'
 
 const MIN = 60 * 1000
@@ -123,4 +124,10 @@ export function seedChat(ahora: number): MensajeChat[] {
     m('c4', 'u_nico', 12 * MIN, 'armé sala "nico 3v3 amistoso", me faltan 2'),
     m('c5', 'u_mati', 6 * MIN, 'voy'),
   ]
+}
+
+/** Jugadores de muestra con Kick vinculado: Nico está en vivo. */
+export const SEED_KICK: Record<string, CanalKick> = {
+  u_nico: { userId: 'u_nico', usuario: 'nico_hax', slug: 'nico_hax', enVivo: true, titulo: 'Amistosos 3v3 con la comunidad', vivoDesde: Date.now() - 40 * MIN },
+  u_cami: { userId: 'u_cami', usuario: 'camidc', slug: 'camidc', enVivo: false, titulo: null, vivoDesde: null },
 }

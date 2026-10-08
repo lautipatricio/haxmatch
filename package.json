@@ -16,7 +16,8 @@
     "ensayo": "npm run build:ensayo && node scripts/ensayo.mjs",
     "ensayo:produccion": "npm run build && node scripts/ensayo-produccion.mjs",
     "test:push": "node scripts/probar-push.mjs",
-    "test:tiktok": "node scripts/probar-tiktok.mjs"
+    "test:tiktok": "node scripts/probar-tiktok.mjs",
+    "test:kick": "node scripts/probar-kick.mjs"
   },
   "dependencies": {
     "@fontsource/barlow": "^5.3.0",

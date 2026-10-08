@@ -3,7 +3,7 @@
 //   cualquier dirección abra la app, para que funcionen los links internos
 //   (/perfil, /clips, etc.).
 // - worker/index.js atiende solo lo que empieza con /api/ (hoy, mandar las
-//   notificaciones). El resto se sirve directo desde dist/.
+//   notificaciones, TikTok y Kick). El resto se sirve directo desde dist/.
 // - Las claves de los avisos (VAPID_PUBLICA, VAPID_PRIVADA, PUSH_SECRETO) se
 //   cargan en el panel de Cloudflare como "Secret". No van en este archivo.
 {
@@ -18,6 +18,8 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]
   },
+  // Cada 2 minutos se le pregunta a Kick qué jugadores están en vivo (worker/kick.js).
+  "triggers": { "crons": ["*/2 * * * *"] },
   // Datos públicos del proyecto de Supabase (los mismos de .env.production).
   "vars": {
     "SUPABASE_URL": "https://kinckqzqgbnplchyrvhj.supabase.co",

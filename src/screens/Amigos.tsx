@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { REAL } from '../config'
 import { nivelTexto, useStore, usuarioDe } from '../data/store'
-import { Avatar, Conectado, Head, Icon, Persona, TabBar, hace, useAhora } from '../ui'
+import { Avatar, Conectado, EtiquetaKick, Head, Icon, Persona, TabBar, hace, useAhora } from '../ui'
 import { FilaDisponible, resumenBusqueda } from './Buscando'
 
 export function Amigos() {
@@ -47,7 +47,7 @@ export function Amigos() {
                 return (
                   <div key={id} className="card card--row card--accent">
                     <Persona user={u}>
-                      <span className="strong cut">{u.username}<Conectado id={u.id} /></span>
+                      <span className="strong cut">{u.username}<Conectado id={u.id} /><EtiquetaKick id={u.id} /></span>
                       <span className="m cut">quiere ser tu amigo</span>
                     </Persona>
                     <div className="acts">
@@ -84,7 +84,7 @@ export function Amigos() {
             return (
               <div key={id} className="card card--row">
                 <Persona user={u}>
-                  <span className="strong cut">{u.username}<Conectado id={u.id} /></span>
+                  <span className="strong cut">{u.username}<Conectado id={u.id} /><EtiquetaKick id={u.id} /></span>
                   <span className="m cut">{REAL ? 'No está buscando' : 'Sin conexión'}</span>
                 </Persona>
               </div>
@@ -95,7 +95,7 @@ export function Amigos() {
             return (
               <div key={id} className="card card--row">
                 <Persona user={u}>
-                  <span className="strong cut">{u.username}<Conectado id={u.id} /></span>
+                  <span className="strong cut">{u.username}<Conectado id={u.id} /><EtiquetaKick id={u.id} /></span>
                   <span className="m cut">Solicitud enviada</span>
                 </Persona>
               </div>

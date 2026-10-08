@@ -6,7 +6,7 @@ import {
 } from '../data/store'
 import { FALTAN, type Busqueda } from '../domain/types'
 import { TEXTO_AVISOS, activarAvisos, estadoAvisos, type EstadoAvisos } from '../data/push'
-import { Chips, Conectado, Empty, Head, Persona, Sheet, TabBar, mmss, useAhora } from '../ui'
+import { Chips, Conectado, Empty, EtiquetaKick, Head, Persona, Sheet, TabBar, mmss, useAhora } from '../ui'
 
 const lista = (v: readonly string[] | null) => (v ?? []).join(', ')
 /** Lo que alguien eligió de verdad: "Cualquiera" y "Polifuncional" no dicen nada. */
@@ -56,7 +56,7 @@ export function FilaDisponible({ b, detalle, soloVer }: { b: Busqueda; detalle?:
     <div className="card card--row">
       <Persona user={u}>
         <span className="strong cut">
-          {u.username}<Conectado id={u.id} />{son > 1 && ` +${son - 1}`}
+          {u.username}<Conectado id={u.id} /><EtiquetaKick id={u.id} />{son > 1 && ` +${son - 1}`}
           {s.amigos.includes(u.id) && <span className="tag tag--linea">AMIGO</span>}
           {/* Solo se marca cuando hay un grupo de por medio: con un jugador suelto no dice nada. */}
           {encajaJusto(s, b) && Math.max(somos, son) > 1 && <span className="tag">JUSTO</span>}

@@ -86,6 +86,13 @@ async function conectar(ctx, nombre) {
     vuelta.searchParams.set('state', ida.searchParams.get('state'))
     await ruta.fulfill({ status: 200, contentType: 'text/html', body: saltar(vuelta.toString()) })
   })
+  await ctx.route('https://id.kick.com/oauth/authorize**', async (ruta) => {
+    const ida = new globalThis.URL(ruta.request().url())
+    const vuelta = new globalThis.URL(ida.searchParams.get('redirect_uri'))
+    vuelta.searchParams.set('code', servidor.kick.autorizar(`${nombre}_kick`, ida.searchParams.get('code_challenge')))
+    vuelta.searchParams.set('state', ida.searchParams.get('state'))
+    await ruta.fulfill({ status: 200, contentType: 'text/html', body: saltar(vuelta.toString()) })
+  })
   await ctx.route('https://www.tiktok.com/player/v1/**', (ruta) => ruta.fulfill({ status: 200, contentType: 'text/html', body: reproductor(nombre === 'olga' ? 'estricto' : nombre === 'rita' ? 'iphone' : 'libre') }))
   await ctx.route('https://p16.tiktokcdn.test/**', (ruta) => ruta.fulfill({ status: 200, contentType: 'image/png', body: PIXEL }))
 }
@@ -698,6 +705,28 @@ try {
   await tere.ver('ya no está suspendida')
   await ulises.page.reload()
   await caja(ulises).waitFor()
+
+  // Kick: Tere vincula su cuenta; Ulises ve la etiqueta y, cuando ella transmite, que está en vivo.
+  await tere.tab('Perfil').click()
+  const filaKick = tere.page.locator('.card--row', { hasText: 'Kick' }).filter({ hasText: /Mostrá tu canal|Conectado como/ })
+  await filaKick.getByRole('button', { name: 'Vincular' }).click()
+  await tere.ver('Kick vinculado.')
+  await filaKick.getByText('Conectado como tere_kick').waitFor()
+  if (tere.page.url().includes('kick=')) throw new Error('Después de mostrar el resultado, la dirección queda limpia')
+  await ulises.page.reload()
+  await ulises.page.locator('.chat__autor', { hasText: 'Tere' }).first().locator('.kick', { hasText: 'KICK' }).waitFor()
+  servidor.kick.enVivo('tere_kick', true, 'Practicando con la comunidad')
+  await servidor.revisarKick()
+  await ulises.page.goto(URL)
+  await ulises.page.getByRole('region', { name: 'En vivo en Kick' }).getByText('Practicando con la comunidad').waitFor()
+  await ulises.foto('kick-en-vivo')
+  await filaKick.getByRole('button', { name: 'Quitar' }).click()
+  await filaKick.getByRole('button', { name: 'Desvincular' }).click()
+  await filaKick.getByRole('button', { name: 'Vincular' }).waitFor()
+  await ulises.page.reload()
+  await ulises.ver('Quiero jugar un amistoso')
+  await ulises.page.waitForTimeout(1500)
+  if (await ulises.page.getByRole('region', { name: 'En vivo en Kick' }).count()) throw new Error('Al desvincular, deja de figurar en vivo')
 
   paso('Bloquear, suspender una cuenta y borrar la cuenta')
   const hasta = async (texto, cumple) => {

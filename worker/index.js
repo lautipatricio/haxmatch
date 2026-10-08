@@ -14,6 +14,7 @@
 //   VAPID_PUBLICA, VAPID_PRIVADA  identifican a HaxMatch ante los servicios de avisos
 //   PUSH_SECRETO                  la comparte con la base, para que nadie más pueda mandar avisos
 
+import { entrar as kickEntrar, kickConfigurado, revisarVivos, volver as kickVolver } from './kick.js'
 import { entrar, revocar, sincronizar, tiktokConfigurado, volver } from './tiktok.js'
 
 const txt = new TextEncoder()
@@ -227,7 +228,15 @@ export default {
     if (pathname === '/api/tiktok/volver' && request.method === 'GET') return volver(request, env)
     if (pathname === '/api/tiktok/sincronizar' && request.method === 'POST') return sincronizar(request, env, ctx)
     if (pathname === '/api/tiktok/revocar' && request.method === 'POST') return revocar(request, env, ctx)
+    if (pathname === '/api/kick/estado' && request.method === 'GET') return json({ configurado: kickConfigurado(env) })
+    if (pathname === '/api/kick/entrar' && request.method === 'POST') return kickEntrar(request, env)
+    if (pathname === '/api/kick/volver' && request.method === 'GET') return kickVolver(request, env)
     if (pathname.startsWith('/api/')) return json({ error: 'No existe' }, 404)
     return env.ASSETS.fetch(request)
+  },
+
+  // Programado en wrangler.jsonc: cada 2 minutos, quién está en vivo en Kick.
+  async scheduled(_evento, env, ctx) {
+    ctx.waitUntil(revisarVivos(env).catch(() => {}))
   },
 }

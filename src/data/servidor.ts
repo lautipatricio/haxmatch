@@ -86,7 +86,7 @@ const ms = (t: string | null): number | null => (t ? Date.parse(t) : null)
 export const GRACIA_MS = 2 * 60 * 1000
 
 /** Color de fondo del avatar para quien no tiene foto, siempre el mismo para cada usuario. */
-function colorDe(id: string): string {
+export function colorDe(id: string): string {
   const colores = ['#5B8C7A', '#8C7A5B', '#7A5B8C', '#5B6F8C', '#8C5B62', '#6F8C5B', '#8C6A5B', '#5B8C8A', '#8C825B']
   let n = 0
   for (const c of id) n = (n * 31 + c.charCodeAt(0)) >>> 0

@@ -37,6 +37,7 @@
     <ul>
       <li><strong>De tu cuenta de Discord</strong> (cuando entrás): tu identificador de Discord, tu nombre de usuario, tu nombre visible y la dirección de email de tu cuenta de Discord. El email queda guardado en el servicio de inicio de sesión: no se lo mostramos a nadie y no lo usamos para escribirte. No recibimos tu contraseña ni tus mensajes de Discord.</li>
       <li><strong>De tu perfil en HaxMatch:</strong> el nick que elegís, tus regiones, tu foto de perfil si subís una, tu código de referido y quién te invitó.</li>
+      <li><strong>De Kick</strong> (si vinculás tu cuenta): tu número de usuario de Kick, tu nombre de usuario y la dirección de tu canal. Cada 2 minutos miramos en Kick, con los datos públicos de tu canal, si estás en vivo y con qué título. Kick también nos manda tu email al vincular: no lo guardamos. Las llaves de acceso que da Kick se usan una sola vez para saber quién sos y se anulan en el momento.</li>
       <li><strong>De tu actividad:</strong> tus búsquedas de partido, los mensajes rápidos que mandás y recibís, las salas y partidos en los que participás, tus amigos y solicitudes de amistad, a quiénes bloqueaste, tus reacciones a clips, los reportes que hacés, los mensajes que escribís en el chat general, cuándo fue la última vez que la app estuvo abierta, los días que entrás a la app y los puntos que sumás con todo eso (de ahí sale tu nivel, que ven los demás jugadores).</li>
       <li><strong>De TikTok, solo si vinculás tu cuenta:</strong> tu identificador y tu nombre visible de TikTok, las llaves de acceso que TikTok nos entrega cuando das el permiso, y la lista de tus videos públicos (número del video, descripción, hashtags, duración, fecha, dirección y la dirección de su miniatura). No guardamos los videos ni sus miniaturas: se muestran desde TikTok.</li>
       <li><strong>De tu celular, solo si activás los avisos:</strong> la dirección que el navegador nos da para poder mandarte notificaciones a ese dispositivo.</li>
@@ -53,7 +54,7 @@
     <p>No vendemos tus datos ni los usamos para publicidad.</p>
 
     <h2>Qué ven los demás</h2>
-    <p>Los otros usuarios de HaxMatch pueden ver tu nick, tu foto, tu usuario de Discord, tu nivel, cuántos amistosos jugaste, lo que estás buscando mientras buscás, los partidos que compartís con ellos, los clips que tenés visibles y lo que escribís en el chat general (durante 24 horas).</p>
+    <p>Los otros usuarios de HaxMatch pueden ver tu nick, tu foto, tu usuario de Discord, tu nivel, cuántos amistosos jugaste, lo que estás buscando mientras buscás, los partidos que compartís con ellos, los clips que tenés visibles, lo que escribís en el chat general (durante 24 horas) y, si vinculaste Kick, tu usuario y tu canal de Kick y si estás en vivo (con el título de la transmisión).</p>
     <p>También ven si estás conectado: un puntito verde al lado de tu nombre mientras tenés la app abierta. Lo podés apagar en tu Perfil, en “Mostrar cuando estoy conectado”.</p>
     <p>Nadie más ve tus amigos, tus mensajes rápidos ni quién te invitó. Quienes moderan HaxMatch ven además los reportes que recibiste (con lo que escribió quien te reportó), cuándo te registraste y si estás suspendido.</p>
 
@@ -63,6 +64,7 @@
       <li><strong>Supabase:</strong> guarda la base de datos y maneja el inicio de sesión.</li>
       <li><strong>Cloudflare:</strong> aloja la web.</li>
       <li><strong>Discord:</strong> confirma quién sos cuando entrás.</li>
+      <li><strong>Kick:</strong> si vinculás tu cuenta, confirma quién sos en Kick y nos dice si tu canal está en vivo.</li>
       <li><strong>TikTok:</strong> si vinculás tu cuenta, nos entrega tu lista de videos. Además, los clips se reproducen con el reproductor de TikTok: al ver un clip o su miniatura, tu navegador se conecta con TikTok.</li>
       <li><strong>El servicio de notificaciones de tu navegador</strong> (Google, Apple o Mozilla): entrega los avisos a tu celular. El contenido viaja cifrado.</li>
     </ul>
@@ -74,6 +76,7 @@
     <h2>Cómo borrar o corregir tus datos</h2>
     <ul>
       <li><strong>TikTok:</strong> en Clips &gt; Mis videos &gt; “Desvincular TikTok”. Se borran las llaves de acceso y todos tus videos de HaxMatch, y se anula el permiso en TikTok. También podés quitar el permiso desde la configuración de TikTok.</li>
+      <li><strong>Kick:</strong> en tu Perfil &gt; Tus cuentas &gt; Kick &gt; “Quitar”. Se borra todo lo de Kick en el momento.</li>
       <li><strong>Avisos:</strong> en tu Perfil &gt; “Desactivar avisos”.</li>
       <li><strong>Foto:</strong> en tu Perfil &gt; “Quitar foto”.</li>
       <li><strong>A quién bloqueaste:</strong> en tu Perfil &gt; Amigos &gt; “Bloqueados”.</li>
@@ -87,7 +90,7 @@
     <p>Si cambiamos esta política, publicamos la nueva versión en esta misma página con su fecha. Podés escribirnos a <a href="mailto:lpatriciogauna@outlook.com">lpatriciogauna@outlook.com</a>.</p>
     <footer>
       <a href="/terminos">Términos y condiciones</a> · <a href="/privacidad">Política de privacidad</a> · <a href="/">Ir a HaxMatch</a>
-      <p>HaxMatch es un proyecto independiente. No está afiliado a HaxBall, Discord ni TikTok.</p>
+      <p>HaxMatch es un proyecto independiente. No está afiliado a HaxBall, Discord, TikTok ni Kick.</p>
     </footer>
   </main>
 </body>
