@@ -199,6 +199,8 @@ interface Efimero {
   /** Diferencia entre el reloj del servidor y el del dispositivo. */
   desfaseMs: number
   toasts: Toast[]
+  /** Lo último que pide que el usuario vuelva a la app: si está en otra ventana, la pestaña titila. */
+  llamada: Llamada | null
   irA: string | null
   /** Jugador cuya ficha está abierta. */
   ficha: string | null
@@ -279,6 +281,15 @@ type Cambio = Partial<Datos & Efimero>
 function conNotif(s: Store, ahora: number, tipo: TipoNotif, titulo: string, detalle: string, ref?: string): Notif[] {
   return [{ id: id('n'), tipo, titulo, detalle, at: ahora, leida: false, ref }, ...s.notifs]
 }
+
+/** Algo que no puede esperar (una invitación, un partido armado). Con `mensajeId`, deja de llamar si ese mensaje se cae. */
+export interface Llamada {
+  id: string
+  texto: string
+  mensajeId?: string
+}
+
+const conLlamada = (texto: string, mensajeId?: string): Llamada => ({ id: id('l'), texto, mensajeId })
 
 function conToast(s: Store, t: Omit<Toast, 'id'>): Toast[] {
   return [...s.toasts, { id: id('t'), ...t }].slice(-2)
@@ -502,6 +513,7 @@ function invitacionDeSala(s: Store, ahora: number): Cambio | null {
     mensajes: [msg, ...s.mensajes],
     notifs: conNotif(s, ahora, 'mensaje', titulo, texto, msg.id),
     toasts: conToast(s, { texto: titulo, detalle: texto, mensajeId: msg.id }),
+    llamada: conLlamada(titulo, msg.id),
   }
 }
 
@@ -538,6 +550,9 @@ function aplicarCola(s: Store, n: ColaLocal, primera: boolean): Cambio {
   const toast = (t: Omit<Toast, 'id'>) => {
     st = { ...st, toasts: conToast(st, t) }
   }
+  const llamar = (texto: string, mensajeId?: string) => {
+    st = { ...st, llamada: conLlamada(texto, mensajeId) }
+  }
 
   const antes = miBusqueda(s)
   const mia = n.busquedas.find((b) => b.userId === YO && b.estado === 'activa')
@@ -565,6 +580,7 @@ function aplicarCola(s: Store, n: ColaLocal, primera: boolean): Cambio {
     const detalle = m.auto ? `La app ${varios ? 'los' : 'lo'} conectó con tu sala` : m.texto
     if (!st.notifs.some((x) => x.ref === m.id)) notif('mensaje', titulo, detalle, m.id)
     toast({ texto: titulo, detalle, mensajeId: m.id })
+    llamar(titulo, m.id)
   }
 
   if (!primera) {
@@ -610,6 +626,7 @@ function aplicarCola(s: Store, n: ColaLocal, primera: boolean): Cambio {
     // Entré a la sala de otro.
     if (entreAUno) {
       notif('match', `Match listo con ${nombre(entreAUno.creadoPor)}`, 'Entrá a la sala y confirmá', entreAUno.id)
+      llamar(`Match listo con ${nombre(entreAUno.creadoPor)}`)
       irA = `/match/${entreAUno.id}`
     }
 
@@ -622,6 +639,7 @@ function aplicarCola(s: Store, n: ColaLocal, primera: boolean): Cambio {
       const titulo = `${nombres(entran)} ${entran.length > 1 ? 'van' : 'va'} a entrar a tu sala`
       const detalle = mia?.faltan ? `Te ${mia.faltan === 1 ? 'falta' : 'faltan'} ${mia.faltan}` : 'Sala completa'
       notif('respuesta', titulo, detalle)
+      llamar(titulo)
       // Si lo acabo de aceptar yo, no hace falta avisarme.
       if (Date.now() - acepteAt > RECIEN) toast({ texto: titulo, detalle, to: '/buscando' })
     }
@@ -646,6 +664,7 @@ function aplicarCola(s: Store, n: ColaLocal, primera: boolean): Cambio {
       if (antes.modo === 'sala' && suMatch && todosAdentro && (antes.faltan ?? 0) === 0) {
         // Sala completa y todos adentro: queda armado el match.
         notif('match', 'Match listo: tu sala está completa', 'Ya entraron todos', suMatch.id)
+        llamar('Match listo: tu sala está completa')
         irA = `/match/${suMatch.id}`
       } else if (antes.modo === 'sala') {
         toast({ texto: 'Tu sala dejó de buscar', detalle: 'La app estuvo mucho tiempo cerrada o sin conexión.' })
@@ -743,6 +762,7 @@ function aplicarCola(s: Store, n: ColaLocal, primera: boolean): Cambio {
     referidos: st.referidos,
     notifs: st.notifs.slice(0, 50),
     toasts: st.toasts,
+    llamada: st.llamada,
     colaLista: true,
     errorCola: null,
     ...(irA ? { irA } : {}),
@@ -800,6 +820,7 @@ export const useStore = create<Store>()((set, get) => {
   return {
   ...inicial,
   toasts: [],
+  llamada: null,
   irA: null,
   ficha: null,
   clipsListos: !REAL,
@@ -991,6 +1012,7 @@ export const useStore = create<Store>()((set, get) => {
           mensajes: [msg, ...st.mensajes],
           notifs: conNotif(st, ahora, 'mensaje', `${nombre} te escribió`, texto, msg.id),
           toasts: conToast(st, { texto: `${nombre} te escribió`, detalle: texto, mensajeId: msg.id }),
+          llamada: conLlamada(`${nombre} te escribió`, msg.id),
         })
       } else if (p.tipo === 'confirma_bot') {
         const matches = st.matches.map((m) => (m.id !== p.matchId ? m : {

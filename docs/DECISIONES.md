@@ -299,6 +299,19 @@ La notificación de prueba dice "esta computadora" o "este celular" según dónd
 
 No se pudo probar con un aviso real (desde acá no se llega a los servicios de avisos). Sí se probó la parte de segundo plano en un Chromium de verdad, haciéndole llegar un aviso simulado, y la lógica de la app con un navegador de mentira (`src/data/push.test.ts`).
 
+### La pestaña titila (7/10/2026)
+
+Los avisos del sistema siguieron sin aparecer en la computadora de Lauti, y pidió otra cosa: que la app titile cuando encuentra partido, "como en FACEIT".
+
+- Cuando pasa algo que no puede esperar y la persona está en otra pestaña o en otra ventana, el título de la pestaña alterna entre "🟡 Nico te invita a su sala" y "⚪ Nico te invita a su sala", y el ícono alterna con una versión amarilla. Al volver a la app, queda como siempre.
+- Titila por cuatro cosas: me invitan o me escriben, alguien quiere entrar a mi sala, alguien va a entrar a mi sala, y match listo. Lo demás (amigos, puntos, niveles) no.
+- Si la invitación se cae antes de que la persona vuelva, deja de titilar.
+- Con la app instalada, además aparece un punto sobre su ícono en la barra de tareas (donde el sistema lo permite).
+- No pide permisos y no hace ruido. Hace falta tener HaxMatch abierta en alguna pestaña.
+- Los avisos del sistema no se tocaron: en el celular siguen igual, y en la computadora siguen activables.
+
+Límite conocido: una pestaña que lleva más de cinco minutos tapada cambia el título una vez por minuto en lugar de una vez por segundo (lo frena el navegador). Por eso los dos estados son llamativos.
+
 ## Decisiones que tomé al construir (revisar)
 
 1. **El match siempre es con una sala.** Dos jugadores sin sala ya no generan match: se juntan en una misma búsqueda. Quien creó la sala ve "Ya entró X a la sala" y el que se une ve "Ya entré a la sala".
