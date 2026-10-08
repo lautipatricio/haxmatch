@@ -54,7 +54,7 @@ export function Notificaciones() {
                 <Accion n={n} />
               </div>
             ))}
-            <p className="m center" style={{ margin: 0 }}>Para recibirlos con la app cerrada, activá los avisos desde tu Perfil.</p>
+            <p className="m center" style={{ margin: 0 }}>Para recibirlos con la app cerrada o en otra ventana, activá los avisos desde tu Perfil.</p>
           </div>
         </div>
       )}

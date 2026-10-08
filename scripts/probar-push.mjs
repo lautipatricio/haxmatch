@@ -125,5 +125,33 @@ ok(pagina.includes('ya están configurados') && !pagina.includes(claves.privada)
 ok((await pedir('/api/otra-cosa')).status === 404, 'una dirección de /api/ que no existe responde 404')
 ok((await (await pedir('/perfil')).text()) === 'la app', 'todo lo demás es la app')
 
+// ---- La parte de la app que muestra el aviso (public/sw.js), con un navegador de mentira ----
+console.log('\nCuándo se muestra la notificación')
+const { readFileSync } = await import('node:fs')
+/** Corre public/sw.js y le hace llegar un aviso. Devuelve los títulos de las notificaciones que mostró. */
+async function llegaAviso(aviso, ventanas, agente = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/141') {
+  const escuchas = {}
+  const mostradas = []
+  const yo = {
+    addEventListener: (tipo, f) => { escuchas[tipo] = f },
+    navigator: { userAgent: agente, maxTouchPoints: 0 },
+    registration: { showNotification: async (titulo) => { mostradas.push(titulo) } },
+    clients: { matchAll: async () => ventanas },
+    location: { origin: 'https://haxmatch.ejemplo.dev' },
+  }
+  new Function('self', 'caches', 'location', readFileSync('public/sw.js', 'utf8'))(yo, {}, yo.location)
+  let espera = Promise.resolve()
+  escuchas.push({ data: { json: () => aviso }, waitUntil: (p) => { espera = p } })
+  await espera
+  return mostradas
+}
+const invitacion = { titulo: 'ana te escribió', cuerpo: '"los pibes" está necesitando un GK. ¿Querés jugar?', url: '/buscando', tag: 'mensaje' }
+ok((await llegaAviso(invitacion, [])).join() === 'ana te escribió', 'con la app cerrada, se muestra')
+ok((await llegaAviso(invitacion, [{ focused: false, visibilityState: 'hidden' }])).length === 1, 'con la app en otra pestaña o minimizada, se muestra')
+ok((await llegaAviso(invitacion, [{ focused: false, visibilityState: 'visible' }])).length === 1, 'en la computadora, con la app a la vista pero usando otra ventana, también se muestra')
+ok((await llegaAviso(invitacion, [{ focused: true, visibilityState: 'visible' }])).length === 0, 'si la persona está usando la app, no: el aviso ya aparece adentro')
+ok((await llegaAviso({ ...invitacion, tag: 'prueba' }, [{ focused: true, visibilityState: 'visible' }])).length === 1, 'el aviso de prueba se muestra siempre')
+ok((await llegaAviso(invitacion, [{ focused: true, visibilityState: 'visible' }], 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)')).length === 1, 'en iPhone se muestra siempre')
+
 console.log(fallas ? `\n${fallas} comprobaciones fallaron.` : '\nTodo bien.')
 process.exit(fallas ? 1 : 0)

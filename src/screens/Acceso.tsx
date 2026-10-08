@@ -122,7 +122,7 @@ export function Ingresar() {
             <h2 className="h">Amigos, niveles y avisos</h2>
             <p>
               Agregá amigos para enterarte cuando se ponen a buscar partido, sumá puntos por jugar y por entrar seguido,
-              y recibí un aviso en el celular cuando una sala te invita.
+              y recibí un aviso en el celular o en la computadora cuando una sala te invita.
             </p>
           </section>
 

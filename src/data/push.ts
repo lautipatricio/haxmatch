@@ -1,6 +1,6 @@
-// Avisos con la app cerrada (notificaciones del sistema). Cada celular los
-// activa por separado: el navegador le da a la app una "suscripción" y la app
-// la guarda en el servidor para que le puedan mandar avisos a ese celular.
+// Avisos con la app cerrada (notificaciones del sistema). Cada celular o computadora
+// los activa por separado: el navegador le da a la app una "suscripción" y la app
+// la guarda en el servidor para que le puedan mandar avisos a ese dispositivo.
 import { cola } from './servidor'
 import { REAL } from './supabase'
 import { rpc } from './transporte'
@@ -22,9 +22,22 @@ const esIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (/macintosh
 const instalada = () =>
   window.matchMedia('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true
 
+/** ¿Es una computadora? Los avisos funcionan igual, pero los textos y los arreglos son otros. */
+export const ES_COMPU = typeof navigator !== 'undefined' && !esIOS() && !/android|mobile/i.test(navigator.userAgent)
+/** "esta computadora" o "este celular", para los textos. */
+export const ACA = ES_COMPU ? 'esta computadora' : 'este celular'
+
 async function registro(): Promise<ServiceWorkerRegistration | null> {
   if (!('serviceWorker' in navigator)) return null
-  if (!(await navigator.serviceWorker.getRegistration())) return null
+  try {
+    // Si la app todavía no llegó a instalar su parte de segundo plano (recién abierta), se instala acá.
+    if (!(await navigator.serviceWorker.getRegistration())) {
+      if (!import.meta.env.PROD) return null
+      await navigator.serviceWorker.register('/sw.js')
+    }
+  } catch {
+    return null
+  }
   // Recién instalado puede no estar activo todavía: se lo espera un momento.
   return Promise.race([
     navigator.serviceWorker.ready,
@@ -88,12 +101,18 @@ export async function estadoAvisos(): Promise<EstadoAvisos> {
 }
 
 export const TEXTO_AVISOS: Record<EstadoAvisos, string> = {
-  'no-disponible': 'Este navegador no permite recibir avisos.',
+  'no-disponible': ES_COMPU
+    ? 'Este navegador no permite recibir avisos. En una ventana privada o de incógnito no funcionan: probá en una ventana común de Chrome, Edge o Firefox.'
+    : 'Este navegador no permite recibir avisos.',
   'falta-instalar': 'En iPhone, primero agregá HaxMatch a la pantalla de inicio (Compartir > Agregar a inicio) y abrila desde ahí.',
-  bloqueados: 'Los avisos están bloqueados en este celular. Activalos desde los ajustes del navegador o del sistema.',
+  bloqueados: ES_COMPU
+    ? 'Los avisos de HaxMatch están bloqueados en este navegador. Tocá el ícono que está a la izquierda de la dirección de la página, buscá "Notificaciones", elegí "Permitir" y recargá la página.'
+    : 'Los avisos están bloqueados en este celular. Activalos desde los ajustes del navegador o del sistema.',
   'sin-configurar': 'Los avisos todavía no están habilitados en HaxMatch.',
-  apagados: 'Te avisamos aunque tengas la app cerrada: cuando te escriben, cuando entrás a una sala y cuando un amigo se pone a buscar.',
-  activos: 'Activados en este celular.',
+  apagados: ES_COMPU
+    ? 'Te avisamos como un mensaje más de la computadora, aunque estés en otra ventana: cuando te invitan o te escriben, cuando entrás a una sala y cuando un amigo se pone a buscar.'
+    : 'Te avisamos aunque tengas la app cerrada: cuando te invitan o te escriben, cuando entrás a una sala y cuando un amigo se pone a buscar.',
+  activos: `Activados en ${ACA}.`,
 }
 
 export const SIN_PERMISO = 'No diste permiso para los avisos. Podés activarlos después desde tu Perfil.'
@@ -124,7 +143,13 @@ export async function activarAvisos(): Promise<string | null> {
     if (!clave) return TEXTO_AVISOS['sin-configurar']
     return await guardar(await suscribir(reg, clave))
   } catch {
-    return 'No pudimos activar los avisos en este celular. Probá de nuevo.'
+    // Brave trae apagado el servicio que usan los avisos: hay que prenderlo a mano.
+    if ((navigator as { brave?: unknown }).brave) {
+      return 'Brave trae los avisos apagados. Abrí brave://settings/privacy, activá "Usar los servicios de Google para la mensajería push", reiniciá Brave y probá de nuevo.'
+    }
+    return ES_COMPU
+      ? 'Este navegador no pudo activar los avisos. Probá de nuevo; si sigue igual, usá Chrome, Edge o Firefox en una ventana común (no privada).'
+      : 'No pudimos activar los avisos en este celular. Probá de nuevo.'
   }
 }
 
@@ -150,8 +175,10 @@ export async function probarAviso(): Promise<{ ok: boolean; texto: string }> {
     if (!r || r.estado === 'esperando') continue
     if (r.estado !== 'respondio') break
     if (r.sin_respuesta) return { ok: false, texto: 'La base de datos no pudo comunicarse con la web de HaxMatch. Probá de nuevo en un rato.' }
-    if (r.codigo === 200 && (r.enviados ?? 0) > 0) return { ok: true, texto: 'Listo: el aviso salió hacia tu celular. Tendría que aparecer en unos segundos.' }
-    if (r.codigo === 200) return { ok: false, texto: 'El servicio de avisos de este celular lo rechazó. Desactivá los avisos, volvé a activarlos y probá de nuevo.' }
+    if (r.codigo === 200 && (r.enviados ?? 0) > 0) return { ok: true, texto: ES_COMPU
+      ? 'Listo: el aviso salió hacia esta computadora. Tendría que aparecer en unos segundos. Si no aparece, revisá que las notificaciones del navegador estén permitidas en el sistema y que no tengas activado "No molestar".'
+      : 'Listo: el aviso salió hacia tu celular. Tendría que aparecer en unos segundos.' }
+    if (r.codigo === 200) return { ok: false, texto: `El servicio de avisos de ${ACA} lo rechazó. Desactivá los avisos, volvé a activarlos y probá de nuevo.` }
     if (r.codigo === 401) return { ok: false, texto: 'La clave de los avisos no coincide entre Supabase y Cloudflare. Hay que repetir la configuración.' }
     if (r.codigo === 503) return { ok: false, texto: 'Faltan cargar las claves de los avisos en Cloudflare.' }
     return { ok: false, texto: `La web de HaxMatch no aceptó el pedido (código ${r.codigo ?? '?'}). Revisá la dirección configurada en Supabase.` }

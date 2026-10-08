@@ -36,8 +36,10 @@ self.addEventListener('fetch', (e) => {
   )
 })
 
-// Llegó un aviso: se muestra como notificación del celular. Si la app está
-// abierta y a la vista no hace falta, porque el aviso ya aparece adentro.
+// Llegó un aviso: se muestra como notificación del celular o de la computadora.
+// Si la persona está usando la app en ese momento (la ventana tiene el foco) no hace
+// falta, porque el aviso ya aparece adentro. En la computadora, una pestaña abierta
+// pero tapada por otra ventana no cuenta: ahí sí se muestra, como un mensaje más.
 // (En iPhone se muestra siempre: Apple exige una notificación por cada aviso.)
 const ES_IPHONE = /iphone|ipad|ipod/i.test(self.navigator.userAgent) ||
   (/macintosh/i.test(self.navigator.userAgent) && self.navigator.maxTouchPoints > 1)
@@ -64,7 +66,7 @@ self.addEventListener('push', (e) => {
     return
   }
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-    .then((ventanas) => (ventanas.some((v) => v.visibilityState === 'visible') ? undefined : mostrar()))
+    .then((ventanas) => (ventanas.some((v) => v.focused) ? undefined : mostrar()))
     .catch(mostrar))
 })
 

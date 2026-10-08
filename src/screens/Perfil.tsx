@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type CSSProperties, type ChangeEven
 import { Link, useNavigate } from 'react-router-dom'
 import { PREVIEW, REAL } from '../config'
 import { cargarFoto, soltarFoto, type FotoElegida } from '../data/foto'
-import { TEXTO_AVISOS, activarAvisos, desactivarAvisos, estadoAvisos, probarAviso, type EstadoAvisos } from '../data/push'
+import { ACA, ES_COMPU, TEXTO_AVISOS, activarAvisos, desactivarAvisos, estadoAvisos, probarAviso, type EstadoAvisos } from '../data/push'
 import { YO, buscarMia, rivalesDe, useStore } from '../data/store'
 import { DIAS_PENDIENTE, PUNTOS, diasParaVencer, esPendiente } from '../domain/rules'
 import { Avatar, BorrarCuenta, Campana, CerrarSesion, Head, Icon, Portada, TabBar, TarjetaNivel, hace, useAhora } from '../ui'
@@ -86,7 +86,7 @@ function MisClips() {
   )
 }
 
-/** Avisos con la app cerrada: se activan en cada celular por separado. */
+/** Avisos con la app cerrada: se activan por separado en cada celular y en cada computadora. */
 function Avisos() {
   const [estado, setEstado] = useState<EstadoAvisos | null>(null)
   const [problema, setProblema] = useState<string | null>(null)
@@ -123,7 +123,7 @@ function Avisos() {
       <div className="row">
         <span style={{ color: estado === 'activos' ? 'var(--accent)' : 'var(--fg2)', display: 'grid' }}><Icon name="campana" stroke={1.75} /></span>
         <div className="grow">
-          <div className="strong">Avisos en este celular</div>
+          <div className="strong">Avisos en {ACA}</div>
           <div className="m">{TEXTO_AVISOS[estado]}</div>
         </div>
       </div>
@@ -154,7 +154,7 @@ function Instalar() {
   if (PREVIEW || instalada) return null
   return (
     <div className="card card--col">
-      <div className="strong">Instalá HaxMatch en tu celular</div>
+      <div className="strong">Instalá HaxMatch en tu {ES_COMPU ? 'computadora' : 'celular'}</div>
       {esIOS ? (
         <ol className="steps m">
           <li>Abrí esta página en Safari.</li>
@@ -162,7 +162,9 @@ function Instalar() {
           <li>Elegí "Agregar a inicio".</li>
         </ol>
       ) : (
-        <div className="m">Se abre como una app y te deja recibir avisos de tus amigos.</div>
+        <div className="m">{ES_COMPU
+          ? 'Queda como un programa más, con su ícono y su propia ventana.'
+          : 'Se abre como una app y te deja recibir avisos de tus amigos.'}</div>
       )}
       {evento?.prompt && <button className="btn" onClick={() => evento.prompt?.()}>Instalar</button>}
     </div>

@@ -274,6 +274,16 @@ Cómo se probó: 11 comprobaciones nuevas del servidor, el recorrido de la demos
 
 TikTok no aprueba una app cuyo sitio sea solo una pantalla de ingreso: pide un sitio que explique qué es, con Términos y Privacidad a la vista. Por eso la pantalla de ingreso ahora sigue hacia abajo: la primera vista es la de siempre (nombre y botones para entrar) y debajo cuenta qué es HaxMatch, cómo funciona, qué hace con TikTok, y tiene los enlaces a Términos, Privacidad y Contacto. Se lee sin entrar. El paso a paso para mandar la app a revisión quedó en `docs/TIKTOK_REVISION.md`.
 
+## Avisos en la computadora (7/10/2026)
+
+Pedido: que en la computadora los avisos lleguen como en el celular, "como un mensaje de WhatsApp".
+
+- Los avisos ya se podían activar en una computadora (es el mismo mecanismo), pero la app hablaba siempre de "este celular" y, si algo fallaba, no decía cómo arreglarlo. Ahora los textos dicen "esta computadora" y explican cada caso: avisos bloqueados en el navegador, ventana privada, o Brave (que trae apagado el servicio que usan los avisos).
+- **Cuándo se muestra la notificación:** antes no aparecía si la app estaba "a la vista", y en una computadora una pestaña abierta cuenta como a la vista aunque uno esté en otra ventana. Ahora solo se omite si la persona está usando la app en ese momento (la ventana tiene el foco). En el celular no cambia nada.
+- Si al abrir el Perfil la app todavía no había instalado su parte de segundo plano, la instala en ese momento en lugar de decir que el navegador no permite avisos.
+
+Lo que no depende de la app: con el navegador cerrado del todo, Windows y Mac solo muestran avisos si el navegador sigue funcionando en segundo plano; y "No molestar" los oculta.
+
 ## Decisiones que tomé al construir (revisar)
 
 1. **El match siempre es con una sala.** Dos jugadores sin sala ya no generan match: se juntan en una misma búsqueda. Quien creó la sala ve "Ya entró X a la sala" y el que se une ve "Ya entré a la sala".
