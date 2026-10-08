@@ -312,6 +312,17 @@ Los avisos del sistema siguieron sin aparecer en la computadora de Lauti, y pidi
 
 Límite conocido: una pestaña que lleva más de cinco minutos tapada cambia el título una vez por minuto en lugar de una vez por segundo (lo frena el navegador). Por eso los dos estados son llamativos.
 
+## Google Play (7/10/2026)
+
+Lauti consiguió prestada una cuenta de Google Play (personal, creada el 5/1/2026) y decidió subir la app con la dirección actual. La guía está en `docs/PLAY_STORE.md`.
+
+- La app de Play es un envoltorio de la web (se arma con PWABuilder). No se toca el código de la app.
+- Por el tipo y la fecha de la cuenta, Google exige una prueba cerrada de 14 días con 12 personas antes de publicar.
+- Se agregó `/borrar-cuenta`, la página pública que Google pide para solicitar el borrado.
+- **Corrección en la Política de privacidad:** al entrar con Discord, el servicio de inicio de sesión (Supabase) también recibe y guarda el email de la cuenta de Discord. La política no lo decía. La app no lo lee ni lo muestra, y se borra con la cuenta.
+- Falta, cuando Lauti genere el paquete: publicar `/.well-known/assetlinks.json` con las dos huellas (la del paquete y la de Google).
+- Google necesita una cuenta de Discord de prueba para revisar la app, porque no hay otra forma de entrar.
+
 ## Decisiones que tomé al construir (revisar)
 
 1. **El match siempre es con una sala.** Dos jugadores sin sala ya no generan match: se juntan en una misma búsqueda. Quien creó la sala ve "Ya entró X a la sala" y el que se une ve "Ya entré a la sala".
