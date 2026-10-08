@@ -284,6 +284,21 @@ Pedido: que en la computadora los avisos lleguen como en el celular, "como un me
 
 Lo que no depende de la app: con el navegador cerrado del todo, Windows y Mac solo muestran avisos si el navegador sigue funcionando en segundo plano; y "No molestar" los oculta.
 
+### El aviso de prueba dice hasta dónde llegó
+
+Reporte: al tocar "Mandar un aviso de prueba" en la computadora, llegaba al celular y no a la computadora. La prueba sale hacia todos los dispositivos de la cuenta, y antes decía "listo" con que uno solo lo recibiera. Ahora sigue el aviso paso por paso:
+
+1. Antes de mandar, vuelve a anotar este dispositivo en el servidor. Si no se puede, lo dice y no manda nada.
+2. Cuando el aviso llega al navegador, la parte de segundo plano (`public/sw.js`) se lo cuenta a la app abierta, y también si lo pudo mostrar.
+3. Según eso, el texto es uno de tres:
+   - **Llegó y se mostró.** Si el cartel no se vio, lo oculta el sistema, y la app dice dónde se prende en Windows, Mac, Android o iPhone. En Windows aclara que "No molestar" se prende solo con un juego a pantalla completa.
+   - **Llegó y el navegador no dejó mostrarlo.** Explica cómo permitir las notificaciones del sitio.
+   - **No llegó.** La primera vez renueva la suscripción de ese dispositivo y pide probar de nuevo. La segunda, da un dato para pedir ayuda: navegador, sistema, servicio de avisos y qué contestó.
+
+La notificación de prueba dice "esta computadora" o "este celular" según dónde aparece.
+
+No se pudo probar con un aviso real (desde acá no se llega a los servicios de avisos). Sí se probó la parte de segundo plano en un Chromium de verdad, haciéndole llegar un aviso simulado, y la lógica de la app con un navegador de mentira (`src/data/push.test.ts`).
+
 ## Decisiones que tomé al construir (revisar)
 
 1. **El match siempre es con una sala.** Dos jugadores sin sala ya no generan match: se juntan en una misma búsqueda. Quien creó la sala ve "Ya entró X a la sala" y el que se une ve "Ya entré a la sala".

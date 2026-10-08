@@ -101,6 +101,8 @@ function Avisos() {
     const r = await probarAviso()
     if (r.ok) setProbado(r.texto)
     else setProblema(r.texto)
+    // Si la prueba no llegó, la app renueva la suscripción: el estado puede haber cambiado.
+    setEstado(await estadoAvisos())
     setProbando(false)
     setOcupado(false)
   }

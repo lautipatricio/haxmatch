@@ -158,32 +158,178 @@ interface ResultadoPrueba {
   codigo?: number | null
   sin_respuesta?: boolean
   enviados?: number | null
+  /** Qué contestó el servicio de avisos de cada dispositivo de la cuenta. */
+  resultados?: number[] | null
 }
 
-const pausa = (ms: number) => new Promise((listo) => setTimeout(listo, ms))
+const pausa = (ms: number) => new Promise<void>((listo) => setTimeout(listo, ms))
+
+/** Versión de public/sw.js desde la que avisa cuando le llega el aviso de prueba. */
+const VERSION_SW = 2
+
+function versionSW(reg: ServiceWorkerRegistration): Promise<number> {
+  const sw = reg.active
+  if (!sw) return Promise.resolve(0)
+  return new Promise((listo) => {
+    const canal = new MessageChannel()
+    const corte = setTimeout(() => listo(0), 2000)
+    canal.port1.onmessage = (e: MessageEvent) => {
+      clearTimeout(corte)
+      listo(Number((e.data as { version?: unknown } | null)?.version) || 0)
+    }
+    sw.postMessage({ tipo: 'version' }, [canal.port2])
+  })
+}
+
+/** ¿La parte de segundo plano ya es la que avisa cuando llega la prueba? Si quedó una vieja, se la actualiza. */
+async function alDia(reg: ServiceWorkerRegistration): Promise<boolean> {
+  try {
+    if ((await versionSW(reg)) >= VERSION_SW) return true
+    await reg.update()
+    for (let i = 0; i < 8; i++) {
+      await pausa(500)
+      if ((await versionSW(reg)) >= VERSION_SW) return true
+    }
+  } catch {
+    // Sin eso la prueba se hace igual, solo que no puede decir si llegó.
+  }
+  return false
+}
+
+/** Escucha si el aviso de prueba llega a este dispositivo. */
+function escucharPrueba() {
+  let mostrado: boolean | null = null
+  let avisar: (() => void) | null = null
+  const alLlegar = (e: MessageEvent) => {
+    const d = e.data as { tipo?: string; mostrado?: boolean } | null
+    if (d?.tipo !== 'aviso-recibido') return
+    mostrado = d.mostrado !== false
+    avisar?.()
+  }
+  navigator.serviceWorker.addEventListener('message', alLlegar)
+  return {
+    /** Espera hasta `ms`. Devuelve si el navegador lo pudo mostrar, o null si todavía no llegó. */
+    esperar: async (ms: number): Promise<boolean | null> => {
+      if (mostrado === null) await Promise.race([new Promise<void>((listo) => { avisar = listo }), pausa(ms)])
+      return mostrado
+    },
+    soltar: () => navigator.serviceWorker.removeEventListener('message', alLlegar),
+  }
+}
+
+type Sistema = 'Windows' | 'Mac' | 'Linux' | 'Android' | 'iPhone'
+
+/** En qué navegador y en qué sistema está abierta la app. */
+export function dondeEstoy(agente = navigator.userAgent, brave = !!(navigator as { brave?: unknown }).brave): { navegador: string; sistema: Sistema | null } {
+  const navegador = brave ? 'Brave'
+    : /edg\//i.test(agente) ? 'Edge'
+    : /opr\//i.test(agente) ? 'Opera'
+    : /firefox\//i.test(agente) ? 'Firefox'
+    : /chrome\//i.test(agente) ? 'Chrome'
+    : /safari\//i.test(agente) ? 'Safari'
+    : 'el navegador'
+  const sistema = esIOS() || /iphone|ipad|ipod/i.test(agente) ? 'iPhone'
+    : /android/i.test(agente) ? 'Android'
+    : /windows/i.test(agente) ? 'Windows'
+    : /mac os x|macintosh/i.test(agente) ? 'Mac'
+    : /linux|cros/i.test(agente) ? 'Linux'
+    : null
+  return { navegador, sistema }
+}
+
+/** Dónde se prenden las notificaciones del navegador en cada sistema. */
+export function ayudaSistema(navegador: string, sistema: Sistema | null): string {
+  if (sistema === 'Windows') {
+    return `Abrí Configuración > Sistema > Notificaciones y revisá tres cosas: que las notificaciones estén prendidas, que "No molestar" esté apagado y que ${navegador} esté prendido en la lista de aplicaciones. Windows prende "No molestar" por su cuenta cuando hay un juego o un video a pantalla completa.`
+  }
+  if (sistema === 'Mac') {
+    return `Abrí Ajustes del Sistema > Notificaciones, entrá en ${navegador} y prendé "Permitir notificaciones". Revisá también que no tengas activado un modo de Concentración.`
+  }
+  if (sistema === 'iPhone') return 'Abrí Ajustes > Notificaciones > HaxMatch y revisá que estén permitidas y que no tengas activado un modo de Concentración.'
+  if (sistema === 'Android') return `Abrí los ajustes del celular > Notificaciones y revisá que ${navegador} (o HaxMatch, si la instalaste) las tenga permitidas y que "No molestar" esté apagado.`
+  return `Revisá en los ajustes del sistema que las notificaciones de ${navegador} estén permitidas y que "No molestar" esté apagado.`
+}
+
+/** Vuelve a suscribir este dispositivo desde cero. Devuelve el problema, o null si quedó. */
+async function renovar(reg: ServiceWorkerRegistration, sub: PushSubscription): Promise<string | null> {
+  try {
+    const clave = await clavePublica()
+    if (!clave) return TEXTO_AVISOS['sin-configurar']
+    await cola.quitarSuscripcion(sub.endpoint)
+    await sub.unsubscribe()
+    return await guardar(await suscribir(reg, clave))
+  } catch {
+    return 'Desactivá los avisos, volvé a activarlos y probá de nuevo.'
+  }
+}
+
+/** En cada visita, la primera vez que la prueba no llega se renueva la suscripción; la segunda, se dan los datos para pedir ayuda. */
+let renovada = false
+
+async function noLlego(reg: ServiceWorkerRegistration, sub: PushSubscription, resultados: number[] | null | undefined): Promise<{ ok: boolean; texto: string }> {
+  const salio = `El aviso salió, pero no llegó a ${ACA}.`
+  if (!renovada) {
+    renovada = true
+    const error = await renovar(reg, sub)
+    return { ok: false, texto: error
+      ? `${salio} Quisimos renovar la conexión de los avisos y no se pudo. ${error}`
+      : `${salio} Renovamos la conexión de los avisos: esperá unos segundos y tocá de nuevo "Mandar un aviso de prueba".` }
+  }
+  const { navegador, sistema } = dondeEstoy()
+  let servicio = '?'
+  try {
+    servicio = new URL(sub.endpoint).host
+  } catch {
+    // Queda el signo de pregunta.
+  }
+  const codigos = Array.isArray(resultados) && resultados.length > 0 ? resultados.join(', ') : 'sin datos'
+  return { ok: false, texto: `${salio} ${ES_COMPU ? 'Cerrá el navegador del todo, abrilo de nuevo' : 'Cerrá la app del todo, abrila de nuevo'} y probá otra vez. Una VPN, un antivirus con firewall o la red de un trabajo o de una escuela pueden cortar los avisos. Si sigue igual, copiá este dato para pedir ayuda: ${navegador}${sistema ? ` en ${sistema}` : ''} · ${servicio} · respuestas ${codigos}.` }
+}
 
 /**
- * Pide un aviso de prueba y espera a saber cómo salió.
- * Devuelve si salió hacia el celular y el texto para mostrar.
+ * Pide un aviso de prueba y espera a saber cómo salió: si la base pudo mandarlo,
+ * si llegó a este dispositivo y si el navegador lo pudo mostrar.
  */
 export async function probarAviso(): Promise<{ ok: boolean; texto: string }> {
-  const pedido = await rpc<string>('probar_aviso')
-  if (pedido.error) return { ok: false, texto: pedido.error }
-  for (const espera of [2500, 3000, 4000]) {
-    await pausa(espera)
-    const r = (await rpc<ResultadoPrueba>('resultado_prueba')).data
-    if (!r || r.estado === 'esperando') continue
-    if (r.estado !== 'respondio') break
-    if (r.sin_respuesta) return { ok: false, texto: 'La base de datos no pudo comunicarse con la web de HaxMatch. Probá de nuevo en un rato.' }
-    if (r.codigo === 200 && (r.enviados ?? 0) > 0) return { ok: true, texto: ES_COMPU
-      ? 'Listo: el aviso salió hacia esta computadora. Tendría que aparecer en unos segundos. Si no aparece, revisá que las notificaciones del navegador estén permitidas en el sistema y que no tengas activado "No molestar".'
-      : 'Listo: el aviso salió hacia tu celular. Tendría que aparecer en unos segundos.' }
-    if (r.codigo === 200) return { ok: false, texto: `El servicio de avisos de ${ACA} lo rechazó. Desactivá los avisos, volvé a activarlos y probá de nuevo.` }
-    if (r.codigo === 401) return { ok: false, texto: 'La clave de los avisos no coincide entre Supabase y Cloudflare. Hay que repetir la configuración.' }
-    if (r.codigo === 503) return { ok: false, texto: 'Faltan cargar las claves de los avisos en Cloudflare.' }
-    return { ok: false, texto: `La web de HaxMatch no aceptó el pedido (código ${r.codigo ?? '?'}). Revisá la dirección configurada en Supabase.` }
+  const { navegador, sistema } = dondeEstoy()
+  // Este dispositivo tiene que estar anotado en el servidor: si no, la prueba sale solo hacia los otros.
+  const reg = await registro()
+  const sub = reg ? await reg.pushManager.getSubscription().catch(() => null) : null
+  if (!reg || !sub) return { ok: false, texto: `Los avisos no están activados en ${ACA}. Activalos y probá de nuevo.` }
+  const sinAnotar = await guardar(sub)
+  if (sinAnotar) return { ok: false, texto: `No pudimos anotar ${ACA} para recibir avisos. ${sinAnotar}` }
+  const sabeSiLlega = await alDia(reg)
+  const oido = escucharPrueba()
+  const llego = (mostrado: boolean) => mostrado
+    ? { ok: true, texto: `El aviso llegó a ${ACA} y el navegador lo mostró. ¿No viste el cartel? Entonces lo está ocultando ${sistema === 'Mac' ? 'la Mac' : sistema === 'Windows' ? 'Windows' : ES_COMPU ? 'el sistema' : 'el celular'}. ${ayudaSistema(navegador, sistema)}` }
+    : { ok: false, texto: `El aviso llegó a ${ACA}, pero el navegador no dejó mostrarlo. ${TEXTO_AVISOS.bloqueados}` }
+  try {
+    const pedido = await rpc<string>('probar_aviso')
+    if (pedido.error) return { ok: false, texto: pedido.error }
+    for (const espera of [2500, 3000, 4000]) {
+      const mostrado = await oido.esperar(espera)
+      if (mostrado !== null) return llego(mostrado)
+      const r = (await rpc<ResultadoPrueba>('resultado_prueba')).data
+      if (!r || r.estado === 'esperando') continue
+      if (r.estado !== 'respondio') break
+      if (r.sin_respuesta) return { ok: false, texto: 'La base de datos no pudo comunicarse con la web de HaxMatch. Probá de nuevo en un rato.' }
+      if (r.codigo === 200 && (r.enviados ?? 0) > 0) {
+        if (!sabeSiLlega) return { ok: true, texto: `Listo: el aviso salió hacia ${ACA}. Tendría que aparecer en unos segundos. Si no aparece: ${ayudaSistema(navegador, sistema)}` }
+        // Ya salió: desde acá, lo normal es que llegue en un par de segundos.
+        const alFinal = await oido.esperar(8000)
+        return alFinal !== null ? llego(alFinal) : await noLlego(reg, sub, r.resultados)
+      }
+      if (r.codigo === 200) return { ok: false, texto: `El servicio de avisos de ${ACA} lo rechazó. Desactivá los avisos, volvé a activarlos y probá de nuevo.` }
+      if (r.codigo === 401) return { ok: false, texto: 'La clave de los avisos no coincide entre Supabase y Cloudflare. Hay que repetir la configuración.' }
+      if (r.codigo === 503) return { ok: false, texto: 'Faltan cargar las claves de los avisos en Cloudflare.' }
+      return { ok: false, texto: `La web de HaxMatch no aceptó el pedido (código ${r.codigo ?? '?'}). Revisá la dirección configurada en Supabase.` }
+    }
+    const tarde = await oido.esperar(0)
+    if (tarde !== null) return llego(tarde)
+    return { ok: true, texto: 'Pedido enviado. Si en un minuto no aparece nada, probá de nuevo.' }
+  } finally {
+    oido.soltar()
   }
-  return { ok: true, texto: 'Pedido enviado. Si en un minuto no te llega nada, avisame.' }
 }
 
 export async function desactivarAvisos(): Promise<string | null> {

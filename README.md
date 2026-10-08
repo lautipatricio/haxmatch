@@ -13,7 +13,7 @@ Necesitás Node 20 o más nuevo.
 ```
 npm install
 npm run dev        # abre la app en http://localhost:5173, con el servidor real
-npm test           # tests de las reglas (puntos, niveles, validación)
+npm test           # tests de las reglas (puntos, niveles, validación) y del aviso de prueba
 npm run test:sql   # prueba los SQL de supabase/ en una base local (390 comprobaciones)
 npm run test:push  # prueba el envío de notificaciones (worker/index.js)
 npm run test:tiktok  # prueba la vinculación con TikTok contra un TikTok de mentira (38 comprobaciones)

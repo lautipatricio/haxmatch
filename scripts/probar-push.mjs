@@ -153,5 +153,43 @@ ok((await llegaAviso(invitacion, [{ focused: true, visibilityState: 'visible' }]
 ok((await llegaAviso({ ...invitacion, tag: 'prueba' }, [{ focused: true, visibilityState: 'visible' }])).length === 1, 'el aviso de prueba se muestra siempre')
 ok((await llegaAviso(invitacion, [{ focused: true, visibilityState: 'visible' }], 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)')).length === 1, 'en iPhone se muestra siempre')
 
+// El aviso de prueba: además de mostrarse, le cuenta a la app abierta que llegó.
+console.log('\nEl aviso de prueba le cuenta a la app que llegó')
+/** Corre public/sw.js, le hace llegar el aviso de prueba y devuelve lo que mostró y lo que le dijo a la app. */
+async function llegaPrueba({ agente = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/141', sinPermiso = false, tag = 'prueba' } = {}) {
+  const escuchas = {}
+  const cuerpos = []
+  const dichos = []
+  const yo = {
+    addEventListener: (tipo, f) => { escuchas[tipo] = f },
+    navigator: { userAgent: agente, maxTouchPoints: 0 },
+    registration: { showNotification: async (_titulo, o) => {
+      if (sinPermiso) throw new TypeError('No notification permission has been granted for this origin.')
+      cuerpos.push(o.body)
+    } },
+    clients: { matchAll: async () => [{ focused: false, postMessage: (m) => dichos.push(m) }] },
+    location: { origin: 'https://haxmatch.ejemplo.dev' },
+  }
+  new Function('self', 'caches', 'location', readFileSync('public/sw.js', 'utf8'))(yo, {}, yo.location)
+  let espera = Promise.resolve()
+  escuchas.push({ data: { json: () => ({ titulo: 'Aviso de prueba', cuerpo: 'Si ves esto, los avisos de HaxMatch funcionan en este celular.', url: '/perfil', tag }) }, waitUntil: (p) => { espera = p } })
+  await espera
+  let version = null
+  escuchas.message({ data: { tipo: 'version' }, ports: [{ postMessage: (m) => { version = m.version } }] })
+  escuchas.message({ data: { tipo: 'otra cosa' }, ports: [] })
+  escuchas.message({ data: null })
+  return { cuerpos, dichos, version }
+}
+let prueba = await llegaPrueba()
+ok(prueba.dichos.length === 1 && prueba.dichos[0].tipo === 'aviso-recibido' && prueba.dichos[0].mostrado === true, 'cuando llega y se muestra, la app se entera')
+ok(prueba.cuerpos[0]?.includes('esta computadora'), 'en una computadora, la notificación dice "esta computadora"')
+ok(prueba.version >= 2, 'contesta qué versión es, para que la app sepa si puede esperar esa noticia')
+prueba = await llegaPrueba({ agente: 'Mozilla/5.0 (Linux; Android 15; Pixel 9) Chrome/141 Mobile' })
+ok(prueba.cuerpos[0]?.includes('este celular'), 'en un celular, dice "este celular"')
+prueba = await llegaPrueba({ sinPermiso: true })
+ok(prueba.cuerpos.length === 0 && prueba.dichos[0]?.mostrado === false, 'si el navegador no deja mostrarla, la app se entera de que llegó pero no se mostró')
+prueba = await llegaPrueba({ tag: 'mensaje' })
+ok(prueba.dichos.length === 0 && prueba.cuerpos[0]?.includes('este celular'), 'los avisos comunes no le cuentan nada a la app y conservan su texto')
+
 console.log(fallas ? `\n${fallas} comprobaciones fallaron.` : '\nTodo bien.')
 process.exit(fallas ? 1 : 0)
