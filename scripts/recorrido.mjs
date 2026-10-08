@@ -253,7 +253,7 @@ await tab('Inicio').click()
 await page.getByRole('region', { name: 'En vivo en Kick' }).getByText('Amistosos 3v3 con la comunidad').waitFor()
 if (!(await page.getByRole('link', { name: 'Ver el directo de Nico en Kick' }).getAttribute('href'))?.startsWith('https://kick.com/nico_hax')) throw new Error('El botón Ver tiene que llevar al canal de Kick')
 await tab('Chat').click()
-await page.locator('.chat__autor', { hasText: 'Cami_DC' }).first().locator('.kick', { hasText: /^K$/ }).waitFor()
+await page.locator('.chat__autor', { hasText: 'Cami_DC' }).first().locator('img.kick-logo').waitFor()
 await page.locator('.chat__autor', { hasText: 'Nico' }).first().locator('.kick', { hasText: 'EN VIVO' }).waitFor()
 // Tocar a quien está en vivo: su perfil muestra el directo, y tocándolo se va a su Kick.
 await page.getByRole('button', { name: 'Ver a Nico' }).first().click()

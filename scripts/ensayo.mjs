@@ -714,7 +714,7 @@ try {
   await filaKick.getByText('Conectado como tere_kick').waitFor()
   if (tere.page.url().includes('kick=')) throw new Error('Después de mostrar el resultado, la dirección queda limpia')
   await ulises.page.reload()
-  await ulises.page.locator('.chat__autor', { hasText: 'Tere' }).first().locator('.kick', { hasText: /^K$/ }).waitFor()
+  await ulises.page.locator('.chat__autor', { hasText: 'Tere' }).first().locator('img.kick-logo').waitFor()
   servidor.kick.enVivo('tere_kick', true, 'Practicando con la comunidad')
   await servidor.revisarKick()
   await ulises.page.goto(URL)

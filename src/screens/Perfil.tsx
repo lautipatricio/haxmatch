@@ -179,9 +179,9 @@ function CuentaKick() {
         {canal ? (
           seguro
             ? <button className="btn btn--danger" disabled={ocupado} onClick={() => void tocar()}>Desvincular</button>
-            : <button className="btn btn--sec" onClick={() => setSeguro(true)}>Quitar</button>
+            : <button key="quitar" className="btn btn--sec" onClick={() => setSeguro(true)}>Quitar</button>
         ) : (
-          <button className="btn" disabled={ocupado} onClick={() => void tocar()}>Vincular</button>
+          <button key="vincular" className="btn" disabled={ocupado} onClick={() => void tocar()}>Vincular</button>
         )}
       </div>
       {aviso && <div className={aviso.ok ? 'ok' : 'err'} role={aviso.ok ? 'status' : 'alert'}>{aviso.texto}</div>}

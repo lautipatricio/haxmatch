@@ -68,7 +68,7 @@ export async function irAKick(): Promise<string | null> {
 
 /** Qué decirle al usuario cuando vuelve de Kick (?kick=...). */
 export const RESULTADO_KICK: Record<string, { ok: boolean; texto: string }> = {
-  ok: { ok: true, texto: 'Kick vinculado. Los demás ven la K verde de Kick al lado de tu nombre y cuando estás en vivo.' },
+  ok: { ok: true, texto: 'Kick vinculado. Los demás ven el logo de Kick al lado de tu nombre y cuando estás en vivo.' },
   cancelado: { ok: false, texto: 'No se vinculó: no diste el permiso en Kick.' },
   vencido: { ok: false, texto: 'La vinculación tardó demasiado o se abrió en otro navegador. Probá de nuevo.' },
   ocupada: { ok: false, texto: 'Esa cuenta de Kick ya está vinculada a otro usuario de HaxMatch.' },
