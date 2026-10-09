@@ -134,10 +134,11 @@ async function abrir(nombre) {
       await u.ver('Jugadores buscando partidos')
     },
     /** `marcar`: opciones del formulario a tocar (una posición, una cancha). */
-    async abrirSala(sala, faltan = 1, marcar = [], cancha = 'Futsal') {
+    async abrirSala(sala, faltan = 1, marcar = [], cancha = 'Futsal', link = '') {
       await u.link('Necesito un jugador').click()
       await u.boton(cancha).click()
       await page.getByLabel('Nombre de la sala').fill(sala)
+      if (link) await page.getByLabel('Link del host (opcional)').fill(link)
       if (faltan !== 1) await u.boton(String(faltan)).click()
       for (const opcion of marcar) await u.boton(opcion).click()
       await u.boton('Buscar jugador').click()
@@ -173,7 +174,7 @@ try {
   const ana = await abrir('ana')
   const beto = await abrir('beto')
   await ana.ver('Nadie buscando ahora')
-  await ana.abrirSala('sala de ana')
+  await ana.abrirSala('sala de ana', 1, [], 'Futsal', 'haxball.com/play?c=SalaDeAna1')
   await beto.ver('1 buscando ahora')
   await beto.buscar()
   await beto.fila('Ana').waitFor()
@@ -193,11 +194,16 @@ try {
   await beto.ver('Te invitan a jugar'); await beto.ver('"sala de ana" está necesitando un jugador en la cancha Futsal. ¿Querés jugar?')
   await titila(beto, 'Ana te invita a su sala'); await quieta(ana)
   await vuelve(beto); await quieta(beto)
-  await beto.ver('Sala de Ana · Nivel 0'); await beto.ver('Si aceptás, entrás directo'); await beto.foto('invitacion')
+  await beto.ver('Sala de Ana · Nivel 0'); await beto.ver('Si aceptás, entrás directo')
+  // Con la invitación le llega el link de la sala (antes de la invitación, no lo veía).
+  const href = await beto.page.getByRole('link', { name: 'Abrir la sala' }).getAttribute('href')
+  if (href !== 'https://www.haxball.com/play?c=SalaDeAna1') throw new Error(`La invitación no trae el link de la sala: ${href}`)
+  await beto.foto('invitacion')
   await beto.boton('Sí, quiero jugar').click()
   await beto.ver('sala de ana'); await beto.ver('No te olvides'); await beto.foto('match-listo')
   await quieta(beto)
   await beto.boton('Entendido').click()
+  if (await beto.page.getByRole('link', { name: 'Entrar a la sala' }).getAttribute('href') !== 'https://www.haxball.com/play?c=SalaDeAna1') throw new Error('El match no trae el link de la sala')
   await ana.ver('Beto va a entrar'); await ana.ver('Sala completa'); await ana.foto('va-a-entrar')
   await titila(ana, 'Beto va a entrar a tu sala')
   await vuelve(ana); await quieta(ana)

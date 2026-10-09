@@ -6,7 +6,7 @@
 import { create } from 'zustand'
 import {
   AMISTOSOS_REFERIDO, MINUTOS_DISPONIBLE, MINUTOS_OFERTA, bonusRacha, conectoHoy,
-  matchCuenta, nivelDe, PUNTOS, puntosAmistoso, puntosReaccion, puntosReel, puntosReferido,
+  linkDeSala, matchCuenta, nivelDe, PUNTOS, puntosAmistoso, puntosReaccion, puntosReel, puntosReferido,
   rachaActual, rivalDe, totalPuntos,
 } from '../domain/rules'
 import type {
@@ -22,7 +22,7 @@ import { desvincularKick, irAKick, leerKick, type CanalKick } from './kick'
 import { sincronizarAvisos, soltarAvisos } from './push'
 import {
   GRACIA_MS, aLocal, cambiarNick as cambiarNickServidor, chat as chatServidor, cola, guardarMostrarConectado, leerAjustes, leerChat, leerCola, leerSeguridad,
-  pedirAmistadPorUsuario, type ColaLocal, type Resumen,
+  pedirAmistadPorUsuario, ponerLinkSala, type ColaLocal, type Resumen,
 } from './servidor'
 import { REAL } from './supabase'
 import { alCambiar, alCambiarChat } from './transporte'
@@ -112,6 +112,8 @@ export interface NuevaBusqueda {
   region: Region[]
   duracion: Duracion
   nombreSala?: string
+  /** Sala: link de la sala de HaxBall (opcional). */
+  linkSala?: string
   faltan?: number
 }
 
@@ -439,6 +441,7 @@ function crearMatch(
     formato: null,
     cancha: d.cancha,
     nombreSala: d.sala.nombreSala ?? '',
+    linkSala: d.sala.linkSala ?? null,
     createdAt: ahora,
     participantes: [
       { userId: creador, equipo: 'A', confirmadoAt: null },
@@ -475,7 +478,7 @@ function ocupar(s: Store, ahora: number, ids: string[], equipo: 'A' | 'B' = 'B')
     ? s.matches.map((m) => (m.id === matchId ? { ...m, participantes: [...m.participantes, ...nuevos] } : m))
     : [{
         id: matchId, creadoPor: YO, formato: null, cancha: elegir<Cancha>(mia.cancha, undefined),
-        nombreSala: mia.nombreSala ?? '', createdAt: ahora, contadoAt: null,
+        nombreSala: mia.nombreSala ?? '', linkSala: mia.linkSala ?? null, createdAt: ahora, contadoAt: null,
         participantes: [{ userId: YO, equipo: 'A' as const, confirmadoAt: null }, ...nuevos],
       }, ...s.matches]
   const faltan = equipo === 'B' ? Math.max(0, (mia.faltan ?? 0) - ids.length) : mia.faltan
@@ -1328,12 +1331,19 @@ export const useStore = create<Store>()((set, get) => {
     const ahora = s.ahora()
     if (miBusqueda(s)) return 'Ya tenés una búsqueda activa. Cancelala para empezar otra.'
     if (d.modo === 'sala' && !d.nombreSala?.trim()) return 'Escribí el nombre de la sala.'
+    const link = d.modo === 'sala' ? linkDeSala(d.linkSala ?? '') : { link: null }
+    if ('error' in link) return link.error
     if (REAL) {
       canceleAt = 0
       const error = await enServidor(() => cola.crearBusqueda({ ...d, nombreSala: d.nombreSala?.trim() }), true)
       // Si no la dejó por una suspensión, que el cartel del Inicio se entere ya.
       if (error && /suspendida/i.test(error)) void get().cargarSeguridad()
-      return error
+      if (error || !link.link) return error
+      // La sala ya está abierta: si el link no se pudo guardar, se avisa pero se sigue.
+      const sinLink = await ponerLinkSala(link.link)
+      if (sinLink) set({ toasts: conToast(get(), { texto: 'La sala se abrió sin el link', detalle: sinLink }) })
+      await get().refrescar()
+      return null
     }
     const b: Busqueda = {
       id: id('b'),
@@ -1344,6 +1354,7 @@ export const useStore = create<Store>()((set, get) => {
       cancha: d.cancha,
       region: d.region,
       nombreSala: d.modo === 'sala' ? d.nombreSala?.trim() : undefined,
+      linkSala: link.link,
       faltan: d.modo === 'sala' ? d.faltan : undefined,
       creadaAt: ahora,
       expiraAt: d.modo === 'jugador' && d.duracion === '15min' ? ahora + MINUTOS_DISPONIBLE * 60 * SEG : null,

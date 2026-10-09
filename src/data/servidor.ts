@@ -12,6 +12,8 @@ interface FilaBusqueda {
   id: string; user_id: string; modo: 'jugador' | 'sala'
   formato: Formato[] | null; posicion: Posicion[]; cancha: Cancha[]; region: Region[]
   nombre_sala: string | null; faltan: number | null; completa_at: string | null
+  /** Paso 11: solo si me corresponde verlo. */
+  link_sala?: string | null
   creada_at: string; expira_at: string | null; estado: 'activa' | 'agrupada'
   lider_id: string | null; equipo_listo: boolean; match_id: string | null
   rechazados: string[]; avisar: boolean | null
@@ -25,7 +27,7 @@ interface FilaMensaje {
 }
 interface FilaMatch {
   /** null si quien creó la sala borró su cuenta. */
-  id: string; creado_por: string | null; cancha: Cancha; nombre_sala: string
+  id: string; creado_por: string | null; cancha: Cancha; nombre_sala: string; link_sala?: string | null
   creado_at: string; contado_at: string | null
   participantes: Array<{
     user_id: string; equipo: 'A' | 'B'; confirmado_at: string | null; entro_at: string | null
@@ -131,6 +133,7 @@ export function aLocal(e: EstadoCola, miId: string): ColaLocal {
       cancha: b.cancha,
       region: b.region,
       nombreSala: b.nombre_sala ?? undefined,
+      linkSala: b.link_sala ?? null,
       faltan: b.faltan ?? undefined,
       completaAt: ms(b.completa_at),
       creadaAt: Date.parse(b.creada_at),
@@ -180,6 +183,7 @@ export function aLocal(e: EstadoCola, miId: string): ColaLocal {
     formato: null,
     cancha: m.cancha,
     nombreSala: m.nombre_sala,
+    linkSala: m.link_sala ?? null,
     createdAt: Date.parse(m.creado_at),
     contadoAt: ms(m.contado_at),
     descartado: m.participantes.find((p) => p.user_id === miId)?.descarto ?? false,
@@ -211,7 +215,7 @@ export function aLocal(e: EstadoCola, miId: string): ColaLocal {
 // ---- Llamadas ----
 
 /** Las funciones que devuelven el estado, de la más completa a la más básica. */
-const ESTADOS = ['estado_completo', 'estado', 'estado_cola'] as const
+const ESTADOS = ['estado_app', 'estado_completo', 'estado', 'estado_cola'] as const
 let desdeCual = 0
 let pedidosDeEstado = 0
 
@@ -401,6 +405,13 @@ export async function levantarDesdePanel(userId: string): Promise<{ texto?: stri
 }
 
 /** Agregar a un amigo por su usuario de Discord. Devuelve cómo quedó, o el problema. */
+/** Poner (o sacar) el link de mi sala abierta. Devuelve el problema, si no se pudo. */
+export async function ponerLinkSala(link: string | null): Promise<string | null> {
+  const r = await rpc<string | null>('poner_link_sala', { p_link: link ?? '' })
+  if (r.error === SIN_BASE) return 'Todavía no se puede agregar el link de la sala. Probá más tarde.'
+  return r.error ?? null
+}
+
 /** Agregar a un amigo por su nick o su usuario de Discord (sin el paso 10 en la base, solo Discord). */
 export async function pedirAmistadPorUsuario(usuario: string): Promise<{ nick?: string; estado?: 'enviada' | 'amigos'; error?: string }> {
   let r = await rpc<{ nick: string; estado: 'enviada' | 'amigos' }>('pedir_amistad_por_nombre', { p_texto: usuario })

@@ -367,6 +367,15 @@ Pedido de Lauti: en "Necesito un jugador", primero se elige la cancha, y de ella
 - Al cambiar de cancha, lo ya elegido se acomoda: si faltaban más de los que entran, queda el máximo; las posiciones que esa cancha no tiene se sacan (si no queda ninguna, Polifuncional).
 - Las reglas viven en la app (`src/domain/rules.ts`). El servidor sigue aceptando de 1 a 7: alcanza, porque el formulario no deja otra cosa.
 
+## Link de la sala (9/10/2026)
+
+Pedido de Lauti: en "Necesito un jugador", abajo del nombre de la sala, un campo opcional "Link del host". Al jugador que la sala invita le llega el link junto con la invitación.
+
+- Solo se aceptan links de salas de HaxBall (`haxball.com/play?c=...`, con o sin `&p=1` de las salas con contraseña). Se guardan siempre como `https://www.haxball.com/play?c=...`: así nadie puede hacer pasar otro sitio por una sala. La base lo controla (`supabase/11_link_sala.sql`) y la app también.
+- Quién lo ve: el dueño, los jugadores a los que la sala les escribió (o que le escribieron) en el último día, y los que están en el partido. El resto de la cola ve solo el nombre, como antes.
+- En la invitación aparece "Abrir la sala" (y copiar el link); en "Match listo", "Entrar a la sala". El nombre de la sala sigue estando, para quien prefiera buscarla.
+- Cuando el grupo arma su propia sala desde "Buscando partido" no se pide link (no lo pediste ahí; se puede sumar después).
+
 ## TikTok "Pronto", amigos por nick y cambiar el nick (9/10/2026)
 
 Pedido de Lauti:

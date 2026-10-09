@@ -4,7 +4,7 @@ import { REAL } from '../config'
 import { YO, buscarMia, chatSinLeer, miRacha, misPuntos, nombreDe, useStore, usuarioDe, type Toast } from '../data/store'
 import { leerFicha } from '../data/servidor'
 import { enlaceKick } from '../data/kick'
-import { progresoNivel } from '../domain/rules'
+import { linkDeSala, progresoNivel } from '../domain/rules'
 import type { Usuario } from '../domain/types'
 
 // ---------- Tiempo ----------
@@ -546,4 +546,23 @@ export async function copiar(texto: string): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+/** Link de la sala de HaxBall: abrirla directo o copiar el link. Solo se muestran links de salas de HaxBall. */
+export function LinkSala({ link, texto = 'Entrar a la sala', secundario }: { link?: string | null; texto?: string; secundario?: boolean }) {
+  const [copiado, setCopiado] = useState<boolean | null>(null)
+  const limpio = link ? linkDeSala(link) : null
+  if (!limpio || !('link' in limpio) || !limpio.link) return null
+  const url = limpio.link
+  return (
+    <div className="link-sala">
+      <div className="row">
+        <a className={`btn grow${secundario ? ' btn--sec' : ''}`} href={url} target="_blank" rel="noopener noreferrer">{texto}</a>
+        <button type="button" className="btn btn--sec" aria-label="Copiar el link de la sala" onClick={async () => setCopiado(await copiar(url))}>
+          <Icon name="copiar" size={18} />{copiado ? 'Copiado' : 'Copiar'}
+        </button>
+      </div>
+      <div className="m cut">{copiado === false ? 'No se pudo copiar. Mantené apretado el link para copiarlo.' : url.replace('https://', '')}</div>
+    </div>
+  )
 }

@@ -673,3 +673,9 @@ a.nivel:active { transform: scale(.98); }
   /* Sin movimiento, la franja quieta parecería un avance: va la barra entera, apagada. */
   .espera--libre > div { width: 100%; opacity: .4; }
 }
+
+/* Link de la sala de HaxBall. */
+.opcional { font-weight: 400; }
+.link-sala { display: flex; flex-direction: column; gap: 6px; }
+.link-sala .row { gap: 8px; }
+.link-sala .btn { min-height: 48px; }

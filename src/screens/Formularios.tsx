@@ -17,6 +17,7 @@ export function FormSala() {
   const nav = useNavigate()
   const [cancha, setCancha] = useState<CanchaSala | null>(null)
   const [nombreSala, setNombreSala] = useState('')
+  const [linkSala, setLinkSala] = useState('')
   const [faltan, setFaltan] = useState<number>(1)
   const [posicion, setPosicion] = useState<Posicion[]>(['Polifuncional'])
   const [region, setRegion] = useState<Region[]>(perfil?.region ?? ['ARG'])
@@ -39,7 +40,7 @@ export function FormSala() {
   const buscar = async () => {
     if (!cancha) return setError('Elegí la cancha.')
     setOcupado(true)
-    const e = await crear({ modo: 'sala', formato: null, posicion, cancha: [cancha], region, duracion: 'match', nombreSala, faltan })
+    const e = await crear({ modo: 'sala', formato: null, posicion, cancha: [cancha], region, duracion: 'match', nombreSala, linkSala, faltan })
     setOcupado(false)
     setError(e)
     if (!e) nav('/buscando')
@@ -64,6 +65,11 @@ export function FormSala() {
               <input id="nombre-sala" className="field" value={nombreSala} maxLength={40} autoComplete="off"
                 placeholder="Como figura en HaxBall" aria-describedby={error ? 'error-sala' : undefined}
                 onChange={(e) => { setNombreSala(e.target.value); setError(null) }} />
+              <label className="h sub" htmlFor="link-sala">Link del host <span className="opcional">(opcional)</span></label>
+              <input id="link-sala" className="field" type="url" inputMode="url" value={linkSala} maxLength={120} autoComplete="off"
+                autoCapitalize="none" spellCheck={false} placeholder="https://www.haxball.com/play?c=…" aria-describedby="nota-link"
+                onChange={(e) => { setLinkSala(e.target.value); setError(null) }} />
+              <div className="m" id="nota-link">Se lo mandamos a los jugadores que invites, para que entren directo.</div>
               {reglas.maxFaltan > 1 && <Chips label="Cuántos faltan" options={lugares} value={faltan} onChange={setFaltan} />}
               {reglas.posiciones.length > 0 && (
                 <ChipsMulti label="Posición que buscás" options={reglas.posiciones} value={posicion} onChange={setPosicion} todas="Polifuncional" />

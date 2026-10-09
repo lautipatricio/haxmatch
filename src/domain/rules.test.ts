@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  REGLAS_CANCHA, ajustarSala, bonusRacha, esPendiente, matchCuenta, nivelDe,
+  REGLAS_CANCHA, ajustarSala, linkDeSala, bonusRacha, esPendiente, matchCuenta, nivelDe,
   progresoNivel, puntosAmistoso, puntosReaccion, puntosReel, puntosReferido, rachaActual, rivalDe,
 } from './rules'
 import type { EventoPuntos, Match, Participante } from './types'
@@ -141,5 +141,20 @@ describe('salas según la cancha', () => {
   })
   it('Futsal deja todas las posiciones y hasta 6', () => {
     expect(ajustarSala('Futsal', 6, ['LD', 'EI'])).toEqual({ faltan: 6, posicion: ['LD', 'EI'] })
+  })
+})
+
+describe('link de la sala', () => {
+  it('vacío es sin link', () => {
+    expect(linkDeSala('  ')).toEqual({ link: null })
+  })
+  it('lo deja siempre igual: con https y www', () => {
+    expect(linkDeSala(' haxball.com/play?c=Ab_C-123xyz ')).toEqual({ link: 'https://www.haxball.com/play?c=Ab_C-123xyz' })
+    expect(linkDeSala('http://www.HaxBall.com/play?c=abcd1234&p=1')).toEqual({ link: 'https://www.haxball.com/play?c=abcd1234&p=1' })
+  })
+  it('rechaza lo que no es una sala de HaxBall', () => {
+    for (const malo of ['https://haxball.estafa.com/play?c=abc123', 'https://evil.com/?u=haxball.com/play?c=abc123', 'https://www.haxball.com/play', 'javascript:alert(1)', 'https://www.haxball.com/play?c=abc123&x=<script>']) {
+      expect(linkDeSala(malo)).toHaveProperty('error')
+    }
   })
 })

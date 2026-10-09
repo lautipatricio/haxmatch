@@ -209,3 +209,15 @@ export function ajustarSala(cancha: CanchaSala, faltan: number, posicion: Posici
     posicion: quedan.length > 0 ? quedan : ['Polifuncional'],
   }
 }
+
+/**
+ * Link de una sala de HaxBall, en su forma de siempre (igual que en la base, paso 11).
+ * Vacío: null. Si no es un link de sala de HaxBall, devuelve el problema.
+ */
+export function linkDeSala(texto: string): { link: string | null } | { error: string } {
+  const v = texto.trim()
+  if (!v) return { link: null }
+  const m = /^(?:https?:\/\/)?(?:www\.)?haxball\.com\/play\?c=([A-Za-z0-9_-]{4,40})(&p=1)?\/?$/i.exec(v)
+  if (!m) return { error: 'Ese link no es de una sala de HaxBall. Tiene que ser como https://www.haxball.com/play?c=...' }
+  return { link: `https://www.haxball.com/play?c=${m[1]}${m[2] ?? ''}` }
+}

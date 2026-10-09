@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { YO, buscarMia, enSala, nombreDe, useStore, usuarioDe } from '../data/store'
 import { DIAS_PENDIENTE } from '../domain/rules'
-import { Avatar, Empty, Head, Icon, Persona, Sheet, copiar } from '../ui'
+import { Avatar, Empty, Head, Icon, LinkSala, Persona, Sheet, copiar } from '../ui'
 
 /** Matches donde ya se mostró el cartel "No te olvides", para no repetirlo al volver. */
 const recordados = new Set<string>()
@@ -133,8 +133,9 @@ export function MatchListo() {
             <div className="m">
               {copiado === false
                 ? 'No se pudo copiar. Mantené apretado el nombre para copiarlo.'
-                : 'Buscala por este nombre en HaxBall, desde tu computadora.'}
+                : m.linkSala ? 'O entrá directo con el link:' : 'Buscala por este nombre en HaxBall, desde tu computadora.'}
             </div>
+            <LinkSala link={m.linkSala} />
           </div>
 
           {conmigo.length > 0 && (

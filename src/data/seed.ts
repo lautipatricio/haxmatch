@@ -42,7 +42,7 @@ export function seedBusquedas(ahora: number): Busqueda[] {
   return [
     // Quien busca partido no elige nada: entra a la cola con las regiones de su perfil.
     b('b_mati', 'u_mati', 2 * MIN, { modo: 'jugador', formato: ['Cualquiera'], cancha: ['Cualquiera'], region: ['ARG'] }),
-    b('b_nico', 'u_nico', 4 * MIN, { modo: 'sala', posicion: ['GK', 'DFC'], cancha: ['Big'], region: ['ARG'], nombreSala: 'nico 3v3 amistoso', faltan: 2 }),
+    b('b_nico', 'u_nico', 4 * MIN, { modo: 'sala', posicion: ['GK', 'DFC'], cancha: ['Big'], region: ['ARG'], nombreSala: 'nico 3v3 amistoso', linkSala: 'https://www.haxball.com/play?c=NicoAmistoso3', faltan: 2 }),
     b('b_tobi', 'u_tobi', 6 * MIN, { modo: 'jugador', formato: ['Cualquiera'], cancha: ['Cualquiera'], region: ['ARG'], grupo: ['u_fede'] }),
     // Fede_7 busca en grupo con Tobi_GK: comparten reloj.
     b('b_fede', 'u_fede', 6 * MIN, { modo: 'jugador', formato: ['Cualquiera'], cancha: ['Cualquiera'], region: ['ARG'], estado: 'agrupada' }),

@@ -45,6 +45,8 @@ export interface Busqueda {
   cancha: Cancha[]
   region: Region[]
   nombreSala?: string
+  /** Sala: link de la sala de HaxBall (opcional). Lo ven el dueño y a quienes la sala les escribió. */
+  linkSala?: string | null
   /** Sala: lugares libres en este momento. */
   faltan?: number
   /** Sala: momento en que se llenó. Desde ahí el reloj queda quieto. */
@@ -90,6 +92,8 @@ export interface Match {
   cancha: Cancha
   /** Vacío hasta que el creador escribe el nombre. */
   nombreSala: string
+  /** Link de la sala de HaxBall, si el dueño lo puso. */
+  linkSala?: string | null
   createdAt: number
   participantes: Participante[]
   /** Momento en que el partido pasó a contar como válido. */
