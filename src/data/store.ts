@@ -21,7 +21,7 @@ import { clipsApi, irATikTok, leerClips, type TikTokInfo } from './clips'
 import { desvincularKick, irAKick, leerKick, type CanalKick } from './kick'
 import { sincronizarAvisos, soltarAvisos } from './push'
 import {
-  GRACIA_MS, aLocal, chat as chatServidor, cola, guardarMostrarConectado, leerAjustes, leerChat, leerCola, leerSeguridad,
+  GRACIA_MS, aLocal, cambiarNick as cambiarNickServidor, chat as chatServidor, cola, guardarMostrarConectado, leerAjustes, leerChat, leerCola, leerSeguridad,
   pedirAmistadPorUsuario, type ColaLocal, type Resumen,
 } from './servidor'
 import { REAL } from './supabase'
@@ -44,6 +44,8 @@ export interface Perfil {
   username: string
   /** Nombre que eligió para mostrar en la app. */
   nick: string
+  /** Cuándo cambió el nick por última vez (después del registro). Hasta 15 días después no puede volver a cambiarlo. */
+  nickCambiadoAt?: number | null
   /** Foto de perfil elegida de la galería. Sin foto se muestra la inicial. */
   foto?: string | null
   /** Regiones del perfil: puede elegir varias. La posición se elige en cada búsqueda. */
@@ -126,6 +128,8 @@ interface Acciones {
   iniciarSesion: () => void
   /** Cambia la foto de perfil. null la quita. */
   cambiarFoto: (foto: string | null) => Promise<string | null>
+  /** Cambiar el nick. Devuelve el problema, si no se pudo. */
+  cambiarNick: (nick: string) => Promise<string | null>
   cerrarSesion: () => void
   /** Borra la cuenta para siempre. Devuelve el problema, o null si salió bien. */
   borrarCuenta: () => Promise<string | null>
@@ -1187,6 +1191,30 @@ export const useStore = create<Store>()((set, get) => {
     return null
   },
 
+  cambiarNick: async (nick) => {
+    const s = get()
+    if (!s.perfil?.onboarding) return 'Primero terminá tu registro.'
+    const nuevo = nick.trim().replace(/\s+/g, ' ')
+    if (nuevo === s.perfil.nick) return 'Ese ya es tu nick.'
+    if (nuevo.length < 2 || nuevo.length > 20) return 'El nick tiene que tener entre 2 y 20 caracteres.'
+    const ahora = REAL ? Date.now() : s.ahora()
+    const desde = proximoCambioDeNick(s.perfil, ahora)
+    if (desde !== null) return `Podés volver a cambiar tu nick desde el ${fechaCorta(desde)}.`
+    if (REAL) {
+      const r = await cambiarNickServidor(nuevo)
+      if (r.error) return r.error
+      const p = get().perfil
+      if (p) set({ perfil: { ...p, nick: r.nick ?? nuevo, nickCambiadoAt: Date.now() } })
+      void get().refrescar()
+    } else {
+      const ocupado = Object.values(s.usuarios).some((u) => u.id !== YO && u.username.toLowerCase() === nuevo.toLowerCase())
+      if (ocupado) return 'Ese nick ya lo usa otro jugador.'
+      set({ perfil: { ...s.perfil, nick: nuevo, nickCambiadoAt: ahora } })
+    }
+    guardar(get())
+    return null
+  },
+
   cambiarFoto: async (foto) => {
     const s = get()
     if (!s.perfil) return 'Primero entrá con Discord.'
@@ -1247,7 +1275,10 @@ export const useStore = create<Store>()((set, get) => {
     // Si administro y si muestro que estoy conectado (paso 8 de la base; sin él, nada cambia).
     void leerAjustes().then((a) => {
       if (get().perfil?.id !== miId) return
-      set(a ? { admin: a.admin, mostrarConectado: a.mostrarConectado, ajustesListos: true } : { ajustesListos: true })
+      const perfil = get().perfil
+      set(a
+        ? { admin: a.admin, mostrarConectado: a.mostrarConectado, ajustesListos: true, perfil: perfil ? { ...perfil, nickCambiadoAt: a.nickCambiadoAt } : perfil }
+        : { ajustesListos: true })
     })
     let seg = await leerSeguridad()
     if (!seg || get().perfil?.id !== miId) return
@@ -1811,16 +1842,18 @@ export const useStore = create<Store>()((set, get) => {
   enviarSolicitud: async (username) => {
     const s = get()
     const buscado = username.trim().replace(/^@/, '').toLowerCase()
-    if (!buscado) return { ok: false, texto: 'Escribí un usuario de Discord.' }
-    if (buscado === s.perfil?.username.toLowerCase()) return { ok: false, texto: 'Ese sos vos.' }
+    if (!buscado) return { ok: false, texto: 'Escribí su nick o su usuario de Discord.' }
+    if (buscado === s.perfil?.username.toLowerCase() || buscado === s.perfil?.nick.toLowerCase()) return { ok: false, texto: 'Ese sos vos.' }
     if (REAL) {
       const r = await pedirAmistadPorUsuario(buscado)
       await get().refrescar()
       if (r.error) return { ok: false, texto: r.error }
       return { ok: true, texto: r.estado === 'amigos' ? `${r.nick} y vos ya son amigos.` : `Solicitud enviada a ${r.nick}.` }
     }
-    const u = Object.values(s.usuarios).find((x) => x.username.toLowerCase() === buscado)
-    if (!u) return { ok: false, texto: 'Ese usuario todavía no está en HaxMatch.' }
+    // Primero por usuario de Discord, después por nick.
+    const otros = Object.values(s.usuarios).filter((x) => x.id !== YO)
+    const u = otros.find((x) => x.discord?.toLowerCase() === buscado) ?? otros.find((x) => x.username.toLowerCase() === buscado)
+    if (!u) return { ok: false, texto: 'No encontramos a nadie con ese nick o usuario de Discord.' }
     if (s.amigos.includes(u.id)) return { ok: false, texto: `${u.username} ya es tu amigo.` }
     if (s.solicitudesEnviadas.includes(u.id)) return { ok: false, texto: 'Ya le mandaste una solicitud.' }
     if (s.solicitudes.includes(u.id)) {
@@ -2160,4 +2193,21 @@ export function nombreDe(s: Store, userId: string): string {
 
 export function rivalesDe(s: Store, m: Match): string {
   return m.participantes.filter((p) => p.userId !== YO).map((p) => nombreDe(s, p.userId)).join(', ')
+}
+
+/** Días que hay que esperar entre un cambio de nick y el siguiente. */
+export const DIAS_ENTRE_NICKS = 15
+
+/** Desde cuándo puede volver a cambiar el nick. null: ya puede. */
+export function proximoCambioDeNick(p: Pick<Perfil, 'nickCambiadoAt'>, ahora: number): number | null {
+  if (!p.nickCambiadoAt) return null
+  const desde = p.nickCambiadoAt + DIAS_ENTRE_NICKS * DIA
+  return desde > ahora ? desde : null
+}
+
+/** "12/10 a las 18:30", como lo dice la base. */
+export function fechaCorta(at: number): string {
+  const d = new Date(at)
+  const dos = (n: number) => String(n).padStart(2, '0')
+  return `${dos(d.getDate())}/${dos(d.getMonth() + 1)} a las ${dos(d.getHours())}:${dos(d.getMinutes())}`
 }

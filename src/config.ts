@@ -1,4 +1,9 @@
-export { REAL } from './data/supabase'
+import { ENSAYO, REAL } from './data/supabase'
+
+export { REAL }
+
+/** La app de verdad (no la demostración ni el ensayo con base de prueba). */
+const REAL_PUBLICADA = REAL && !ENSAYO
 
 /** Build de demostración (vista previa publicada): sin service worker ni instalación. */
 export const PREVIEW = import.meta.env.MODE === 'preview'
@@ -32,3 +37,11 @@ export const REF_INICIAL: string = (() => {
  * Para activarlo, poné acá el link completo, por ejemplo 'https://cafecito.app/haxmatch'.
  */
 export const APOYO_URL: string = ''
+
+/**
+ * Vincular TikTok todavía no está abierto para todos (TikTok tiene que aprobar la app).
+ * Mientras tanto, en la app publicada el botón dice "Pronto". Cuando TikTok la apruebe,
+ * poné esto en true.
+ */
+export const TIKTOK_ABIERTO: boolean = false
+export const TIKTOK_PRONTO: boolean = REAL_PUBLICADA && !TIKTOK_ABIERTO

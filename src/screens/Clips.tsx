@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type TouchEvent, type WheelEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { REAL } from '../config'
+import { REAL, TIKTOK_PRONTO } from '../config'
 import { RESULTADO_TIKTOK, tiktokHabilitado } from '../data/clips'
 import { seedReels } from '../data/seed'
 import { YO, buscarMia, feed, misPuntos, nombreDe, useStore } from '../data/store'
@@ -281,8 +281,10 @@ export function Clips() {
       <div className="screen">
         <Head title="Clips" />
         <BannerBusqueda detalle="Te avisamos cuando haya respuesta" />
-        <Empty title="Sin clips todavía" text="Los clips salen de TikTok. Vinculá tu cuenta y usá #haxball o #haxmatch en tus videos.">
-          <Link className="btn" to="/clips/mis-videos">Vincular TikTok</Link>
+        <Empty title="Sin clips todavía" text={TIKTOK_PRONTO
+          ? 'Los clips salen de TikTok. Muy pronto vas a poder vincular tu cuenta.'
+          : 'Los clips salen de TikTok. Vinculá tu cuenta y usá #haxball o #haxmatch en tus videos.'}>
+          {TIKTOK_PRONTO ? <Pronto /> : <Link className="btn" to="/clips/mis-videos">Vincular TikTok</Link>}
         </Empty>
         <TabBar on="clips" />
       </div>
@@ -359,7 +361,9 @@ export function Clips() {
         )}
         <div className="feed-top">
           <Head title="Clips">
-            <Link className="btn btn--sec" to="/clips/mis-videos">{s.tiktok ? 'Mis videos' : 'Vincular TikTok'}</Link>
+            {!s.tiktok && TIKTOK_PRONTO
+              ? <Pronto />
+              : <Link className="btn btn--sec" to="/clips/mis-videos">{s.tiktok ? 'Mis videos' : 'Vincular TikTok'}</Link>}
           </Head>
           <BannerBusqueda detalle="Te avisamos cuando haya respuesta" />
         </div>
@@ -367,6 +371,11 @@ export function Clips() {
       <TabBar on="clips" />
     </div>
   )
+}
+
+/** Vincular TikTok todavía no está abierto: se muestra, pero no se puede tocar. */
+function Pronto() {
+  return <button className="btn btn--sec" disabled aria-label="Vincular TikTok: pronto">TikTok · Pronto</button>
 }
 
 const conHashtag = (h: string[]) => h.some((x) => x === 'haxball' || x === 'haxmatch')
@@ -432,13 +441,13 @@ export function MisVideos() {
   const [parametros] = useSearchParams()
   const vuelta = RESULTADO_TIKTOK[parametros.get('tiktok') ?? '']
   const [aviso, setAviso] = useState(vuelta ?? null)
-  const [habilitado, setHabilitado] = useState<boolean | null>(REAL ? null : true)
+  const [habilitado, setHabilitado] = useState<boolean | null>(TIKTOK_PRONTO ? false : REAL ? null : true)
   const [ocupado, setOcupado] = useState(false)
   const mios = s.reels.filter((r) => r.userId === YO).sort((a, b) => b.publicadoAt - a.publicadoAt)
 
   useEffect(() => {
     void cargar()
-    if (REAL) void tiktokHabilitado().then(setHabilitado)
+    if (REAL && !TIKTOK_PRONTO) void tiktokHabilitado().then(setHabilitado)
     // El resultado de volver de TikTok se muestra una vez: se saca de la dirección.
     if (parametros.get('tiktok')) nav('/clips/mis-videos', { replace: true })
   }, [cargar]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -483,7 +492,7 @@ export function MisVideos() {
               </div>
               {habilitado === false ? (
                 <div className="card card--col">
-                  <div className="strong">Todavía no se puede vincular</div>
+                  <div className="strong">Pronto</div>
                   <div className="m">Estamos terminando de habilitar la conexión con TikTok. Va a estar disponible en una próxima actualización.</div>
                 </div>
               ) : (

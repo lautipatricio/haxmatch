@@ -104,6 +104,8 @@ a, button, label, [role="switch"] { touch-action: manipulation; }
 .sub-fila { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 14px; }
 .sub-fila .sub { margin-top: 0; }
 .enlace { font-size: 14px; font-weight: 600; color: var(--fg); text-decoration: none; padding: 13px 0; margin: -13px 0; flex: none; }
+button.enlace { background: none; border: 0; font-family: inherit; color: var(--accent); cursor: pointer; padding: 13px 4px; }
+button.enlace:focus-visible { outline: 2px solid var(--accent); outline-offset: -6px; border-radius: 8px; }
 .m { color: var(--fg2); font-size: 14px; }
 .strong { font-weight: 600; }
 .num { font-variant-numeric: tabular-nums; }

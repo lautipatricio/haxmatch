@@ -324,9 +324,21 @@ export const chat = {
 // ---- Ajustes propios y panel de administración (paso 8) ----
 
 /** Si administro y si muestro que estoy conectado. null si la base todavía no tiene el paso 8. */
-export async function leerAjustes(): Promise<{ admin: boolean; mostrarConectado: boolean } | null> {
-  const r = await rpc<{ admin: boolean; mostrar_conectado: boolean }>('mis_ajustes')
-  return r.data ? { admin: r.data.admin === true, mostrarConectado: r.data.mostrar_conectado !== false } : null
+export async function leerAjustes(): Promise<{ admin: boolean; mostrarConectado: boolean; nickCambiadoAt: number | null } | null> {
+  const r = await rpc<{ admin: boolean; mostrar_conectado: boolean; nick_cambiado_at?: string | null }>('mis_ajustes')
+  return r.data
+    ? {
+        admin: r.data.admin === true, mostrarConectado: r.data.mostrar_conectado !== false,
+        nickCambiadoAt: r.data.nick_cambiado_at ? Date.parse(r.data.nick_cambiado_at) : null,
+      }
+    : null
+}
+
+/** Cambiar mi nick. Las reglas (15 días, que no lo use otro) las controla la base. */
+export async function cambiarNick(nick: string): Promise<{ nick?: string; error?: string }> {
+  const r = await rpc<{ nick: string }>('cambiar_nick', { p_nick: nick })
+  if (r.error === SIN_BASE) return { error: 'Todavía no se puede cambiar el nick. Probá más tarde.' }
+  return r.data ? { nick: r.data.nick } : { error: r.error ?? 'No pudimos cambiar tu nick. Probá de nuevo.' }
 }
 
 export const guardarMostrarConectado = (mostrar: boolean) => hacer('guardar_mostrar_conectado', { p_mostrar: mostrar })
@@ -389,7 +401,9 @@ export async function levantarDesdePanel(userId: string): Promise<{ texto?: stri
 }
 
 /** Agregar a un amigo por su usuario de Discord. Devuelve cómo quedó, o el problema. */
+/** Agregar a un amigo por su nick o su usuario de Discord (sin el paso 10 en la base, solo Discord). */
 export async function pedirAmistadPorUsuario(usuario: string): Promise<{ nick?: string; estado?: 'enviada' | 'amigos'; error?: string }> {
-  const r = await rpc<{ nick: string; estado: 'enviada' | 'amigos' }>('pedir_amistad_por_usuario', { p_username: usuario })
+  let r = await rpc<{ nick: string; estado: 'enviada' | 'amigos' }>('pedir_amistad_por_nombre', { p_texto: usuario })
+  if (r.error === SIN_BASE) r = await rpc<{ nick: string; estado: 'enviada' | 'amigos' }>('pedir_amistad_por_usuario', { p_username: usuario })
   return r.data ? r.data : { error: r.error ?? 'No pudimos mandar la solicitud. Probá de nuevo.' }
 }

@@ -367,6 +367,15 @@ Pedido de Lauti: en "Necesito un jugador", primero se elige la cancha, y de ella
 - Al cambiar de cancha, lo ya elegido se acomoda: si faltaban más de los que entran, queda el máximo; las posiciones que esa cancha no tiene se sacan (si no queda ninguna, Polifuncional).
 - Las reglas viven en la app (`src/domain/rules.ts`). El servidor sigue aceptando de 1 a 7: alcanza, porque el formulario no deja otra cosa.
 
+## TikTok "Pronto", amigos por nick y cambiar el nick (9/10/2026)
+
+Pedido de Lauti:
+
+- **Vincular TikTok dice "Pronto"** en la app publicada (Perfil, Clips y Mis videos), mientras TikTok no apruebe la app. Quien ya lo tenía vinculado lo sigue viendo igual. Cuando TikTok la apruebe: `TIKTOK_ABIERTO = true` en `src/config.ts`. En la demostración y en el ensayo se sigue pudiendo probar.
+- **Agregar amigos por nick o por usuario de Discord**, en el mismo campo. Primero se busca el usuario de Discord (es único) y si no hay, el nick (sin importar mayúsculas). Si dos jugadores tuvieran el mismo nick, se pide el usuario de Discord.
+- **Cambiar el nick** desde el Perfil ("Cambiar nick"). Después de cambiarlo hay que esperar 15 días. No se puede usar un nick que ya tiene otro jugador. El cambio se ve en todos lados (cola, chat, amigos), porque todo muestra el nick actual.
+- Las reglas las controla la base (`supabase/10_nick_y_amigos.sql`): aunque alguien intentara cambiar el nick por otro camino, se aplican igual. Elegir el nick al registrarse no cuenta como cambio.
+
 ## Decisiones que tomé al construir (revisar)
 
 1. **El match siempre es con una sala.** Dos jugadores sin sala ya no generan match: se juntan en una misma búsqueda. Quien creó la sala ve "Ya entró X a la sala" y el que se une ve "Ya entré a la sala".

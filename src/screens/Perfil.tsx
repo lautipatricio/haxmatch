@@ -1,12 +1,12 @@
-import { useEffect, useId, useRef, useState, type CSSProperties, type ChangeEvent } from 'react'
+import { useEffect, useId, useRef, useState, type CSSProperties, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { APOYO_URL, PREVIEW, REAL } from '../config'
+import { APOYO_URL, PREVIEW, REAL, TIKTOK_PRONTO } from '../config'
 import { cargarFoto, soltarFoto, type FotoElegida } from '../data/foto'
 import { RESULTADO_KICK } from '../data/kick'
 import { ACA, ES_COMPU, TEXTO_AVISOS, activarAvisos, desactivarAvisos, estadoAvisos, probarAviso, type EstadoAvisos } from '../data/push'
-import { YO, buscarMia, rivalesDe, useStore } from '../data/store'
+import { DIAS_ENTRE_NICKS, YO, buscarMia, fechaCorta, proximoCambioDeNick, rivalesDe, useStore } from '../data/store'
 import { DIAS_PENDIENTE, PUNTOS, diasParaVencer, esPendiente } from '../domain/rules'
-import { Avatar, BorrarCuenta, Campana, CerrarSesion, EtiquetaKick, Head, Icon, Portada, TabBar, TarjetaNivel, hace, useAhora } from '../ui'
+import { Avatar, BorrarCuenta, Campana, CerrarSesion, EtiquetaKick, Head, Icon, Portada, Sheet, TabBar, TarjetaNivel, hace, useAhora } from '../ui'
 import { Recortador } from '../ui/Recortador'
 
 /** Partidos que el usuario todavía no confirmó. Se muestran como un aviso pendiente. */
@@ -274,6 +274,58 @@ function FotoDePerfil({ onElegida, onError }: { onElegida: (f: FotoElegida) => v
   )
 }
 
+/** Cambiar el nick. Después de cambiarlo hay que esperar 15 días para volver a hacerlo. */
+function CambiarNick() {
+  const perfil = useStore((s) => s.perfil)
+  const cambiar = useStore((s) => s.cambiarNick)
+  const ahoraDemo = useStore((s) => s.ahora)
+  const [abierto, setAbierto] = useState(false)
+  const [nick, setNick] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [ocupado, setOcupado] = useState(false)
+  const id = useId()
+  if (!perfil?.onboarding) return null
+  const desde = proximoCambioDeNick(perfil, REAL ? Date.now() : ahoraDemo())
+  const abrir = () => {
+    setNick(perfil.nick)
+    setError(null)
+    setAbierto(true)
+  }
+  const guardar = async (e: FormEvent) => {
+    e.preventDefault()
+    setOcupado(true)
+    const problema = await cambiar(nick)
+    setOcupado(false)
+    if (problema) return setError(problema)
+    setAbierto(false)
+  }
+  return (
+    <>
+      <button className="enlace" onClick={abrir}>Cambiar nick</button>
+      {abierto && (
+        <Sheet title="Cambiar nick">
+          {desde !== null ? (
+            <>
+              <div>Ya cambiaste tu nick hace poco. Podés volver a cambiarlo desde el {fechaCorta(desde)}.</div>
+              <button className="btn btn--sec" onClick={() => setAbierto(false)}>Entendido</button>
+            </>
+          ) : (
+            <form className="lista" onSubmit={(e) => void guardar(e)}>
+              <label className="strong" htmlFor={id}>Tu nuevo nick</label>
+              <input id={id} className="field" value={nick} maxLength={20} autoComplete="off" autoFocus
+                aria-describedby={`${id}-nota`} onChange={(e) => { setNick(e.target.value); setError(null) }} />
+              <div className="m" id={`${id}-nota`}>Ojo: después de cambiarlo, vas a tener que esperar {DIAS_ENTRE_NICKS} días para volver a cambiarlo.</div>
+              {error && <div className="err" role="alert">{error}</div>}
+              <button className="btn" type="submit" disabled={ocupado || nick.trim().length < 2}>{ocupado ? 'Guardando…' : 'Guardar nick'}</button>
+              <button className="btn btn--sec" type="button" onClick={() => setAbierto(false)}>Cancelar</button>
+            </form>
+          )}
+        </Sheet>
+      )}
+    </>
+  )
+}
+
 export function Perfil() {
   const s = useStore()
   const ahora = useAhora()
@@ -325,6 +377,7 @@ export function Perfil() {
                 <div className="strong cut" style={{ fontSize: 22, lineHeight: 1.15 }}>{s.perfil?.nick}</div>
                 <div className="m cut">Perfil público · {s.perfil?.region.join(', ')}</div>
               </div>
+              <CambiarNick />
             </div>
             <div className="row">
               <div className="m grow">
@@ -388,8 +441,10 @@ export function Perfil() {
             </div>
             <div className="card card--row">
               <Avatar nombre="T" />
-              <div className="grow"><div className="strong">TikTok</div><div className="m cut">{s.tiktok ? `Conectado${s.tiktokInfo?.nombre ? ` como ${s.tiktokInfo.nombre}` : ''}` : 'Sin vincular'}</div></div>
-              <Link className={`btn${s.tiktok ? ' btn--sec' : ''}`} to="/clips/mis-videos">{s.tiktok ? 'Mis videos' : 'Vincular'}</Link>
+              <div className="grow"><div className="strong">TikTok</div><div className="m cut">{s.tiktok ? `Conectado${s.tiktokInfo?.nombre ? ` como ${s.tiktokInfo.nombre}` : ''}` : TIKTOK_PRONTO ? 'Muy pronto vas a poder vincularlo' : 'Sin vincular'}</div></div>
+              {!s.tiktok && TIKTOK_PRONTO
+                ? <span className="pill">Pronto</span>
+                : <Link className={`btn${s.tiktok ? ' btn--sec' : ''}`} to="/clips/mis-videos">{s.tiktok ? 'Mis videos' : 'Vincular'}</Link>}
             </div>
             <CuentaKick />
             <div className="card card--row">
