@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { REAL } from '../config'
 import { YO, buscarMia, nivelTexto, useStore, usuarioDe } from '../data/store'
 import { enlaceKick } from '../data/kick'
-import { BannerBusqueda, BannerMatch, Campana, Conectado, EtiquetaKick, Icon, Persona, TabBar, hace, useAhora } from '../ui'
+import type { Busqueda } from '../domain/types'
+import { BannerBusqueda, BannerMatch, Campana, Conectado, EtiquetaKick, Head, Icon, Persona, TabBar, hace, useAhora } from '../ui'
 import { FilaDisponible, resumenBusqueda } from './Buscando'
 
 /** Lo que va adentro de cada una de las dos entradas: el título es su nombre y el renglón de abajo, su descripción. */
@@ -97,68 +98,125 @@ function EnVivo() {
   )
 }
 
-/** Amigos que están buscando ahora. Para escribirles hay que estar buscando también. */
-function AmigosBuscando() {
-  const s = useStore()
-  const ahora = useAhora()
-  const disponibles = s.busquedas.filter((b) => b.estado === 'activa' && s.amigos.includes(b.userId))
-  if (disponibles.length === 0) return null
-  const buscando = !!buscarMia(s)
+/** Cuántos están en línea y cuántos jugadores hay. "En línea" se muestra desde 2 (sin contarme). */
+function Datos() {
+  const conectados = useStore((s) => s.conectados.filter((u) => u !== YO).length)
+  const registrados = useStore((s) => s.registrados)
+  const partes: JSX.Element[] = []
+  if (conectados >= 2) partes.push(<span key="c"><b>{conectados}</b> en línea</span>)
+  if (registrados !== null && registrados > 0) partes.push(<span key="r"><b>{registrados}</b> jugadores</span>)
+  if (partes.length === 0) return null
   return (
-    <section className="lista" aria-label="Amigos buscando">
-      <h2 className="h sub">Amigos buscando</h2>
-      {disponibles.map((b) => (
-        <FilaDisponible key={b.id} b={b} soloVer={REAL && !buscando}
-          detalle={`${nivelTexto(s.usuarios[b.userId])}${resumenBusqueda(b)} · ${hace(ahora - b.creadaAt)}`} />
-      ))}
-      {REAL && !buscando && <div className="m">Para escribirles, primero ponete a buscar partido.</div>}
-    </section>
+    <div className="juegos__datos">
+      {conectados >= 2 && <span className="latido" aria-hidden="true" />}
+      {partes.reduce<JSX.Element[]>((a, p, n) => (n ? [...a, <span key={`s${n}`} aria-hidden="true">·</span>, p] : [p]), [])}
+    </div>
   )
 }
 
+/** Inicio: "¿Qué querés jugar hoy?". Tu foto en el centro, con los anillos, lleva a HaxBall. */
 export function Inicio() {
-  const busquedas = useStore((s) => s.busquedas)
-  const colaLista = useStore((s) => s.colaLista)
-  const errorCola = useStore((s) => s.errorCola)
-  const nick = useStore((s) => s.perfil?.nick)
+  const perfil = useStore((s) => s.perfil)
   const suspension = useStore((s) => s.suspension)
-  /** Por qué no se pudo entrar a la cola (sin conexión, por ejemplo). */
-  const [error, setError] = useState<string | null>(null)
-  const activas = busquedas.filter((b) => b.estado === 'activa')
-
+  const nick = perfil?.nick ?? ''
+  const inicial = nick.replace(/[^a-zA-Z0-9]/g, '').slice(0, 1).toUpperCase() || '?'
   return (
-    <div className="screen">
+    <div className="screen juegos">
+      <div className="juegos__luz" aria-hidden="true" />
+      <div className="juegos__luz juegos__luz--2" aria-hidden="true" />
       <header className="head">
-        <div className="marca" aria-hidden="true">HAX<span>MATCH</span></div>
+        <div className="marca" aria-hidden="true">HAXMATCH</div>
         <Campana desde="/" />
       </header>
       <div className="scroll">
-        <div className="pad inicio">
+        <div className="pad juegos__pad">
           <div className="avisos"><BannerBusqueda /><BannerMatch /></div>
-          <div className="hola">
-            <h1 className={`h${(nick?.length ?? 0) > 12 ? ' hola--largo' : ''}`}>Hola, {nick}</h1>
-            <div className={`vivo${colaLista && activas.length > 0 ? ' vivo--si' : ''}`}>
-              <span>
-                {!colaLista
-                  ? errorCola ?? 'Buscando jugadores…'
-                  : activas.length === 0
-                  ? 'Nadie buscando ahora. Sé el primero.'
-                  : `${activas.length} buscando ahora`}
-              </span>
-            </div>
+          <div className="juegos__hola aparece">
+            <div className="juegos__saludo">Hola, {nick}</div>
+            <Datos />
           </div>
           {suspension && (
             <div className="err" role="alert">
               {suspension} Mientras tanto no podés buscar partido, escribirle a otros jugadores ni agregar amigos.
             </div>
           )}
+          <h1 className="juegos__titulo aparece aparece--2">¿Qué querés<br /><span>jugar hoy?</span></h1>
+          <Link className="juego aparece aparece--3" to="/haxball" aria-label="Jugar HaxBall">
+            <span className="juego__orbe" aria-hidden="true">
+              <span className="juego__halo" />
+              <svg className="juego__arco" viewBox="0 0 196 196"><circle cx="98" cy="98" r="96" className="juego__pista" /><circle cx="98" cy="98" r="96" className="juego__luz" strokeDasharray="90 513" /></svg>
+              <svg className="juego__arco juego__arco--2" viewBox="0 0 168 168"><circle cx="84" cy="84" r="83" className="juego__pista juego__pista--2" /><circle cx="84" cy="84" r="83" className="juego__luz juego__luz--2" strokeDasharray="40 482" /></svg>
+              <span className="juego__foto">
+                {perfil?.foto ? <img src={perfil.foto} alt="" /> : inicial}
+                <span className="juego__punto" />
+              </span>
+            </span>
+            <span className="juego__nombre">HaxBall</span>
+          </Link>
+          <div className="juegos__mas aparece aparece--4">
+            <span aria-hidden="true"><Icon name="mas" size={12} stroke={2} /></span>
+            Más juegos, próximamente
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** HaxBall: la cola y las salas en una sola pantalla. Desde acá se suma a la cola o abre su sala. */
+export function HaxBall() {
+  const s = useStore()
+  const ahora = useAhora()
+  /** Por qué no se pudo entrar a la cola (sin conexión, por ejemplo). */
+  const [error, setError] = useState<string | null>(null)
+  const activas = s.busquedas.filter((b) => b.estado === 'activa')
+  const otras = activas.filter((b) => b.userId !== YO && !s.bloqueados.includes(b.userId))
+  const jugadores = otras.filter((b) => b.modo === 'jugador')
+  const salas = otras.filter((b) => b.modo === 'sala' && (b.faltan ?? 0) > 0 && !b.completaAt)
+  const buscando = !!buscarMia(s)
+  const fila = (b: Busqueda) => (
+    <FilaDisponible key={b.id} b={b} soloVer={!buscando}
+      detalle={`${nivelTexto(s.usuarios[b.userId])}${resumenBusqueda(b)} · ${hace(ahora - b.creadaAt)}`} />
+  )
+  return (
+    <div className="screen">
+      <Head title="HaxBall" back="/"><Campana desde="/haxball" /></Head>
+      <div className="scroll">
+        <div className="pad haxball">
+          <div className="avisos"><BannerBusqueda /><BannerMatch /></div>
+          <div className="marcador">
+            <div className="marcador__n num">{s.colaLista ? activas.length : '–'}</div>
+            <div className="marcador__d">
+              <span className={`vivo${s.colaLista && activas.length > 0 ? ' vivo--si' : ''}`}>
+                <span>{!s.colaLista ? s.errorCola ?? 'Buscando jugadores…' : 'buscando partido ahora'}</span>
+              </span>
+              {s.colaLista && activas.length === 0 && <span className="m">Sumate y te avisamos apenas una sala necesite gente.</span>}
+            </div>
+          </div>
+          {s.suspension && (
+            <div className="err" role="alert">
+              {s.suspension} Mientras tanto no podés buscar partido, escribirle a otros jugadores ni agregar amigos.
+            </div>
+          )}
           <div className="modos">
             <BotonJugar onError={setError} />
             <BotonSala />
-            {error && !suspension && <div className="err" role="alert">{error}</div>}
+            {error && !s.suspension && <div className="err" role="alert">{error}</div>}
           </div>
+          <section className="lista" aria-label="Quieren jugar un amistoso">
+            <h2 className="h sub">Quieren jugar un amistoso</h2>
+            {jugadores.length === 0
+              ? <div className="vacio"><span className="m">Nadie en la cola en este momento.</span></div>
+              : jugadores.map(fila)}
+          </section>
+          <section className="lista" aria-label="Salas buscando jugadores">
+            <h2 className="h sub">Salas buscando jugadores</h2>
+            {salas.length === 0
+              ? <div className="vacio"><span className="m">Ninguna sala está buscando gente ahora.</span></div>
+              : salas.map(fila)}
+          </section>
+          {otras.length > 0 && !buscando && REAL && <div className="m">Para escribirles, sumate a la cola o abrí tu sala.</div>}
           <EnVivo />
-          <AmigosBuscando />
         </div>
       </div>
       <TabBar on="inicio" />

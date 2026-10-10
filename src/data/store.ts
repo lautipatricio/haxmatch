@@ -22,7 +22,7 @@ import { desvincularKick, irAKick, leerKick, type CanalKick } from './kick'
 import { sincronizarAvisos, soltarAvisos } from './push'
 import {
   GRACIA_MS, aLocal, cambiarNick as cambiarNickServidor, chat as chatServidor, cola, guardarMostrarConectado, leerAjustes, leerChat, leerCola, leerSeguridad,
-  pedirAmistadPorUsuario, ponerLinkSala, type ColaLocal, type Resumen,
+  leerRegistrados, pedirAmistadPorUsuario, ponerLinkSala, type ColaLocal, type Resumen,
 } from './servidor'
 import { REAL } from './supabase'
 import { alCambiar, alCambiarChat } from './transporte'
@@ -214,6 +214,8 @@ interface Acciones {
   marcarChatVisto: () => void
   /** Quién tiene Kick vinculado y quién está en vivo. */
   cargarKick: () => Promise<void>
+  /** Cuántos jugadores hay en HaxMatch. */
+  cargarRegistrados: () => Promise<void>
   /** Con servidor manda al usuario a Kick a dar el permiso. Devuelve el problema, si no se pudo empezar. */
   vincularKick: () => Promise<string | null>
   desvincularKick: () => Promise<string | null>
@@ -256,6 +258,8 @@ interface Efimero {
   mostrarConectado: boolean
   /** Jugadores con Kick vinculado (también yo), con su canal y si están en vivo. */
   kick: Record<string, CanalKick>
+  /** Cuántos jugadores tiene HaxMatch (paso 12). null mientras no se sabe. */
+  registrados: number | null
 }
 
 export type Store = Datos & Efimero & Acciones
@@ -879,6 +883,7 @@ export const useStore = create<Store>()((set, get) => {
   ajustesListos: !REAL,
   mostrarConectado: true,
   kick: REAL ? {} : SEED_KICK,
+  registrados: REAL ? null : Object.keys(USUARIOS).length + 44,
   irA: null,
   ficha: null,
   clipsListos: !REAL,
@@ -972,8 +977,11 @@ export const useStore = create<Store>()((set, get) => {
     // Quién está en vivo en Kick: la web lo revisa cada minuto; acá se pregunta cada 30 segundos.
     void get().cargarKick()
     const cadaKick = setInterval(() => void get().cargarKick(), 30 * SEG)
+    void get().cargarRegistrados()
+    const cadaRegistro = setInterval(() => void get().cargarRegistrados(), 5 * 60 * SEG)
     return () => {
       clearInterval(cadaKick)
+      clearInterval(cadaRegistro)
       dejarDeEscuchar()
       dejarChat()
       if (esperaChat) clearTimeout(esperaChat)
@@ -1245,7 +1253,7 @@ export const useStore = create<Store>()((set, get) => {
       canceleAt = Date.now()
       set({
         perfil: null, toasts: [], busquedas: [], mensajes: [], colaLista: false, ficha: null, reels: [], misReacciones: [], tiktok: false, tiktokInfo: null, clipsListos: false, suspension: null,
-        conectados: [], chat: [], chatListo: false, errorChat: null, admin: false, ajustesListos: false, mostrarConectado: true, kick: {},
+        conectados: [], chat: [], chatListo: false, errorChat: null, admin: false, ajustesListos: false, mostrarConectado: true, kick: {}, registrados: null,
       })
       guardar(get())
       // La búsqueda se cancela antes de salir: después ya no hay sesión para pedirlo.
@@ -1993,6 +2001,12 @@ export const useStore = create<Store>()((set, get) => {
     const cada = setInterval(() => void get().cargarChat(), 15 * SEG)
     void get().cargarChat()
     return () => clearInterval(cada)
+  },
+
+  cargarRegistrados: async () => {
+    if (!REAL || !get().perfil?.id) return
+    const n = await leerRegistrados()
+    if (n !== null) set({ registrados: n })
   },
 
   cargarKick: async () => {

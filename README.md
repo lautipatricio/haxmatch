@@ -118,6 +118,7 @@ Cómo funciona: la app le pide a la web (`/api/kick/entrar`) empezar una vincula
 | `supabase/07_ficha.sql` | El perfil de otro jugador: cuántos amistosos jugó y su nivel (lo que la app muestra al tocarlo en la cola) |
 | `supabase/09_kick.sql` | Cuentas de Kick vinculadas y quién está en vivo (lo anota la web cada minuto) |
 | `supabase/08_chat_y_panel.sql` | Chat general (mensajes de 24 horas, con topes y respetando los bloqueos), la opción de ocultar el puntito de conectado y el panel de administración (solo para quienes estén en la tabla `admins`) |
+| `supabase/12_jugadores.sql` | Cuántos jugadores tiene HaxMatch (el número del Inicio) |
 | `supabase/11_link_sala.sql` | Link de la sala de HaxBall (opcional): lo ven el dueño, los jugadores a los que la sala invitó y los del partido |
 | `supabase/10_nick_y_amigos.sql` | Cambiar el nick (cada 15 días, sin repetir el de otro jugador) y agregar amigos por nick o por usuario de Discord |
 
@@ -200,6 +201,7 @@ En la web publicada:
 - **Real también** (con `supabase/08_chat_y_panel.sql` y `03` actualizado): chat general, puntito verde de conectado y panel de administración.
 - **Real también** (con `supabase/09_kick.sql` y las claves de Kick en Cloudflare): vincular Kick, la etiqueta al lado del nombre y quién está en vivo.
 - **Real también** (con `supabase/10_nick_y_amigos.sql`): cambiar el nick y agregar amigos por su nick. Sin ese paso, se agrega solo por usuario de Discord.
+- **Real también** (con `supabase/12_jugadores.sql`): el número de jugadores del Inicio. Sin ese paso, no se muestra.
 - **Real también** (con `supabase/11_link_sala.sql`): el link de la sala. Sin ese paso, la sala se abre igual, sin el link.
 - **Vincular TikTok:** en la web publicada dice "Pronto" hasta que TikTok apruebe la app; se abre con `TIKTOK_ABIERTO = true` en `src/config.ts`.
 - **Botón "Apoyá HaxMatch":** aparece en el Perfil cuando se completa `APOYO_URL` en `src/config.ts`.

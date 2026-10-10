@@ -186,7 +186,7 @@ const escapar = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)
 
 async function paginaConfigurar(request, env) {
   const origen = new URL(request.url).origin
-  const estilo = 'body{font:16px/1.5 system-ui,sans-serif;background:#0E1512;color:#EAF2EC;max-width:720px;margin:0 auto;padding:24px}h1,h2{color:#FFD84D}code,textarea{display:block;width:100%;box-sizing:border-box;background:#17211C;color:#EAF2EC;border:1px solid #2F4238;border-radius:10px;padding:10px;font:14px/1.4 ui-monospace,monospace;overflow-wrap:anywhere;white-space:pre-wrap}li{margin:10px 0}.nota{color:#9FB3A6}'
+  const estilo = 'body{font:16px/1.5 system-ui,sans-serif;background:#090D14;color:#EAF2FF;max-width:720px;margin:0 auto;padding:24px}h1,h2{color:#3B82F6}code,textarea{display:block;width:100%;box-sizing:border-box;background:#111827;color:#EAF2FF;border:1px solid #293241;border-radius:10px;padding:10px;font:14px/1.4 ui-monospace,monospace;overflow-wrap:anywhere;white-space:pre-wrap}li{margin:10px 0}.nota{color:#8A9AB5}'
   const pagina = (cuerpo) => new Response(
     `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Avisos de HaxMatch</title><style>${estilo}</style><h1>Avisos de HaxMatch</h1>${cuerpo}</html>`,
     { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } })

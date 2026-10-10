@@ -48,7 +48,7 @@ export function FormSala() {
 
   return (
     <div className="screen">
-      <Head title="Necesito un jugador" back="/" />
+      <Head title="Necesito un jugador" back="/haxball" />
       <div className="scroll">
         <div className="pad">
           <h2 className="h sub">Cancha</h2>

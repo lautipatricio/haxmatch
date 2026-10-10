@@ -6,7 +6,7 @@ const js = readFileSync('dist-demo/app.js', 'utf8').replace(/<\/script/gi, '<\\/
 const css = readFileSync('dist-demo/app.css', 'utf8').replace(/<\/style/gi, '<\\/style')
 
 const html = `<title>HaxMatch</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700&family=Barlow:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap">
 <style>
 ${css}
 /* La página publicada ya deja libre el espacio de las barras del sistema. */

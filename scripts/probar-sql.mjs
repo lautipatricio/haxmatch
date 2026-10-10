@@ -1385,5 +1385,13 @@ await falla('la app no puede llamar a la función interna', () => x.sql(beto, `s
 await limpiar()
 }
 
+{
+titulo('Cuántos jugadores hay')
+const total = await x.rpc(ana, 'cuantos_jugadores')
+const esperado = (await x.admin(`select count(*)::int as n from public.profiles where onboarding and (suspendido_hasta is null or suspendido_hasta <= now())`))[0].n
+ok(total === esperado && total > 5, `cuenta a los registrados (${total})`)
+await falla('un visitante no puede pedirlo', () => x.rpc(null, 'cuantos_jugadores'))
+}
+
 console.log(fallas ? `\n${fallas} comprobaciones fallaron.` : '\nTodo bien.')
 process.exit(fallas ? 1 : 0)

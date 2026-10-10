@@ -63,6 +63,8 @@ async function abrir(nombre) {
   await page.goto(URL)
   await u.ver('Bienvenido')
   await u.boton('Empezar').click()
+  await u.ver('¿Qué querés')
+  await page.getByRole('link', { name: 'Jugar HaxBall' }).click()
   await u.ver('Quiero jugar un amistoso')
   return u
 }

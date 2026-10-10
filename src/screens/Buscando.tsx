@@ -118,7 +118,7 @@ function CartelSeguir({ mia, porTiempo, onCerrar }: { mia: Busqueda; porTiempo: 
           {somos > 1 ? 'Crear una sala entre nosotros y seguir buscando' : 'Crear una sala y buscar jugadores'}
         </button>
         {porTiempo
-          ? <button className="btn btn--ghost" onClick={() => { s.cancelarBusqueda(); nav('/') }}>Dejar de buscar</button>
+          ? <button className="btn btn--ghost" onClick={() => { s.cancelarBusqueda(); nav('/haxball') }}>Dejar de buscar</button>
           : <button className="btn btn--ghost" onClick={onCerrar}>Ahora no</button>}
       </Sheet>
     )
@@ -357,7 +357,7 @@ export function Buscando() {
   return (
     <div className="screen">
       <div className="screen">
-      <Head chico back="/" title={completa ? 'Sala completa' : sala ? 'Buscando jugador' : 'Buscando partido'} />
+      <Head chico back="/haxball" title={completa ? 'Sala completa' : sala ? 'Buscando jugador' : 'Buscando partido'} />
       <div className="scroll">
         <div className="pad" style={{ paddingTop: 0 }}>
           <div className="reloj">
@@ -470,7 +470,7 @@ export function Buscando() {
           {!completa && <OfrecerAvisos sala={sala} />}
 
           <button className="btn btn--quieto btn--block" style={{ marginTop: 8 }}
-            onClick={() => { s.cancelarBusqueda(); nav('/') }}>
+            onClick={() => { s.cancelarBusqueda(); nav('/haxball') }}>
             {conGente ? 'Cerrar sala' : lider ? 'Salir del grupo' : 'Cancelar búsqueda'}
           </button>
 

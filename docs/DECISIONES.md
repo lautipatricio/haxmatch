@@ -367,6 +367,17 @@ Pedido de Lauti: en "Necesito un jugador", primero se elige la cancha, y de ella
 - Al cambiar de cancha, lo ya elegido se acomoda: si faltaban más de los que entran, queda el máximo; las posiciones que esa cancha no tiene se sacan (si no queda ninguna, Polifuncional).
 - Las reglas viven en la app (`src/domain/rules.ts`). El servidor sigue aceptando de 1 a 7: alcanza, porque el formulario no deja otra cosa.
 
+## Diseño nuevo: paleta 4, Inicio "¿Qué querés jugar hoy?" y HaxBall en una pantalla (10/10/2026)
+
+Pedido de Lauti, después de comparar bocetos en el lienzo de diseño:
+
+- **Paleta 4** (azul noche) y **Manrope** en toda la app, más sobria y minimalista. El amarillo se fue: daba la sensación de opción ya elegida.
+- **Inicio nuevo**: "Hola, nick", cuántos están en línea (solo si son 2 o más, sin contarte) y cuántos jugadores tiene HaxMatch (paso 12 de la base). En vez de "Nadie buscando ahora. Sé el primero.", que hacía ver la app vacía. Título "¿Qué querés jugar hoy?" con brillo, y tu foto de perfil con anillos que giran. Abajo, "Más juegos, próximamente" (una sola línea, sin nombrar juegos).
+- **Sin barra de abajo en el Inicio** (elegido: "la barra aparece al entrar"). Aparece en HaxBall y en el resto; su primera pestaña pasó a llamarse "Jugar" y lleva a HaxBall.
+- **HaxBall en una pantalla** (elegido: "todo junto"): número grande de cuántos buscan, los dos botones de siempre, quiénes quieren jugar, salas buscando gente y en vivo en Kick. Para escribirles hay que estar en la cola, como antes.
+- El ícono de la app, el de la pestaña que titila (ahora con 🔵) y las páginas de Términos, Privacidad y Borrar cuenta pasaron a los colores nuevos.
+- El logo de HaxBall no se dibujó: es de otro. El círculo lleva tu foto (lo que pidió Lauti).
+
 ## Link de la sala (9/10/2026)
 
 Pedido de Lauti: en "Necesito un jugador", abajo del nombre de la sala, un campo opcional "Link del host". Al jugador que la sala invita le llega el link junto con la invitación.

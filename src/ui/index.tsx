@@ -38,7 +38,7 @@ export function hace(ms: number): string {
 
 // ---------- Íconos (trazo, como en los mockups) ----------
 
-type IconName = 'inicio' | 'chat' | 'basura' | 'enviar' | 'clips' | 'perfil' | 'campana' | 'atras' | 'flecha' | 'abajo' | 'check' | 'play' | 'x' | 'corazon' | 'copiar' | 'reloj' | 'camara' | 'sonido' | 'mudo'
+type IconName = 'inicio' | 'chat' | 'basura' | 'enviar' | 'clips' | 'perfil' | 'campana' | 'atras' | 'flecha' | 'abajo' | 'check' | 'play' | 'x' | 'corazon' | 'copiar' | 'reloj' | 'camara' | 'sonido' | 'mudo' | 'mas' | 'pelota'
 
 const PATHS: Record<IconName, ReactNode> = {
   inicio: <path d="M4 11.5 12 4l8 7.5V20h-5.5v-5h-5v5H4z" />,
@@ -60,6 +60,8 @@ const PATHS: Record<IconName, ReactNode> = {
   copiar: <><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V6a2 2 0 0 1 2-2h9" /></>,
   reloj: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
   camara: <><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></>,
+  mas: <path d="M12 5v14M5 12h14" />,
+  pelota: <><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="2.5" /></>,
 }
 
 export function Icon({ name, size = 22, stroke = 2, fill }: { name: IconName; size?: number; stroke?: number; fill?: boolean }) {
@@ -308,8 +310,8 @@ export function TabBar({ on }: { on: 'inicio' | 'chat' | 'clips' | 'perfil' }) {
   const chatNuevo = useStore(chatSinLeer)
   return (
     <nav className="tabbar" aria-label="Secciones">
-      <Link to="/" className={on === 'inicio' ? 'on' : ''} aria-current={on === 'inicio' ? 'page' : undefined}>
-        <Icon name="inicio" size={24} stroke={1.75} />Inicio
+      <Link to="/haxball" className={on === 'inicio' ? 'on' : ''} aria-current={on === 'inicio' ? 'page' : undefined}>
+        <Icon name="pelota" size={24} stroke={1.75} />Jugar
       </Link>
       <Link to="/chat" className={on === 'chat' ? 'on' : ''} aria-current={on === 'chat' ? 'page' : undefined}>
         <Icon name="chat" size={24} stroke={1.75} />Chat

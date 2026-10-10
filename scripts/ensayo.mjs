@@ -150,8 +150,9 @@ async function abrir(nombre) {
       await otro.ver('Te invitan a jugar')
       await otro.boton('Sí, quiero jugar').click()
     },
+    /** A la pantalla de HaxBall (la cola y las salas). */
     async inicio() {
-      await page.goto(URL)
+      await page.goto(`${URL}/haxball`)
       await u.ver('Quiero jugar un amistoso')
     },
   }
@@ -159,6 +160,8 @@ async function abrir(nombre) {
   await u.boton('Entrar con Discord').click()
   await u.ver('Bienvenido')
   await u.boton('Empezar').click()
+  await u.ver('¿Qué querés')
+  await page.getByRole('link', { name: 'Jugar HaxBall' }).click()
   await u.ver('Quiero jugar un amistoso')
   return u
 }
@@ -173,9 +176,9 @@ try {
   paso('Sala de 1: la dueña elige a un jugador de la lista, él acepta la invitación, entra y los dos confirman')
   const ana = await abrir('ana')
   const beto = await abrir('beto')
-  await ana.ver('Nadie buscando ahora')
+  await ana.ver('Sumate y te avisamos')
   await ana.abrirSala('sala de ana', 1, [], 'Futsal', 'haxball.com/play?c=SalaDeAna1')
-  await beto.ver('1 buscando ahora')
+  await beto.page.locator('.marcador__n', { hasText: /^1$/ }).waitFor()
   await beto.buscar()
   await beto.fila('Ana').waitFor()
   await beto.ver('sala "sala de ana"'); await beto.foto('ve-la-sala')
@@ -186,7 +189,7 @@ try {
   // Los dos están en otra ventana: la pestaña de cada uno titila cuando le toca, y deja de hacerlo al volver.
   const enOtraVentana = (u) => u.page.evaluate(() => { document.hasFocus = () => false })
   const vuelve = (u) => u.page.evaluate(() => { delete document.hasFocus; window.dispatchEvent(new Event('focus')) })
-  const titila = (u, texto) => u.page.waitForFunction((t) => document.title === `🟡 ${t}` || document.title === `⚪ ${t}`, texto, { timeout: 8000 })
+  const titila = (u, texto) => u.page.waitForFunction((t) => document.title === `🔵 ${t}` || document.title === `⚪ ${t}`, texto, { timeout: 8000 })
   const quieta = (u) => u.page.waitForFunction(() => document.title === 'HaxMatch', null, { timeout: 8000 })
   await enOtraVentana(ana); await enOtraVentana(beto)
   await ana.fila('Beto').getByRole('button', { name: 'Invitar' }).click()
@@ -232,9 +235,9 @@ try {
   await ana.page.goto(`${URL}/?u=ana`)
   await Promise.race([
     ana.boton('Entrar con Discord').waitFor().then(() => ana.boton('Entrar con Discord').click()),
-    ana.ver('Quiero jugar un amistoso'),
+    ana.ver('¿Qué querés'),
   ])
-  await ana.ver('Quiero jugar un amistoso')
+  await ana.ver('¿Qué querés')
   await ana.page.goto(`${URL}/perfil/nivel`)
   await ana.ver('12 de 50 puntos')
   // Sara entró con el código de Ana: Ana la ve en su lista, y al quinto amistoso de Sara suma 50.
@@ -429,7 +432,7 @@ try {
   paso('Amigos: agregar desde la cola, aceptar, aviso cuando se pone a buscar, agregar por usuario y quitar')
   const lola = await abrir('lola')
   const mora = await abrir('mora')
-  await lola.ver('Hola, Lola'); await lola.foto('saludo')
+  await lola.page.goto(URL); await lola.ver('Hola, Lola'); await lola.foto('saludo'); await lola.inicio()
   await lola.buscar()
   await mora.buscar()
   await mora.page.getByRole('button', { name: 'Ver a Lola' }).click()
@@ -685,7 +688,7 @@ try {
   // Le llega a Ulises sin tocar nada.
   await enChat(ulises, 'hola, ¿alguien para un 3v3?').waitFor({ timeout: 8000 })
   // Tere se va a otra solapa: cuando Ulises escribe, a ella se le marca el Chat.
-  await tere.tab('Inicio').click()
+  await tere.tab('Jugar').click()
   if (await tere.tab('Chat').locator('.dot').count()) throw new Error('Tere ya leyó todo: la solapa Chat no tiene que marcar nada')
   await caja(ulises).fill('yo! armá sala'); await caja(ulises).press('Enter')
   await tere.tab('Chat').locator('.dot').waitFor({ timeout: 8000 })
@@ -744,14 +747,13 @@ try {
   await ulises.page.locator('.chat__autor', { hasText: 'Tere' }).first().locator('img.kick-logo').waitFor()
   servidor.kick.enVivo('tere_kick', true, 'Practicando con la comunidad')
   await servidor.revisarKick()
-  await ulises.page.goto(URL)
+  await ulises.page.goto(`${URL}/haxball`)
   await ulises.page.getByRole('region', { name: 'En vivo en Kick' }).getByText('Practicando con la comunidad').waitFor()
   await ulises.foto('kick-en-vivo')
   await filaKick.getByRole('button', { name: 'Quitar' }).click()
   await filaKick.getByRole('button', { name: 'Desvincular' }).click()
   await filaKick.getByRole('button', { name: 'Vincular' }).waitFor()
-  await ulises.page.reload()
-  await ulises.ver('Quiero jugar un amistoso')
+  await ulises.inicio()
   await ulises.page.waitForTimeout(1500)
   if (await ulises.page.getByRole('region', { name: 'En vivo en Kick' }).count()) throw new Error('Al desvincular, deja de figurar en vivo')
 
@@ -776,16 +778,17 @@ try {
   await kira.page.goto(`${URL}/?u=kira`)
   await Promise.race([
     kira.boton('Entrar con Discord').waitFor().then(() => kira.boton('Entrar con Discord').click()),
-    kira.ver('Quiero jugar un amistoso'),
+    kira.ver('¿Qué querés'),
   ])
-  await kira.ver('Quiero jugar un amistoso')
+  await kira.ver('¿Qué querés')
   await kira.page.goto(`${URL}/perfil/amigos`)
   await kira.fila('Ana').getByRole('button', { name: 'Desbloquear' }).click()
   await hasta('Al desbloquear, el bloqueo tendría que irse del servidor', async () => (await bloqueosDeKira()).length === 0)
   // El dueño suspende a Kira desde el SQL Editor: la app se lo dice y no la deja buscar.
   await servidor.acceso.admin(`select public.mod_suspender('kira', 3, 'Prueba de moderación')`)
   await kira.page.goto(URL)
-  await kira.ver('Tu cuenta está suspendida hasta el'); await kira.ver('Motivo: Prueba de moderación'); await kira.foto('suspendida')
+  await kira.ver('Tu cuenta está suspendida hasta el')
+  await kira.inicio(); await kira.ver('Motivo: Prueba de moderación'); await kira.foto('suspendida')
   await kira.boton('Quiero jugar un amistoso').click()
   await kira.page.waitForTimeout(1500)
   await kira.page.locator('.err', { hasText: 'Tu cuenta está suspendida' }).first().waitFor()
@@ -793,8 +796,7 @@ try {
   const deKira = await servidor.acceso.admin(`select 1 from public.busquedas where user_id = $1 and estado = 'activa'`, [servidor.usuario('kira').id])
   if (deKira.length) throw new Error('Una cuenta suspendida no tiene que entrar a la cola')
   await servidor.acceso.admin(`select public.mod_levantar('kira')`)
-  await kira.page.goto(URL)
-  await kira.ver('Quiero jugar un amistoso')
+  await kira.inicio()
   await kira.page.waitForTimeout(1500)
   await kira.noVer('Tu cuenta está suspendida')
   // Beto borra su cuenta: hay que escribir BORRAR, y después no queda nada suyo.

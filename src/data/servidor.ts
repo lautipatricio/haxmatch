@@ -405,6 +405,15 @@ export async function levantarDesdePanel(userId: string): Promise<{ texto?: stri
 }
 
 /** Agregar a un amigo por su usuario de Discord. Devuelve cómo quedó, o el problema. */
+/** Cuántos jugadores hay en HaxMatch (paso 12). null si la base todavía no lo tiene. */
+let sinRegistrados = false
+export async function leerRegistrados(): Promise<number | null> {
+  if (sinRegistrados) return null
+  const r = await rpc<number>('cuantos_jugadores')
+  if (r.error === SIN_BASE) sinRegistrados = true
+  return typeof r.data === 'number' ? r.data : null
+}
+
 /** Poner (o sacar) el link de mi sala abierta. Devuelve el problema, si no se pudo. */
 export async function ponerLinkSala(link: string | null): Promise<string | null> {
   const r = await rpc<string | null>('poner_link_sala', { p_link: link ?? '' })

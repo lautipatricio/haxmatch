@@ -8,10 +8,10 @@ const TITULO = 'HaxMatch'
 // El ícono de siempre, con los colores dados vuelta: se nota en la fila de pestañas.
 const ICONO_ALERTA = `data:image/svg+xml,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">'
-  + '<rect width="512" height="512" rx="96" fill="#FFD84D"/>'
-  + '<rect x="96" y="136" width="320" height="240" rx="28" fill="none" stroke="#0E1512" stroke-width="20"/>'
-  + '<path d="M256 136v240" stroke="#0E1512" stroke-width="20"/>'
-  + '<circle cx="256" cy="256" r="44" fill="#0E1512"/>'
+  + '<rect width="512" height="512" rx="96" fill="#3B82F6"/>'
+  + '<rect x="96" y="136" width="320" height="240" rx="28" fill="none" stroke="#090D14" stroke-width="20"/>'
+  + '<path d="M256 136v240" stroke="#090D14" stroke-width="20"/>'
+  + '<circle cx="256" cy="256" r="44" fill="#090D14"/>'
   + '</svg>',
 )}`
 
@@ -48,7 +48,7 @@ export function titilar(texto: string, mensajeId?: string) {
     prendido = !prendido
     // Los dos estados llaman la atención: si el navegador frena los relojes de una
     // pestaña que lleva rato tapada, queda quieta pero distinta de lo normal.
-    document.title = `${prendido ? '🟡' : '⚪'} ${texto}`
+    document.title = `${prendido ? '🔵' : '⚪'} ${texto}`
     const enlace = enlaceIcono()
     if (enlace && iconoNormal) enlace.href = prendido ? ICONO_ALERTA : iconoNormal
   }

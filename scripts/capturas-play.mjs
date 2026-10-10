@@ -31,7 +31,7 @@ async function abrir(nick) {
       await ver('Bienvenido')
       await page.getByLabel('Tu nick (opcional)').fill(nick)
       await boton('Empezar').click()
-      await ver('Quiero jugar un amistoso')
+      await ver('¿Qué querés')
     },
   }
 }
@@ -39,7 +39,9 @@ async function abrir(nick) {
 // Como jugador: inicio, la cola, el perfil de otro, la invitación y el match.
 const j = await abrir('Lauti')
 await j.entrar()
+await j.page.waitForTimeout(1500)
 await j.foto('1-inicio')
+await j.page.getByRole('link', { name: 'Jugar HaxBall' }).click()
 await j.boton('Quiero jugar un amistoso').click()
 await j.ver('Jugadores buscando partidos')
 await j.page.waitForTimeout(8000)
@@ -62,6 +64,7 @@ await j.ctx.close()
 // Como dueño de una sala: la lista para elegir a quién invitar.
 const s = await abrir('Lauti')
 await s.entrar()
+await s.page.getByRole('link', { name: 'Jugar HaxBall' }).click()
 await s.page.getByRole('link', { name: 'Necesito un jugador', exact: true }).click()
 await s.boton('Big').click()
 await s.page.getByLabel('Nombre de la sala').fill('amistoso 3v3')
@@ -76,25 +79,25 @@ await s.ctx.close()
 const fuente = (archivo) => `data:font/woff2;base64,${readFileSync(`node_modules/@fontsource/${archivo}`).toString('base64')}`
 const portada = await browser.newPage({ viewport: { width: 1024, height: 500 }, deviceScaleFactor: 1 })
 await portada.setContent(`<!doctype html><html><head><style>
-  @font-face { font-family: 'Titulo'; src: url(${fuente('barlow-condensed/files/barlow-condensed-latin-700-normal.woff2')}) format('woff2'); font-weight: 700; }
-  @font-face { font-family: 'Texto'; src: url(${fuente('barlow/files/barlow-latin-500-normal.woff2')}) format('woff2'); font-weight: 500; }
+  @font-face { font-family: 'Titulo'; src: url(${fuente('manrope/files/manrope-latin-300-normal.woff2')}) format('woff2'); font-weight: 300; }
+  @font-face { font-family: 'Texto'; src: url(${fuente('manrope/files/manrope-latin-500-normal.woff2')}) format('woff2'); font-weight: 500; }
   * { box-sizing: border-box; margin: 0; }
-  body { width: 1024px; height: 500px; background: #0E1512; color: #EAF2EC; overflow: hidden; position: relative; font-family: 'Texto', sans-serif; }
+  body { width: 1024px; height: 500px; background: #090D14; color: #EAF2FF; overflow: hidden; position: relative; font-family: 'Texto', sans-serif; }
   /* Media cancha, saliendo por la derecha. */
   svg { position: absolute; right: -150px; top: -40px; width: 640px; height: 580px; }
   .texto { position: absolute; left: 72px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; gap: 18px; }
-  .marca { font: 700 120px/0.9 'Titulo', sans-serif; letter-spacing: .01em; text-transform: uppercase; }
-  .marca span { color: #FFD84D; }
-  .lema { font-size: 34px; line-height: 1.2; color: #9FB3A6; max-width: 520px; }
+  .marca { font: 300 92px/1 'Titulo', sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+  .marca span { color: #3B82F6; }
+  .lema { font-size: 34px; line-height: 1.2; color: #8A9AB5; max-width: 520px; }
 </style></head><body>
-  <svg viewBox="0 0 640 580" fill="none" stroke="#2F4238" stroke-width="6">
+  <svg viewBox="0 0 640 580" fill="none" stroke="#293241" stroke-width="6">
     <rect x="60" y="60" width="700" height="460" rx="36"/>
     <path d="M410 60v460"/>
     <circle cx="410" cy="290" r="96"/>
-    <circle cx="410" cy="290" r="30" fill="#FFD84D" stroke="none"/>
-    <circle cx="250" cy="200" r="22" fill="#EAF2EC" stroke="none"/>
-    <circle cx="270" cy="400" r="22" fill="#EAF2EC" stroke="none"/>
-    <circle cx="540" cy="230" r="22" fill="#EAF2EC" stroke="none"/>
+    <circle cx="410" cy="290" r="30" fill="#3B82F6" stroke="none"/>
+    <circle cx="250" cy="200" r="22" fill="#EAF2FF" stroke="none"/>
+    <circle cx="270" cy="400" r="22" fill="#EAF2FF" stroke="none"/>
+    <circle cx="540" cy="230" r="22" fill="#EAF2FF" stroke="none"/>
   </svg>
   <div class="texto">
     <div class="marca">Hax<span>Match</span></div>

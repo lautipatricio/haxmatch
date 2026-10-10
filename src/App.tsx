@@ -8,7 +8,7 @@ import { Buscando } from './screens/Buscando'
 import { Chat } from './screens/Chat'
 import { Clips, MisVideos } from './screens/Clips'
 import { FormSala } from './screens/Formularios'
-import { Inicio } from './screens/Inicio'
+import { HaxBall, Inicio } from './screens/Inicio'
 import { MatchListo } from './screens/MatchListo'
 import { Nivel } from './screens/Nivel'
 import { Notificaciones } from './screens/Notificaciones'
@@ -115,6 +115,7 @@ export function App() {
         <Route path="/bienvenida" element={!perfil ? <Navigate to="/ingresar" replace /> : perfil.onboarding ? <Navigate to="/" replace /> : <Onboarding />} />
         <Route element={<ConSesion />}>
           <Route path="/" element={<Inicio />} />
+          <Route path="/haxball" element={<HaxBall />} />
           <Route path="/sala" element={<FormSala />} />
           <Route path="/buscando" element={<Buscando />} />
           <Route path="/match/:id" element={<MatchListo />} />
