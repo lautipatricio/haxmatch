@@ -38,6 +38,9 @@ Reglas:
 ## Inicio y HaxBall
 
 - El Inicio ("¿Qué querés jugar hoy?") va sin barra de abajo: saludo, en línea y jugadores, el título con un brillo que respira y tu foto en el centro con dos anillos que giran. Tocarla lleva a HaxBall.
+- Al tocar la foto, la foto crece, lo demás se desvanece y una ola de luz azul cubre la pantalla; HaxBall entra desde esa luz, con su contenido subiendo de a uno.
+- Todas las pantallas tienen de fondo las mismas dos manchas de luz azul que se mueven despacio (`Luces`, en `src/ui/index.tsx`). La barra de abajo y la de escribir del chat son translúcidas.
+- La barra de abajo va solo con íconos (Jugar es un joystick); la pestaña elegida se marca con un punto azul.
 - HaxBall junta todo: cuántos buscan (número grande), "Quiero jugar un amistoso", "Necesito un jugador", quiénes quieren jugar, qué salas buscan gente y quién está en vivo en Kick. Desde acá aparece la barra de abajo; su primera pestaña es "Jugar".
 
 ## Formas

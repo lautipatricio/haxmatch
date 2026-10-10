@@ -124,7 +124,7 @@ async function abrir(nombre) {
     boton: (texto) => page.getByRole('button', { name: texto, exact: true }),
     link: (texto) => page.getByRole('link', { name: texto, exact: true }),
     fila: (texto) => page.locator('.card--row', { hasText: texto }),
-    tab: (texto) => page.locator('.tabbar a', { hasText: texto }),
+    tab: (texto) => page.locator(`.tabbar a[aria-label^="${texto}"]`),
     ver: (texto, timeout = 12000) => page.getByText(texto, { exact: false }).first().waitFor({ timeout }),
     noVer: async (texto) => { if (await page.getByText(texto, { exact: false }).count()) throw new Error(`${nombre} no debería ver: ${texto}`) },
     foto: (titulo) => page.screenshot({ path: `${dir}/${String(++n).padStart(2, '0')}-${nombre}-${titulo}.png` }),
@@ -437,7 +437,8 @@ try {
   await mora.buscar()
   await mora.page.getByRole('button', { name: 'Ver a Lola' }).click()
   await mora.ver('Discord: lola'); await mora.ver('amistosos jugados')
-  if ((await mora.page.locator('.ficha .stat .h').first().innerText()) !== '0') throw new Error('Lola todavía no jugó ningún amistoso')
+  // El número llega un momento después de abrir la ficha.
+  await mora.page.locator('.ficha .stat .h').first().filter({ hasText: /^0$/ }).waitFor({ timeout: 8000 }).catch(() => { throw new Error('Lola todavía no jugó ningún amistoso') })
   await mora.foto('ficha')
   await mora.boton('Agregar a amigos').click()
   await mora.boton('Solicitud enviada').waitFor()

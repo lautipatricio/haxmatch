@@ -87,7 +87,7 @@ try {
   await beto.boton('Quiero jugar un amistoso').click()
   await beto.ver('Jugadores buscando partidos')
   // Beto se va a mirar clips. Ana lo elige de su lista y a él la invitación le llega como aviso.
-  await beto.page.locator('.tabbar a', { hasText: 'Clips' }).click()
+  await beto.page.locator('.tabbar a[aria-label^="Clips"]').click()
   await ana.page.locator('.card--row', { hasText: 'Beto' }).getByRole('button', { name: 'Invitar' }).click()
   await beto.ver('Ana te invita a su sala')
   await beto.boton('Aceptar').click()

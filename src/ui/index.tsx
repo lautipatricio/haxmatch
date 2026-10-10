@@ -38,7 +38,7 @@ export function hace(ms: number): string {
 
 // ---------- Íconos (trazo, como en los mockups) ----------
 
-type IconName = 'inicio' | 'chat' | 'basura' | 'enviar' | 'clips' | 'perfil' | 'campana' | 'atras' | 'flecha' | 'abajo' | 'check' | 'play' | 'x' | 'corazon' | 'copiar' | 'reloj' | 'camara' | 'sonido' | 'mudo' | 'mas' | 'pelota'
+type IconName = 'inicio' | 'chat' | 'basura' | 'enviar' | 'clips' | 'perfil' | 'campana' | 'atras' | 'flecha' | 'abajo' | 'check' | 'play' | 'x' | 'corazon' | 'copiar' | 'reloj' | 'camara' | 'sonido' | 'mudo' | 'mas' | 'pelota' | 'joystick'
 
 const PATHS: Record<IconName, ReactNode> = {
   inicio: <path d="M4 11.5 12 4l8 7.5V20h-5.5v-5h-5v5H4z" />,
@@ -62,6 +62,7 @@ const PATHS: Record<IconName, ReactNode> = {
   camara: <><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></>,
   mas: <path d="M12 5v14M5 12h14" />,
   pelota: <><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="2.5" /></>,
+  joystick: <><path d="M7.5 7.5h9a4.5 4.5 0 0 1 4.4 5.4l-.9 4.4a2.3 2.3 0 0 1-3.9 1.2L13.7 16h-3.4l-2.4 2.5a2.3 2.3 0 0 1-3.9-1.2l-.9-4.4a4.5 4.5 0 0 1 4.4-5.4z" /><path d="M8.5 10.5v3.5M6.75 12.25h3.5" /><circle cx="15.5" cy="11" r="1" fill="currentColor" stroke="none" /><circle cx="17.25" cy="13.5" r="1" fill="currentColor" stroke="none" /></>,
 }
 
 export function Icon({ name, size = 22, stroke = 2, fill }: { name: IconName; size?: number; stroke?: number; fill?: boolean }) {
@@ -310,19 +311,19 @@ export function TabBar({ on }: { on: 'inicio' | 'chat' | 'clips' | 'perfil' }) {
   const chatNuevo = useStore(chatSinLeer)
   return (
     <nav className="tabbar" aria-label="Secciones">
-      <Link to="/haxball" className={on === 'inicio' ? 'on' : ''} aria-current={on === 'inicio' ? 'page' : undefined}>
-        <Icon name="pelota" size={24} stroke={1.75} />Jugar
+      <Link to="/haxball" aria-label="Jugar" className={on === 'inicio' ? 'on' : ''} aria-current={on === 'inicio' ? 'page' : undefined}>
+        <Icon name="joystick" size={26} stroke={1.6} />
       </Link>
-      <Link to="/chat" className={on === 'chat' ? 'on' : ''} aria-current={on === 'chat' ? 'page' : undefined}>
-        <Icon name="chat" size={24} stroke={1.75} />Chat
-        {chatNuevo && on !== 'chat' && <span className="dot" aria-label="Hay mensajes sin leer en el chat" />}
+      <Link to="/chat" aria-label={chatNuevo && on !== 'chat' ? 'Chat, hay mensajes sin leer' : 'Chat'} className={on === 'chat' ? 'on' : ''} aria-current={on === 'chat' ? 'page' : undefined}>
+        <Icon name="chat" size={24} stroke={1.6} />
+        {chatNuevo && on !== 'chat' && <span className="dot" />}
       </Link>
-      <Link to="/clips" className={on === 'clips' ? 'on' : ''} aria-current={on === 'clips' ? 'page' : undefined}>
-        <Icon name="clips" size={24} stroke={1.75} />Clips
+      <Link to="/clips" aria-label="Clips" className={on === 'clips' ? 'on' : ''} aria-current={on === 'clips' ? 'page' : undefined}>
+        <Icon name="clips" size={24} stroke={1.6} />
       </Link>
-      <Link to="/perfil" className={on === 'perfil' ? 'on' : ''} aria-current={on === 'perfil' ? 'page' : undefined}>
-        <Icon name="perfil" size={24} stroke={1.75} />Perfil
-        {sinLeer && <span className="dot" aria-label="Hay notificaciones sin leer" />}
+      <Link to="/perfil" aria-label={sinLeer ? 'Perfil, hay notificaciones sin leer' : 'Perfil'} className={on === 'perfil' ? 'on' : ''} aria-current={on === 'perfil' ? 'page' : undefined}>
+        <Icon name="perfil" size={24} stroke={1.6} />
+        {sinLeer && <span className="dot" />}
       </Link>
     </nav>
   )
@@ -566,5 +567,15 @@ export function LinkSala({ link, texto = 'Entrar a la sala', secundario }: { lin
       </div>
       <div className="m cut">{copiado === false ? 'No se pudo copiar. Mantené apretado el link para copiarlo.' : url.replace('https://', '')}</div>
     </div>
+  )
+}
+
+/** Dos manchas de luz azul muy tenues que se mueven despacio detrás de todas las pantallas. */
+export function Luces() {
+  return (
+    <>
+      <div className="luz" aria-hidden="true" />
+      <div className="luz luz--2" aria-hidden="true" />
+    </>
   )
 }

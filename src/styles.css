@@ -63,6 +63,7 @@ a, button, label, [role="switch"] { touch-action: manipulation; }
 
 .app {
   position: relative;
+  isolation: isolate;
   height: 100%;
   max-width: 430px;
   margin: 0 auto;
@@ -95,6 +96,19 @@ a, button, label, [role="switch"] { touch-action: manipulation; }
   width: 44px; height: 44px; margin-left: -12px; flex: none;
   display: grid; place-items: center;
   background: none; border: 0; border-radius: 12px; color: var(--fg);
+}
+
+/* Luz de fondo: dos manchas azules muy tenues que se mueven despacio detrás de todas las pantallas. */
+.luz {
+  position: absolute; z-index: -1; pointer-events: none; border-radius: 50%;
+  width: 440px; height: 440px; left: -180px; top: -140px;
+  background: radial-gradient(circle, rgba(59, 130, 246, .18) 0%, rgba(59, 130, 246, 0) 65%);
+  animation: luz 14s ease-in-out infinite;
+}
+.luz--2 {
+  width: 400px; height: 400px; left: auto; right: -190px; top: 46%;
+  background: radial-gradient(circle, rgba(56, 189, 248, .11) 0%, rgba(56, 189, 248, 0) 65%);
+  animation: luz2 17s ease-in-out infinite;
 }
 
 /* ---------- Texto ---------- */
@@ -342,7 +356,7 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
 .chat__borrar-si { flex: none; min-height: 32px; padding: 0 10px; color: var(--danger); margin-top: -4px; }
 .chat__escribir {
   flex: none; display: flex; flex-direction: column; gap: 6px;
-  padding: 10px var(--gutter); border-top: 1px solid var(--mute); background: var(--bg);
+  padding: 10px var(--gutter); border-top: 1px solid var(--mute); background: rgba(9, 13, 20, .78); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
 }
 .chat__escribir .row { gap: 8px; }
 .chat__escribir .field { min-height: 48px; }
@@ -364,8 +378,8 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
 .tabbar {
   display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); flex: none;
   border-top: 1px solid var(--mute);
-  padding: 8px 12px calc(10px + var(--safe-bottom));
-  background: var(--bg);
+  padding: 6px 12px calc(8px + var(--safe-bottom));
+  background: rgba(9, 13, 20, .78); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
 }
 .tabbar a {
   min-height: 52px; border-radius: 14px;
@@ -375,7 +389,11 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
   transition: transform 120ms var(--ease-out), color 140ms ease-out;
 }
 .tabbar a:active { transform: scale(.94); }
-.tabbar a.on { color: var(--accent); font-weight: 600; }
+.tabbar a.on { color: var(--fg); }
+/* Sin textos: la pestaña elegida se marca con un punto azul debajo del ícono. */
+.tabbar a::after { content: ''; position: absolute; bottom: 6px; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); opacity: 0; transform: scale(.4); transition: opacity 160ms ease-out, transform 200ms var(--ease-out); }
+.tabbar a.on::after { opacity: 1; transform: none; }
+.tabbar a.on svg { filter: drop-shadow(0 0 8px rgba(59, 130, 246, .55)); }
 .dot { position: absolute; top: 4px; left: calc(50% + 8px); width: 10px; height: 10px; border-radius: 50%; background: var(--danger); border: 2px solid var(--bg); }
 .btn .dot { top: 8px; left: auto; right: 8px; border-color: var(--card); }
 
@@ -450,19 +468,6 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
 /* ---------- Inicio: "¿Qué querés jugar hoy?" ---------- */
 
 .juegos { overflow: hidden; }
-/* Dos manchas de luz muy tenues que se mueven despacio por el fondo. */
-.juegos__luz {
-  position: absolute; z-index: 0; pointer-events: none; border-radius: 50%;
-  width: 420px; height: 420px; left: -170px; top: -130px;
-  background: radial-gradient(circle, rgba(59, 130, 246, .2) 0%, rgba(59, 130, 246, 0) 65%);
-  animation: luz 14s ease-in-out infinite;
-}
-.juegos__luz--2 {
-  width: 380px; height: 380px; left: auto; right: -180px; top: 320px;
-  background: radial-gradient(circle, rgba(56, 189, 248, .12) 0%, rgba(56, 189, 248, 0) 65%);
-  animation: luz2 17s ease-in-out infinite;
-}
-.juegos > .head, .juegos > .scroll { position: relative; z-index: 1; }
 .juegos__pad { --gap: 0px; min-height: 100%; padding-top: 8px; padding-bottom: calc(28px + var(--safe-bottom)); }
 .juegos__pad .avisos { margin-bottom: 16px; }
 .juegos__saludo { font-size: 15px; color: var(--fg2); }
@@ -510,6 +515,28 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
 
 .aparece { animation: aparece .9s var(--ease-out) both; }
 .aparece--3 { animation-delay: .3s; }
+
+/* Salida del Inicio al tocar el juego: el resto se va, la foto crece y una ola de luz cubre la pantalla. */
+.juegos--sale .aparece, .juegos--sale .juegos__titulo.aparece { animation: sale .35s ease-in both; }
+.juegos--sale .juego__orbe.aparece { animation: crece .64s cubic-bezier(.65, 0, .35, 1) both; }
+.juegos--sale .juego__arco { animation-duration: 1.4s; }
+.juegos__ola {
+  position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  background: radial-gradient(circle at var(--x) var(--y), rgba(59, 130, 246, .6) 0%, rgba(37, 99, 235, .28) 22%, #090D14 62%);
+  animation: ola .64s cubic-bezier(.65, 0, .35, 1) both;
+}
+/* Entrada a HaxBall: la luz se apaga y el contenido sube de a uno. */
+.haxball-entra::before {
+  content: ''; position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  background: radial-gradient(circle at 50% 40%, rgba(59, 130, 246, .5) 0%, rgba(37, 99, 235, .22) 24%, #090D14 64%);
+  animation: apaga .55s ease-out both;
+}
+.haxball-entra .head, .haxball-entra .haxball > * { animation: aparece .6s var(--ease-out) both; }
+.haxball-entra .haxball > :nth-child(2) { animation-delay: .06s; }
+.haxball-entra .haxball > :nth-child(3) { animation-delay: .12s; }
+.haxball-entra .haxball > :nth-child(4) { animation-delay: .18s; }
+.haxball-entra .haxball > :nth-child(5) { animation-delay: .24s; }
+.haxball-entra .haxball > :nth-child(n+6) { animation-delay: .3s; }
 .aparece--4 { animation-delay: .45s; }
 
 /* ---------- HaxBall: cola y salas ---------- */
@@ -604,6 +631,10 @@ a.nivel:active { transform: scale(.98); }
 @keyframes gira { to { transform: rotate(360deg); } }
 @keyframes flota { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 @keyframes latido { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(3); opacity: 0; } }
+@keyframes sale { to { opacity: 0; filter: blur(6px); transform: translateY(-10px); } }
+@keyframes crece { from { opacity: 1; } to { transform: scale(1.3); opacity: .9; } }
+@keyframes ola { from { clip-path: circle(0 at var(--x) var(--y)); } to { clip-path: circle(150% at var(--x) var(--y)); } }
+@keyframes apaga { to { opacity: 0; } }
 @keyframes luz { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(30px, 24px) scale(1.15); } }
 @keyframes luz2 { 0%, 100% { transform: translate(0, 0) scale(1.1); } 50% { transform: translate(-26px, -18px) scale(.95); } }
 
@@ -753,6 +784,7 @@ a.nivel:active { transform: scale(.98); }
   *, *::before, *::after { animation: none !important; transition: none !important; }
   /* Sin movimiento, la franja quieta parecería un avance: va la barra entera, apagada. */
   .espera--libre > div { width: 100%; opacity: .4; }
+  .haxball-entra::before { display: none; }
 }
 
 /* Link de la sala de HaxBall. */

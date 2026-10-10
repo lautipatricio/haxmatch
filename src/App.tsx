@@ -15,7 +15,7 @@ import { Notificaciones } from './screens/Notificaciones'
 import { Perfil } from './screens/Perfil'
 import { Referir } from './screens/Referir'
 import { Reportar } from './screens/Reportar'
-import { Empty, FichaJugador, Toasts } from './ui'
+import { Empty, FichaJugador, Luces, Toasts } from './ui'
 
 /** Solo deja pasar a quien ya entró con Discord y terminó el onboarding. */
 function ConSesion() {
@@ -96,6 +96,7 @@ export function App() {
   if (cargandoSesion) {
     return (
       <div className="app">
+        <Luces />
         <div className="hero" style={{ gap: 14 }} role="status">
           <h1 className="h logo">Hax<br /><span>Match</span></h1>
           <div className="m">Cargando tu cuenta…</div>
@@ -107,6 +108,7 @@ export function App() {
 
   return (
     <div className="app">
+      <Luces />
       <Routes>
         {/* Términos y Privacidad son páginas comunes (public/*.html), para que se puedan leer sin entrar ni cargar la app. */}
         <Route path="/terminos" element={<PaginaFija archivo="/terminos.html" />} />

@@ -1,5 +1,5 @@
-import { useId, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useId, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { REAL } from '../config'
 import { YO, buscarMia, nivelTexto, useStore, usuarioDe } from '../data/store'
 import { enlaceKick } from '../data/kick'
@@ -120,11 +120,25 @@ export function Inicio() {
   const suspension = useStore((s) => s.suspension)
   const nick = perfil?.nick ?? ''
   const inicial = nick.replace(/[^a-zA-Z0-9]/g, '').slice(0, 1).toUpperCase() || '?'
+  const nav = useNavigate()
+  const pantalla = useRef<HTMLDivElement>(null)
+  const orbe = useRef<HTMLSpanElement>(null)
+  /** Al tocar el juego: una ola de luz sale desde la foto y cubre la pantalla; después entra HaxBall. */
+  const [sale, setSale] = useState<{ x: number; y: number } | null>(null)
+  const entrar = (e: MouseEvent) => {
+    if (sale) return e.preventDefault()
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !pantalla.current || !orbe.current) return
+    e.preventDefault()
+    const p = pantalla.current.getBoundingClientRect()
+    const o = orbe.current.getBoundingClientRect()
+    setSale({ x: o.left + o.width / 2 - p.left, y: o.top + o.height / 2 - p.top })
+    window.setTimeout(() => nav('/haxball', { state: { desdeInicio: true } }), 640)
+  }
   return (
-    <div className="screen juegos">
-      <div className="juegos__luz" aria-hidden="true" />
-      <div className="juegos__luz juegos__luz--2" aria-hidden="true" />
-      <header className="head">
+    <div ref={pantalla} className={`screen juegos${sale ? ' juegos--sale' : ''}`}
+      style={sale ? { '--x': `${sale.x}px`, '--y': `${sale.y}px` } as CSSProperties : undefined}>
+      {sale && <div className="juegos__ola" aria-hidden="true" />}
+      <header className="head aparece">
         <div className="marca" aria-hidden="true">HAXMATCH</div>
         <Campana desde="/" />
       </header>
@@ -141,8 +155,8 @@ export function Inicio() {
             </div>
           )}
           <h1 className="juegos__titulo aparece aparece--2">¿Qué querés<br /><span>jugar hoy?</span></h1>
-          <Link className="juego aparece aparece--3" to="/haxball" aria-label="Jugar HaxBall">
-            <span className="juego__orbe" aria-hidden="true">
+          <Link className="juego" to="/haxball" aria-label="Jugar HaxBall" onClick={entrar}>
+            <span className="juego__orbe aparece aparece--3" aria-hidden="true" ref={orbe}>
               <span className="juego__halo" />
               <svg className="juego__arco" viewBox="0 0 196 196"><circle cx="98" cy="98" r="96" className="juego__pista" /><circle cx="98" cy="98" r="96" className="juego__luz" strokeDasharray="90 513" /></svg>
               <svg className="juego__arco juego__arco--2" viewBox="0 0 168 168"><circle cx="84" cy="84" r="83" className="juego__pista juego__pista--2" /><circle cx="84" cy="84" r="83" className="juego__luz juego__luz--2" strokeDasharray="40 482" /></svg>
@@ -151,7 +165,7 @@ export function Inicio() {
                 <span className="juego__punto" />
               </span>
             </span>
-            <span className="juego__nombre">HaxBall</span>
+            <span className="juego__nombre aparece aparece--3">HaxBall</span>
           </Link>
           <div className="juegos__mas aparece aparece--4">
             <span aria-hidden="true"><Icon name="mas" size={12} stroke={2} /></span>
@@ -166,6 +180,8 @@ export function Inicio() {
 /** HaxBall: la cola y las salas en una sola pantalla. Desde acá se suma a la cola o abre su sala. */
 export function HaxBall() {
   const s = useStore()
+  // Viniendo del Inicio, la pantalla entra desde la luz con la que se fue la anterior.
+  const desdeInicio = (useLocation().state as { desdeInicio?: boolean } | null)?.desdeInicio === true
   const ahora = useAhora()
   /** Por qué no se pudo entrar a la cola (sin conexión, por ejemplo). */
   const [error, setError] = useState<string | null>(null)
@@ -179,7 +195,7 @@ export function HaxBall() {
       detalle={`${nivelTexto(s.usuarios[b.userId])}${resumenBusqueda(b)} · ${hace(ahora - b.creadaAt)}`} />
   )
   return (
-    <div className="screen">
+    <div className={`screen${desdeInicio ? ' haxball-entra' : ''}`}>
       <Head title="HaxBall" back="/"><Campana desde="/haxball" /></Head>
       <div className="scroll">
         <div className="pad haxball">
