@@ -367,6 +367,10 @@ Pedido de Lauti: en "Necesito un jugador", primero se elige la cancha, y de ella
 - Al cambiar de cancha, lo ya elegido se acomoda: si faltaban más de los que entran, queda el máximo; las posiciones que esa cancha no tiene se sacan (si no queda ninguna, Polifuncional).
 - Las reglas viven en la app (`src/domain/rules.ts`). El servidor sigue aceptando de 1 a 7: alcanza, porque el formulario no deja otra cosa.
 
+## Retoques del diseño nuevo (10/10/2026)
+
+Pedido de Lauti: ícono nuevo (círculo con anillo y arco azul, como el Inicio); al entrar a HaxBall, la misma animación de aparición que tiene el Inicio (se sacó la ola de luz); "● N en línea · M jugadores registrados" siempre (en línea te cuenta a vos); sin campanita en el Inicio; "Quiero jugar un amistoso" lleva a Clips con el aviso arriba; reloj chico y centrado en la búsqueda (sin "de 15:00", "Vence en" ni la región) y a los 15 minutos "¿Querés seguir buscando?"; "Salas buscando jugadores" pasó a "Equipos buscando jugadores"; se sacaron los textos "Cuando una sala te invita…" y "Si un jugador acepta tu mensaje…"; la nota del link del host dice solo "Se lo mandamos a los jugadores que invites."
+
 ## Diseño nuevo: paleta 4, Inicio "¿Qué querés jugar hoy?" y HaxBall en una pantalla (10/10/2026)
 
 Pedido de Lauti, después de comparar bocetos en el lienzo de diseño:

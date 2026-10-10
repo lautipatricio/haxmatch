@@ -9,9 +9,8 @@ const TITULO = 'HaxMatch'
 const ICONO_ALERTA = `data:image/svg+xml,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">'
   + '<rect width="512" height="512" rx="96" fill="#3B82F6"/>'
-  + '<rect x="96" y="136" width="320" height="240" rx="28" fill="none" stroke="#090D14" stroke-width="20"/>'
-  + '<path d="M256 136v240" stroke="#090D14" stroke-width="20"/>'
-  + '<circle cx="256" cy="256" r="44" fill="#090D14"/>'
+  + '<circle cx="256" cy="256" r="150" fill="none" stroke="#090D14" stroke-width="22"/>'
+  + '<circle cx="256" cy="256" r="70" fill="#090D14"/>'
   + '</svg>',
 )}`
 

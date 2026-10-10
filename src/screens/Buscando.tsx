@@ -109,10 +109,10 @@ function CartelSeguir({ mia, porTiempo, onCerrar }: { mia: Busqueda; porTiempo: 
       <Sheet title={porTiempo ? 'Pasaron 15 minutos' : 'Armar una sala'}>
         <div>
           {porTiempo
-            ? `${somos > 1 ? `Siguen siendo ${somos} y no apareció una sala.` : 'Todavía no apareció un partido.'} ¿Cómo seguimos?`
+            ? `${somos > 1 ? `Siguen siendo ${somos} y todavía no apareció un equipo.` : 'Todavía no apareció un partido.'} ¿Querés seguir buscando?`
             : `Son ${somos}. Uno crea la sala en HaxBall y los demás entran.`}
         </div>
-        {porTiempo && <button className="btn" onClick={s.renovarBusqueda}>Renovar la búsqueda</button>}
+        {porTiempo && <button className="btn" onClick={s.renovarBusqueda}>Sí, seguir buscando</button>}
         {somos > 1 && <button className={`btn${porTiempo ? ' btn--sec' : ''}`} onClick={() => setPaso('entre')}>{entre}</button>}
         <button className="btn btn--sec" onClick={() => setPaso('sala')}>
           {somos > 1 ? 'Crear una sala entre nosotros y seguir buscando' : 'Crear una sala y buscar jugadores'}
@@ -360,23 +360,18 @@ export function Buscando() {
       <Head chico back="/haxball" title={completa ? 'Sala completa' : sala ? 'Buscando jugador' : 'Buscando partido'} />
       <div className="scroll">
         <div className="pad" style={{ paddingTop: 0 }}>
+          {/* Un reloj chico y la barra: cuánto hace que se busca. A los 15 minutos sale el cartel para seguir. */}
           <div className="reloj">
-            <div className="reloj__fila">
-              <div className="h num reloj__t" role="timer">{mmss((mia.completaAt ?? ahora) - mia.creadaAt)}</div>
-              {plazo !== null && !completa && <div className="m num">de {mmss(plazo)}</div>}
+            <div className="num reloj__t" role="timer" aria-label={`Buscando hace ${mmss((mia.completaAt ?? ahora) - mia.creadaAt)}`}>
+              {mmss((mia.completaAt ?? ahora) - mia.creadaAt)}
             </div>
             {/* Con vencimiento, la barra muestra cuánto pasó; sin vencimiento, que se sigue buscando. */}
             <div className={`espera${completa || mia.expiraAt !== null ? '' : ' espera--libre'}`} aria-hidden="true">
               <div style={completa || mia.expiraAt === null ? undefined : { transform: `translateX(${Math.round((avance - 1) * 1000) / 10}%)` }} />
             </div>
-            <div className="reloj__d">
-              <div className="m">{datos}{sala && ` · Sala "${mia.nombreSala}"`}</div>
-              <div className="m num">
-                {completa ? 'Ya no se busca a nadie. Cuando entren todos, queda armado el match.'
-                  : lider && vencida ? `Pasaron los 15 minutos. ${lider.username} decide cómo siguen.`
-                  : mia.expiraAt ? `Vence en ${mmss(mia.expiraAt - ahora)}` : sala ? 'Sigue buscando hasta completarse' : 'Activa hasta conseguir partido'}
-              </div>
-            </div>
+            {sala && <div className="m center">{datos} · Sala "{mia.nombreSala}"</div>}
+            {completa && <div className="m center">Ya no se busca a nadie. Cuando entren todos, queda armado el match.</div>}
+            {!completa && lider && vencida && <div className="m center">Pasaron los 15 minutos. {lider.username} decide cómo siguen.</div>}
           </div>
 
           {!sala && recibidos.length > 0 && (
@@ -436,16 +431,12 @@ export function Buscando() {
 
           {!sala && (
             <>
-              <h2 className="h sub">Salas buscando jugadores</h2>
+              <h2 className="h sub">Equipos buscando jugadores</h2>
               {cargando ? esqueleto : salas.length === 0 ? (
-                <Vacio titulo="No hay salas buscando ahora" texto="Cuando una sala necesite jugadores aparece acá." />
+                <Vacio titulo="No hay equipos buscando ahora" texto="Cuando un equipo necesite jugadores aparece acá." />
               ) : (
                 salas.map((b) => <FilaDisponible key={b.id} b={b} />)
               )}
-              <div className="m">
-                Cuando una sala te invita, te avisamos y elegís si {grupo.length ? 'entran' : 'entrás'}.
-                {!lider && ' También podés escribirle vos a una sala: si te acepta, entrás.'}
-              </div>
             </>
           )}
 
@@ -457,12 +448,8 @@ export function Buscando() {
               ) : (
                 jugadores.map((b) => <FilaDisponible key={b.id} b={b} />)
               )}
-              {!lider && (
-                <div className="m">
-                  {sala
-                    ? 'Elegí a quién invitar. Le llega el aviso con los datos de tu sala y, si acepta, ocupa un lugar.'
-                    : 'Si un jugador acepta tu mensaje, se suma a tu búsqueda y siguen buscando juntos.'}
-                </div>
+              {!lider && sala && (
+                <div className="m">Elegí a quién invitar. Le llega el aviso con los datos de tu sala y, si acepta, ocupa un lugar.</div>
               )}
             </>
           )}

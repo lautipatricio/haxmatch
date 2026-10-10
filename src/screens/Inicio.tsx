@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type CSSProperties, type MouseEvent } from 'react'
+import { useId, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { REAL } from '../config'
 import { YO, buscarMia, nivelTexto, useStore, usuarioDe } from '../data/store'
@@ -40,11 +40,19 @@ function BotonJugar({ onError }: { onError: (texto: string | null) => void }) {
     if (mia) return nav('/buscando')
     setOcupado(true)
     onError(null)
-    const error = await entrar()
+    let error = await entrar()
+    // "Ya tenés una búsqueda activa" justo después de cancelar: el servidor todavía no se había
+    // enterado. Se mira el estado y, si de verdad no hay búsqueda, se prueba una vez más.
+    if (error && /búsqueda activa/i.test(error)) {
+      await useStore.getState().refrescar()
+      if (!buscarMia(useStore.getState())) error = await entrar()
+    }
     setOcupado(false)
     // Si ya tenía una búsqueda (la app todavía no se había enterado), no es un error: va a verla.
     if (error && !/búsqueda activa/i.test(error)) onError(error)
-    else nav('/buscando')
+    else if (error) nav('/buscando')
+    // En la cola: mientras espera, mira clips. Arriba queda el aviso de que le avisamos.
+    else nav('/clips')
   }
   return (
     <button className="modo modo--principal" disabled={ocupado} onClick={() => void tocar()} aria-labelledby={ids.idTitulo} aria-describedby={ids.idDetalle}>
@@ -98,18 +106,17 @@ function EnVivo() {
   )
 }
 
-/** Cuántos están en línea y cuántos jugadores hay. "En línea" se muestra desde 2 (sin contarme). */
+/** Cuántos están en línea (contándote) y cuántos jugadores hay registrados. */
 function Datos() {
-  const conectados = useStore((s) => s.conectados.filter((u) => u !== YO).length)
+  const enLinea = useStore((s) => s.conectados.filter((u) => u !== YO).length + 1)
   const registrados = useStore((s) => s.registrados)
-  const partes: JSX.Element[] = []
-  if (conectados >= 2) partes.push(<span key="c"><b>{conectados}</b> en línea</span>)
-  if (registrados !== null && registrados > 0) partes.push(<span key="r"><b>{registrados}</b> jugadores</span>)
-  if (partes.length === 0) return null
   return (
     <div className="juegos__datos">
-      {conectados >= 2 && <span className="latido" aria-hidden="true" />}
-      {partes.reduce<JSX.Element[]>((a, p, n) => (n ? [...a, <span key={`s${n}`} aria-hidden="true">·</span>, p] : [p]), [])}
+      <span className="latido" aria-hidden="true" />
+      <span><b>{enLinea}</b> en línea</span>
+      {registrados !== null && registrados > 0 && (
+        <><span aria-hidden="true">·</span><span><b>{registrados}</b> jugadores registrados</span></>
+      )}
     </div>
   )
 }
@@ -120,27 +127,10 @@ export function Inicio() {
   const suspension = useStore((s) => s.suspension)
   const nick = perfil?.nick ?? ''
   const inicial = nick.replace(/[^a-zA-Z0-9]/g, '').slice(0, 1).toUpperCase() || '?'
-  const nav = useNavigate()
-  const pantalla = useRef<HTMLDivElement>(null)
-  const orbe = useRef<HTMLSpanElement>(null)
-  /** Al tocar el juego: una ola de luz sale desde la foto y cubre la pantalla; después entra HaxBall. */
-  const [sale, setSale] = useState<{ x: number; y: number } | null>(null)
-  const entrar = (e: MouseEvent) => {
-    if (sale) return e.preventDefault()
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !pantalla.current || !orbe.current) return
-    e.preventDefault()
-    const p = pantalla.current.getBoundingClientRect()
-    const o = orbe.current.getBoundingClientRect()
-    setSale({ x: o.left + o.width / 2 - p.left, y: o.top + o.height / 2 - p.top })
-    window.setTimeout(() => nav('/haxball', { state: { desdeInicio: true } }), 640)
-  }
   return (
-    <div ref={pantalla} className={`screen juegos${sale ? ' juegos--sale' : ''}`}
-      style={sale ? { '--x': `${sale.x}px`, '--y': `${sale.y}px` } as CSSProperties : undefined}>
-      {sale && <div className="juegos__ola" aria-hidden="true" />}
+    <div className="screen juegos">
       <header className="head aparece">
         <div className="marca" aria-hidden="true">HAXMATCH</div>
-        <Campana desde="/" />
       </header>
       <div className="scroll">
         <div className="pad juegos__pad">
@@ -155,8 +145,8 @@ export function Inicio() {
             </div>
           )}
           <h1 className="juegos__titulo aparece aparece--2">¿Qué querés<br /><span>jugar hoy?</span></h1>
-          <Link className="juego" to="/haxball" aria-label="Jugar HaxBall" onClick={entrar}>
-            <span className="juego__orbe aparece aparece--3" aria-hidden="true" ref={orbe}>
+          <Link className="juego" to="/haxball" state={{ desdeInicio: true }} aria-label="Jugar HaxBall">
+            <span className="juego__orbe aparece aparece--3" aria-hidden="true">
               <span className="juego__halo" />
               <svg className="juego__arco" viewBox="0 0 196 196"><circle cx="98" cy="98" r="96" className="juego__pista" /><circle cx="98" cy="98" r="96" className="juego__luz" strokeDasharray="90 513" /></svg>
               <svg className="juego__arco juego__arco--2" viewBox="0 0 168 168"><circle cx="84" cy="84" r="83" className="juego__pista juego__pista--2" /><circle cx="84" cy="84" r="83" className="juego__luz juego__luz--2" strokeDasharray="40 482" /></svg>
@@ -180,7 +170,7 @@ export function Inicio() {
 /** HaxBall: la cola y las salas en una sola pantalla. Desde acá se suma a la cola o abre su sala. */
 export function HaxBall() {
   const s = useStore()
-  // Viniendo del Inicio, la pantalla entra desde la luz con la que se fue la anterior.
+  // Viniendo del Inicio, el contenido entra igual que el del Inicio: de a uno, desde un desenfoque.
   const desdeInicio = (useLocation().state as { desdeInicio?: boolean } | null)?.desdeInicio === true
   const ahora = useAhora()
   /** Por qué no se pudo entrar a la cola (sin conexión, por ejemplo). */
@@ -225,10 +215,10 @@ export function HaxBall() {
               ? <div className="vacio"><span className="m">Nadie en la cola en este momento.</span></div>
               : jugadores.map(fila)}
           </section>
-          <section className="lista" aria-label="Salas buscando jugadores">
-            <h2 className="h sub">Salas buscando jugadores</h2>
+          <section className="lista" aria-label="Equipos buscando jugadores">
+            <h2 className="h sub">Equipos buscando jugadores</h2>
             {salas.length === 0
-              ? <div className="vacio"><span className="m">Ninguna sala está buscando gente ahora.</span></div>
+              ? <div className="vacio"><span className="m">Ningún equipo está buscando jugadores ahora.</span></div>
               : salas.map(fila)}
           </section>
           {otras.length > 0 && !buscando && REAL && <div className="m">Para escribirles, sumate a la cola o abrí tu sala.</div>}

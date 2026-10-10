@@ -69,7 +69,7 @@ export function FormSala() {
               <input id="link-sala" className="field" type="url" inputMode="url" value={linkSala} maxLength={120} autoComplete="off"
                 autoCapitalize="none" spellCheck={false} placeholder="https://www.haxball.com/play?c=…" aria-describedby="nota-link"
                 onChange={(e) => { setLinkSala(e.target.value); setError(null) }} />
-              <div className="m" id="nota-link">Se lo mandamos a los jugadores que invites, para que entren directo.</div>
+              <div className="m" id="nota-link">Se lo mandamos a los jugadores que invites.</div>
               {reglas.maxFaltan > 1 && <Chips label="Cuántos faltan" options={lugares} value={faltan} onChange={setFaltan} />}
               {reglas.posiciones.length > 0 && (
                 <ChipsMulti label="Posición que buscás" options={reglas.posiciones} value={posicion} onChange={setPosicion} todas="Polifuncional" />

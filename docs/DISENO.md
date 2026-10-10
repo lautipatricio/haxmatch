@@ -38,7 +38,11 @@ Reglas:
 ## Inicio y HaxBall
 
 - El Inicio ("¿Qué querés jugar hoy?") va sin barra de abajo: saludo, en línea y jugadores, el título con un brillo que respira y tu foto en el centro con dos anillos que giran. Tocarla lleva a HaxBall.
-- Al tocar la foto, la foto crece, lo demás se desvanece y una ola de luz azul cubre la pantalla; HaxBall entra desde esa luz, con su contenido subiendo de a uno.
+- Al tocar la foto, HaxBall entra igual que el Inicio: su contenido aparece de a uno desde un desenfoque.
+- El Inicio no tiene campanita: solo el nombre de la app, el saludo, "● N en línea · M jugadores registrados", el título y la foto.
+- "Quiero jugar un amistoso" lleva a Clips: mientras espera mira videos, y arriba queda el aviso "Te avisamos cuando encontremos una coincidencia" (tocándolo, va a la búsqueda).
+- En la búsqueda, el reloj es chico y centrado, con la barra abajo. A los 15 minutos sale "Pasaron 15 minutos. ¿Querés seguir buscando?".
+- Ícono de la app: la misma idea del Inicio, un círculo claro con un anillo y un arco azul, sobre azul noche.
 - Todas las pantallas tienen de fondo las mismas dos manchas de luz azul que se mueven despacio (`Luces`, en `src/ui/index.tsx`). La barra de abajo y la de escribir del chat son translúcidas.
 - La barra de abajo va solo con íconos (Jugar es un joystick); la pestaña elegida se marca con un punto azul.
 - HaxBall junta todo: cuántos buscan (número grande), "Quiero jugar un amistoso", "Necesito un jugador", quiénes quieren jugar, qué salas buscan gente y quién está en vivo en Kick. Desde acá aparece la barra de abajo; su primera pestaña es "Jugar".

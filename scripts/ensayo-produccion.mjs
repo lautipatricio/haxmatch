@@ -85,7 +85,7 @@ try {
   await ana.ver('Buscando jugador')
   // Un toque y a la cola, sin formulario.
   await beto.boton('Quiero jugar un amistoso').click()
-  await beto.ver('Jugadores buscando partidos')
+  await beto.ver('Te avisamos cuando encontremos una coincidencia')
   // Beto se va a mirar clips. Ana lo elige de su lista y a él la invitación le llega como aviso.
   await beto.page.locator('.tabbar a[aria-label^="Clips"]').click()
   await ana.page.locator('.card--row', { hasText: 'Beto' }).getByRole('button', { name: 'Invitar' }).click()

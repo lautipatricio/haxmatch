@@ -130,7 +130,12 @@ async function abrir(nombre) {
     foto: (titulo) => page.screenshot({ path: `${dir}/${String(++n).padStart(2, '0')}-${nombre}-${titulo}.png` }),
     /** "Quiero jugar un amistoso": un toque y a la cola, sin formulario. */
     async buscar() {
+      // Recién cancelada otra búsqueda, se espera a que la app sepa que ya no busca.
+      await u.ver('Entrás directo a la cola')
       await u.boton('Quiero jugar un amistoso').click()
+      // Entra a la cola y lo lleva a Clips; el aviso de arriba lleva a la búsqueda.
+      await u.ver('Te avisamos cuando encontremos una coincidencia')
+      await page.locator('.banner a').first().click()
       await u.ver('Jugadores buscando partidos')
     },
     /** `marcar`: opciones del formulario a tocar (una posición, una cancha). */
@@ -422,8 +427,9 @@ try {
   paso('Los 15 minutos: aparece el cartel y se puede renovar')
   await servidor.acceso.admin(`update public.busquedas set expira_at = now() - interval '5 seconds' where user_id = $1 and estado = 'activa'`, [servidor.usuario('kira').id])
   await kira.ver('Pasaron 15 minutos', 15000); await kira.foto('quince-minutos')
-  await kira.boton('Renovar la búsqueda').click()
-  await kira.ver('Búsqueda renovada'); await kira.ver('Vence en 14:')
+  await kira.ver('¿Querés seguir buscando?')
+  await kira.boton('Sí, seguir buscando').click()
+  await kira.ver('Búsqueda renovada')
   // Si no responde, vence sola.
   await servidor.acceso.admin(`update public.busquedas set expira_at = now() - interval '3 minutes' where user_id = $1 and estado = 'activa'`, [servidor.usuario('kira').id])
   await kira.ver('Tu búsqueda venció', 15000); await kira.ver('No estás buscando')

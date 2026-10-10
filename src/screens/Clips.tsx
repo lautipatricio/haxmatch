@@ -280,7 +280,7 @@ export function Clips() {
     return (
       <div className="screen">
         <Head title="Clips" />
-        <BannerBusqueda detalle="Te avisamos cuando haya respuesta" />
+        <BannerBusqueda detalle="Te avisamos cuando encontremos una coincidencia" />
         <Empty title="Sin clips todavía" text={TIKTOK_PRONTO
           ? 'Los clips salen de TikTok. Muy pronto vas a poder vincular tu cuenta.'
           : 'Los clips salen de TikTok. Vinculá tu cuenta y usá #haxball o #haxmatch en tus videos.'}>
@@ -365,7 +365,7 @@ export function Clips() {
               ? <Pronto />
               : <Link className="btn btn--sec" to="/clips/mis-videos">{s.tiktok ? 'Mis videos' : 'Vincular TikTok'}</Link>}
           </Head>
-          <BannerBusqueda detalle="Te avisamos cuando haya respuesta" />
+          <BannerBusqueda detalle="Te avisamos cuando encontremos una coincidencia" />
         </div>
       </div>
       <TabBar on="clips" />

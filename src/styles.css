@@ -516,27 +516,12 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
 .aparece { animation: aparece .9s var(--ease-out) both; }
 .aparece--3 { animation-delay: .3s; }
 
-/* Salida del Inicio al tocar el juego: el resto se va, la foto crece y una ola de luz cubre la pantalla. */
-.juegos--sale .aparece, .juegos--sale .juegos__titulo.aparece { animation: sale .35s ease-in both; }
-.juegos--sale .juego__orbe.aparece { animation: crece .64s cubic-bezier(.65, 0, .35, 1) both; }
-.juegos--sale .juego__arco { animation-duration: 1.4s; }
-.juegos__ola {
-  position: absolute; inset: 0; z-index: 5; pointer-events: none;
-  background: radial-gradient(circle at var(--x) var(--y), rgba(59, 130, 246, .6) 0%, rgba(37, 99, 235, .28) 22%, #090D14 62%);
-  animation: ola .64s cubic-bezier(.65, 0, .35, 1) both;
-}
-/* Entrada a HaxBall: la luz se apaga y el contenido sube de a uno. */
-.haxball-entra::before {
-  content: ''; position: absolute; inset: 0; z-index: 5; pointer-events: none;
-  background: radial-gradient(circle at 50% 40%, rgba(59, 130, 246, .5) 0%, rgba(37, 99, 235, .22) 24%, #090D14 64%);
-  animation: apaga .55s ease-out both;
-}
-.haxball-entra .head, .haxball-entra .haxball > * { animation: aparece .6s var(--ease-out) both; }
-.haxball-entra .haxball > :nth-child(2) { animation-delay: .06s; }
-.haxball-entra .haxball > :nth-child(3) { animation-delay: .12s; }
-.haxball-entra .haxball > :nth-child(4) { animation-delay: .18s; }
-.haxball-entra .haxball > :nth-child(5) { animation-delay: .24s; }
-.haxball-entra .haxball > :nth-child(n+6) { animation-delay: .3s; }
+/* Entrada a HaxBall desde el Inicio: igual que el Inicio, el contenido aparece de a uno desde un desenfoque. */
+.haxball-entra .head, .haxball-entra .haxball > * { animation: aparece .9s var(--ease-out) both; }
+.haxball-entra .haxball > :nth-child(2) { animation-delay: .1s; }
+.haxball-entra .haxball > :nth-child(3) { animation-delay: .2s; }
+.haxball-entra .haxball > :nth-child(4) { animation-delay: .3s; }
+.haxball-entra .haxball > :nth-child(n+5) { animation-delay: .4s; }
 .aparece--4 { animation-delay: .45s; }
 
 /* ---------- HaxBall: cola y salas ---------- */
@@ -570,10 +555,9 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
 
 /* ---------- Búsqueda: reloj y barra de avance ---------- */
 
-.reloj { display: flex; flex-direction: column; gap: 12px; padding: 8px 0 10px; }
-.reloj__fila { display: flex; align-items: baseline; gap: 10px; }
-.reloj__t { font-size: 64px; font-weight: 300; line-height: .95; letter-spacing: -0.04em; }
-.reloj__d { display: flex; flex-direction: column; gap: 2px; }
+.reloj { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 0 12px; }
+.reloj .espera { width: 100%; }
+.reloj__t { font-size: 22px; font-weight: 300; line-height: 1; letter-spacing: .06em; color: var(--fg2); }
 .espera { height: 6px; border-radius: 3px; background: var(--mute); overflow: hidden; }
 .espera > div { height: 100%; border-radius: 3px; background: var(--accent); transition: transform 1s linear; }
 /* Sin hora de vencimiento: una franja que recorre la barra mientras se busca. */
@@ -631,10 +615,6 @@ a.nivel:active { transform: scale(.98); }
 @keyframes gira { to { transform: rotate(360deg); } }
 @keyframes flota { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 @keyframes latido { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(3); opacity: 0; } }
-@keyframes sale { to { opacity: 0; filter: blur(6px); transform: translateY(-10px); } }
-@keyframes crece { from { opacity: 1; } to { transform: scale(1.3); opacity: .9; } }
-@keyframes ola { from { clip-path: circle(0 at var(--x) var(--y)); } to { clip-path: circle(150% at var(--x) var(--y)); } }
-@keyframes apaga { to { opacity: 0; } }
 @keyframes luz { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(30px, 24px) scale(1.15); } }
 @keyframes luz2 { 0%, 100% { transform: translate(0, 0) scale(1.1); } 50% { transform: translate(-26px, -18px) scale(.95); } }
 
@@ -784,7 +764,6 @@ a.nivel:active { transform: scale(.98); }
   *, *::before, *::after { animation: none !important; transition: none !important; }
   /* Sin movimiento, la franja quieta parecería un avance: va la barra entera, apagada. */
   .espera--libre > div { width: 100%; opacity: .4; }
-  .haxball-entra::before { display: none; }
 }
 
 /* Link de la sala de HaxBall. */
