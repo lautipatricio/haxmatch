@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { REAL } from '../config'
 import { YO, buscarMia, nivelTexto, useStore, usuarioDe } from '../data/store'
 import { enlaceKick } from '../data/kick'
@@ -145,7 +145,7 @@ export function Inicio() {
             </div>
           )}
           <h1 className="juegos__titulo aparece aparece--2">¿Qué querés<br /><span>jugar hoy?</span></h1>
-          <Link className="juego" to="/haxball" state={{ desdeInicio: true }} aria-label="Jugar HaxBall">
+          <Link className="juego" to="/haxball" aria-label="Jugar HaxBall">
             <span className="juego__orbe aparece aparece--3" aria-hidden="true">
               <span className="juego__halo" />
               <svg className="juego__arco" viewBox="0 0 196 196"><circle cx="98" cy="98" r="96" className="juego__pista" /><circle cx="98" cy="98" r="96" className="juego__luz" strokeDasharray="90 513" /></svg>
@@ -170,8 +170,6 @@ export function Inicio() {
 /** HaxBall: la cola y las salas en una sola pantalla. Desde acá se suma a la cola o abre su sala. */
 export function HaxBall() {
   const s = useStore()
-  // Viniendo del Inicio, el contenido entra igual que el del Inicio: de a uno, desde un desenfoque.
-  const desdeInicio = (useLocation().state as { desdeInicio?: boolean } | null)?.desdeInicio === true
   const ahora = useAhora()
   /** Por qué no se pudo entrar a la cola (sin conexión, por ejemplo). */
   const [error, setError] = useState<string | null>(null)
@@ -185,7 +183,7 @@ export function HaxBall() {
       detalle={`${nivelTexto(s.usuarios[b.userId])}${resumenBusqueda(b)} · ${hace(ahora - b.creadaAt)}`} />
   )
   return (
-    <div className={`screen${desdeInicio ? ' haxball-entra' : ''}`}>
+    <div className="screen">
       <Head title="HaxBall" back="/"><Campana desde="/haxball" /></Head>
       <div className="scroll">
         <div className="pad haxball">

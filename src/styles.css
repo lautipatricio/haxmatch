@@ -481,7 +481,7 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
   background: linear-gradient(90deg, #EAF2FF 0%, #9CC3FF 55%, #7DD3FC 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
-.juegos__titulo.aparece { animation: aparece .9s .15s var(--ease-out) both, brilla 4s 1s ease-in-out infinite; }
+.juegos__titulo.aparece { animation: aparece .9s .15s var(--ease-out) backwards, brilla 4s 1s ease-in-out infinite; }
 
 /* El juego: tu foto en el centro, con dos anillos que giran y una luz que respira. */
 .juego { align-self: center; margin-top: 48px; display: flex; flex-direction: column; align-items: center; gap: 24px; text-decoration: none; color: var(--fg); border-radius: 50%; transition: transform 250ms var(--ease-out); }
@@ -513,15 +513,17 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
 .latido { position: relative; width: 6px; height: 6px; border-radius: 50%; background: var(--vivo); flex: none; }
 .latido::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--vivo); animation: latido 2s ease-out infinite; }
 
-.aparece { animation: aparece .9s var(--ease-out) both; }
+.aparece { animation: aparece .9s var(--ease-out) backwards; }
 .aparece--3 { animation-delay: .3s; }
 
-/* Entrada a HaxBall desde el Inicio: igual que el Inicio, el contenido aparece de a uno desde un desenfoque. */
-.haxball-entra .head, .haxball-entra .haxball > * { animation: aparece .9s var(--ease-out) both; }
-.haxball-entra .haxball > :nth-child(2) { animation-delay: .1s; }
-.haxball-entra .haxball > :nth-child(3) { animation-delay: .2s; }
-.haxball-entra .haxball > :nth-child(4) { animation-delay: .3s; }
-.haxball-entra .haxball > :nth-child(n+5) { animation-delay: .4s; }
+/* Al cambiar de pantalla, el contenido entra igual que el del Inicio: de a uno, desde un desenfoque.
+   Con :where() no pisa las animaciones propias de cada pieza (las del Inicio, el brillo, los esqueletos). */
+.vista { flex: 1; min-height: 0; display: flex; flex-direction: column; position: relative; }
+:where(.vista) :where(.head, .pad > *, .feed, .empty) { animation: aparece .7s var(--ease-out) backwards; }
+:where(.vista) :where(.pad > :nth-child(2)) { animation-delay: .07s; }
+:where(.vista) :where(.pad > :nth-child(3)) { animation-delay: .14s; }
+:where(.vista) :where(.pad > :nth-child(4)) { animation-delay: .21s; }
+:where(.vista) :where(.pad > :nth-child(n+5)) { animation-delay: .28s; }
 .aparece--4 { animation-delay: .45s; }
 
 /* ---------- HaxBall: cola y salas ---------- */
@@ -609,7 +611,7 @@ a.nivel:active { transform: scale(.98); }
 @keyframes down { from { transform: translateY(-16px); opacity: 0; } }
 @keyframes shimmer { to { background-position: -200% 0; } }
 @keyframes barrido { from { transform: translateX(-100%); } to { transform: translateX(313%); } }
-@keyframes aparece { from { opacity: 0; filter: blur(10px); transform: translateY(8px); } to { opacity: 1; filter: blur(0); transform: none; } }
+@keyframes aparece { from { opacity: 0; filter: blur(10px); transform: translateY(8px); } to { opacity: 1; filter: none; transform: none; } }
 @keyframes brilla { 0%, 100% { text-shadow: 0 0 18px rgba(59, 130, 246, .35), 0 0 42px rgba(59, 130, 246, .18); } 50% { text-shadow: 0 0 26px rgba(59, 130, 246, .55), 0 0 64px rgba(59, 130, 246, .28); } }
 @keyframes respira { 0%, 100% { transform: scale(.9); opacity: .55; } 50% { transform: scale(1.08); opacity: 1; } }
 @keyframes gira { to { transform: rotate(360deg); } }

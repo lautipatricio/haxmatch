@@ -1,6 +1,6 @@
 // Service worker: deja la app instalable, la abre sin conexión y muestra los
 // avisos que llegan con la app cerrada.
-const CACHE = 'haxmatch-v1'
+const CACHE = 'haxmatch-v2'
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.add('/')).then(() => self.skipWaiting()))
@@ -24,7 +24,18 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(fetch(req).catch(() => caches.match('/')))
     return
   }
-  // Archivos de la app (tienen hash en el nombre): caché primero.
+  // El resto (íconos, manifiesto, páginas fijas): primero la red, así un cambio se ve enseguida.
+  if (!url.pathname.startsWith('/assets/')) {
+    e.respondWith(fetch(req).then((res) => {
+      if (res.ok) {
+        const copia = res.clone()
+        caches.open(CACHE).then((c) => c.put(req, copia))
+      }
+      return res
+    }).catch(() => caches.match(req)))
+    return
+  }
+  // Archivos de la app (tienen hash en el nombre, nunca cambian): caché primero.
   e.respondWith(
     caches.match(req).then((hit) => hit || fetch(req).then((res) => {
       if (res.ok) {

@@ -38,7 +38,7 @@ Reglas:
 ## Inicio y HaxBall
 
 - El Inicio ("¿Qué querés jugar hoy?") va sin barra de abajo: saludo, en línea y jugadores, el título con un brillo que respira y tu foto en el centro con dos anillos que giran. Tocarla lleva a HaxBall.
-- Al tocar la foto, HaxBall entra igual que el Inicio: su contenido aparece de a uno desde un desenfoque.
+- Cada cambio de pantalla (también las pestañas de abajo) hace entrar el contenido igual que el Inicio: de a uno, desde un desenfoque (`.vista` en `src/App.tsx` y `:where(.vista)` en los estilos).
 - El Inicio no tiene campanita: solo el nombre de la app, el saludo, "● N en línea · M jugadores registrados", el título y la foto.
 - "Quiero jugar un amistoso" lleva a Clips: mientras espera mira videos, y arriba queda el aviso "Te avisamos cuando encontremos una coincidencia" (tocándolo, va a la búsqueda).
 - En la búsqueda, el reloj es chico y centrado, con la barra abajo. A los 15 minutos sale "Pasaron 15 minutos. ¿Querés seguir buscando?".
