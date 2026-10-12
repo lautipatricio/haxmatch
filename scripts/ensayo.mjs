@@ -195,7 +195,7 @@ try {
   const enOtraVentana = (u) => u.page.evaluate(() => { document.hasFocus = () => false })
   const vuelve = (u) => u.page.evaluate(() => { delete document.hasFocus; window.dispatchEvent(new Event('focus')) })
   const titila = (u, texto) => u.page.waitForFunction((t) => document.title === `🔵 ${t}` || document.title === `⚪ ${t}`, texto, { timeout: 8000 })
-  const quieta = (u) => u.page.waitForFunction(() => document.title === 'HaxMatch', null, { timeout: 8000 })
+  const quieta = (u) => u.page.waitForFunction(() => document.title === 'haxmatch.com', null, { timeout: 8000 })
   await enOtraVentana(ana); await enOtraVentana(beto)
   await ana.fila('Beto').getByRole('button', { name: 'Invitar' }).click()
   await ana.fila('Beto').getByRole('button', { name: 'Invitado' }).waitFor()

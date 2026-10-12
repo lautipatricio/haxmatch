@@ -200,7 +200,7 @@ if (![...vistos].every((t) => /^(🔵|⚪) Nico te invita a su sala$/.test(t)) |
 if (iconos.size !== 2 || !iconos.has('/icon.svg?v=2')) throw new Error('El ícono de la pestaña no cambia')
 await page.evaluate(() => { delete document.hasFocus; window.dispatchEvent(new Event('focus')) })
 await page.waitForTimeout(1200)
-if ((await titulo()) !== 'HaxMatch' || (await icono()) !== '/icon.svg?v=2') throw new Error(`Al volver a la app, la pestaña sigue titilando: ${await titulo()}`)
+if ((await titulo()) !== 'haxmatch.com' || (await icono()) !== '/icon.svg?v=2') throw new Error(`Al volver a la app, la pestaña sigue titilando: ${await titulo()}`)
 await ver('Si aceptás, entran los 2 del grupo'); await ver('haxball.com/play?c=NicoAmistoso3')
 if (await page.getByRole('link', { name: 'Abrir la sala' }).getAttribute('href') !== 'https://www.haxball.com/play?c=NicoAmistoso3') throw new Error('La invitación no trae el link de la sala')
 await page.waitForTimeout(400); await foto('invitacion-de-sala')
