@@ -13,13 +13,15 @@
   --card: #111827;
   --mute: #1A2333;
   --line: #293241;
+  /* Borde de los campos de texto: más claro que --line, para que el campo se distinga. */
+  --borde-campo: #4B5A70;
   --fg: #EAF2FF;
   --fg2: #8A9AB5;
   /* Azul para líneas, texto e íconos sobre el fondo; el más oscuro, para rellenos con texto blanco. */
   --accent: #3B82F6;
   --accent-fondo: #2563EB;
   --on-accent: #FFFFFF;
-  --on-accent2: #E3ECFF;
+  --on-accent2: #F2F6FF;
   /* Texto sobre un relleno claro (chip elegido, botón de peligro). */
   --oscuro: #090D14;
   --danger: #FF8A7A;
@@ -289,7 +291,7 @@ a.chip { display: inline-grid; place-items: center; text-decoration: none; }
 
 .field {
   width: 100%; min-height: 52px;
-  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  background: var(--card); border: 1px solid var(--borde-campo); border-radius: 12px;
   padding: 0 14px; color: var(--fg); font-size: 16px;
   transition: border-color 140ms ease-out;
 }
@@ -352,11 +354,11 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
 .chat__linea { display: flex; align-items: flex-start; gap: 4px; }
 .chat__texto { margin: 0; flex: 1; min-width: 0; padding: 2px 0; line-height: 1.4; overflow-wrap: anywhere; white-space: pre-wrap; }
 .chat__msg--primero .chat__texto { margin-top: -4px; }
-.chat__borrar { width: 32px; height: 32px; margin-top: -4px; opacity: .55; }
-.chat__borrar-si { flex: none; min-height: 32px; padding: 0 10px; color: var(--danger); margin-top: -4px; }
+.chat__borrar { width: 44px; height: 44px; margin: -10px -6px -6px 0; color: var(--fg2); }
+.chat__borrar-si { flex: none; min-height: 44px; padding: 0 10px; color: var(--danger); margin: -10px 0 -6px; }
 .chat__escribir {
   flex: none; display: flex; flex-direction: column; gap: 6px;
-  padding: 10px var(--gutter); border-top: 1px solid var(--mute); background: rgba(9, 13, 20, .78); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  padding: 10px var(--gutter); border-top: 1px solid var(--mute); background: rgba(9, 13, 20, .9);
 }
 .chat__escribir .row { gap: 8px; }
 .chat__escribir .field { min-height: 48px; }
@@ -379,7 +381,7 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
   display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); flex: none;
   border-top: 1px solid var(--mute);
   padding: 6px 12px calc(8px + var(--safe-bottom));
-  background: rgba(9, 13, 20, .78); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  background: rgba(9, 13, 20, .9);
 }
 .tabbar a {
   min-height: 52px; border-radius: 14px;
@@ -418,6 +420,7 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
 
 .scrim { position: absolute; inset: 0; background: rgba(5, 8, 13, .8); display: flex; align-items: flex-end; z-index: 20; animation: fade 200ms ease-out; }
 .scrim--clear { background: none; pointer-events: none; animation: none; }
+.sheet:focus { outline: none; }
 .sheet {
   width: 100%; pointer-events: auto;
   background: var(--card); border-top: 1px solid var(--line);
@@ -519,7 +522,9 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
 /* Al cambiar de pantalla, el contenido entra igual que el del Inicio: de a uno, desde un desenfoque.
    Con :where() no pisa las animaciones propias de cada pieza (las del Inicio, el brillo, los esqueletos). */
 .vista { flex: 1; min-height: 0; display: flex; flex-direction: column; position: relative; }
-:where(.vista) :where(.head, .pad > *, .feed, .empty) { animation: aparece .7s var(--ease-out) backwards; }
+:where(.vista) :where(.head, .pad > :nth-child(-n+6), .empty) { animation: aparece .6s var(--ease-out) backwards; }
+/* Lo que avisa algo (errores, estados) aparece en el momento, sin esperar la animación. */
+:where(.vista) :where(.pad > .err, .pad > [role="alert"], .pad > [role="status"]) { animation: none; }
 :where(.vista) :where(.pad > :nth-child(2)) { animation-delay: .07s; }
 :where(.vista) :where(.pad > :nth-child(3)) { animation-delay: .14s; }
 :where(.vista) :where(.pad > :nth-child(4)) { animation-delay: .21s; }
@@ -611,7 +616,7 @@ a.nivel:active { transform: scale(.98); }
 @keyframes down { from { transform: translateY(-16px); opacity: 0; } }
 @keyframes shimmer { to { background-position: -200% 0; } }
 @keyframes barrido { from { transform: translateX(-100%); } to { transform: translateX(313%); } }
-@keyframes aparece { from { opacity: 0; filter: blur(10px); transform: translateY(8px); } to { opacity: 1; filter: none; transform: none; } }
+@keyframes aparece { from { opacity: 0; filter: blur(6px); transform: translateY(8px); } to { opacity: 1; filter: none; transform: none; } }
 @keyframes brilla { 0%, 100% { text-shadow: 0 0 18px rgba(59, 130, 246, .35), 0 0 42px rgba(59, 130, 246, .18); } 50% { text-shadow: 0 0 26px rgba(59, 130, 246, .55), 0 0 64px rgba(59, 130, 246, .28); } }
 @keyframes respira { 0%, 100% { transform: scale(.9); opacity: .55; } 50% { transform: scale(1.08); opacity: 1; } }
 @keyframes gira { to { transform: rotate(360deg); } }
@@ -690,7 +695,7 @@ a.nivel:active { transform: scale(.98); }
 .feed-top .head .btn--sec { background: var(--card); }
 /* Aviso de "deslizá para actualizar" y su resultado. */
 .feed-aviso {
-  position: absolute; z-index: 6; top: calc(128px + var(--safe-top)); left: 50%; transform: translate(-50%, 0);
+  position: absolute; z-index: 6; top: calc(var(--alto-arriba, calc(128px + var(--safe-top))) + 4px); left: 50%; transform: translate(-50%, 0);
   padding: 10px 16px; border-radius: 14px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line);
   color: var(--fg); font-size: 14px; font-weight: 600; white-space: nowrap; pointer-events: none;
 }
@@ -719,12 +724,11 @@ a.nivel:active { transform: scale(.98); }
 .reel__toque > span:first-child:not(.m) { width: 72px; height: 72px; border-radius: 24px; background: rgba(9, 13, 20, .6); display: grid; place-items: center; padding-left: 4px; }
 /* Sonido: arriba a la derecha, debajo del título de la pantalla. */
 .reel__sonido {
-  position: absolute; top: calc(80px + var(--safe-top)); right: var(--gutter); min-width: 44px; min-height: 44px; padding: 0 11px; border: 0; border-radius: 14px;
+  position: absolute; top: calc(var(--alto-arriba, calc(80px + var(--safe-top))) - 16px); right: var(--gutter); min-width: 44px; min-height: 44px; padding: 0 11px; border: 0; border-radius: 14px;
   background: var(--card); color: var(--fg); display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 15px var(--body); white-space: nowrap;
   transition: transform 120ms var(--ease-out);
 }
 .reel__sonido:active { transform: scale(.94); }
-.feed--cartel .reel__sonido { top: calc(154px + var(--safe-top)); }
 /* La primera vez que hace falta un toque para el sonido, el botón va grande y al medio. */
 .reel__sonido--pedir, .feed--cartel .reel__sonido--pedir { top: 50%; left: 50%; right: auto; transform: translate(-50%, -50%); min-height: 52px; padding: 0 20px; font-size: 17px; }
 .reel__sonido--pedir:active { transform: translate(-50%, -50%) scale(.96); }
@@ -773,3 +777,20 @@ a.nivel:active { transform: scale(.98); }
 .link-sala { display: flex; flex-direction: column; gap: 6px; }
 .link-sala .row { gap: 8px; }
 .link-sala .btn { min-height: 48px; }
+
+/* Invitación: lo que no se puede perder. */
+.toast--llama { background: var(--card); border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 14px 40px -10px rgba(37, 99, 235, .6); align-items: flex-start; padding: 14px 14px 14px 16px; }
+.toast__latido { margin-top: 7px; }
+.toast__acts { margin-top: 10px; flex-wrap: wrap; }
+.invita { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 16px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--accent); }
+.invita__sala { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+
+/* Match listo: el nombre de la sala, grande para leerlo desde la compu. */
+.sala-match__nombre { font-size: 34px; font-weight: 600; line-height: 1.1; letter-spacing: .01em; overflow-wrap: anywhere; }
+.sala-match__acciones { flex-wrap: wrap; }
+
+/* Nombre en una fila de lista: se corta el nick, nunca los distintivos. */
+.persona .strong.fila-nombre { display: flex; align-items: center; min-width: 0; white-space: nowrap; }
+.fila-nombre > .cut { min-width: 0; }
+.fila-nombre > :not(.cut) { flex: none; }
+.reel__toque:focus-visible { outline-offset: -4px; }

@@ -303,7 +303,7 @@ function CambiarNick() {
     <>
       <button className="enlace" onClick={abrir}>Cambiar nick</button>
       {abierto && (
-        <Sheet title="Cambiar nick">
+        <Sheet title="Cambiar nick" onCerrar={() => setAbierto(false)}>
           {desde !== null ? (
             <>
               <div>Ya cambiaste tu nick hace poco. Podés volver a cambiarlo desde el {fechaCorta(desde)}.</div>

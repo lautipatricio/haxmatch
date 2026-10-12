@@ -75,7 +75,7 @@ await foto('onboarding')
 await boton('Empezar').click()
 await ver('¿Qué querés'); await ver('Hola, ElDemo'); await ver('53 jugadores'); await page.waitForTimeout(1200); await foto('inicio')
 if (await page.locator('.tabbar').count()) throw new Error('El Inicio va sin la barra de abajo')
-await alHaxBall(); await ver('buscando partido ahora'); await foto('haxball')
+await alHaxBall(); await ver('buscando ahora'); await foto('haxball')
 await tab('Perfil').click()
 await ver('Conectado como Jugador_Demo'); await ver('ElDemo'); await ver('Perfil público · ARG, UY')
 

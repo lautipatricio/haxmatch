@@ -367,6 +367,15 @@ Pedido de Lauti: en "Necesito un jugador", primero se elige la cancha, y de ella
 - Al cambiar de cancha, lo ya elegido se acomoda: si faltaban más de los que entran, queda el máximo; las posiciones que esa cancha no tiene se sacan (si no queda ninguna, Polifuncional).
 - Las reglas viven en la app (`src/domain/rules.ts`). El servidor sigue aceptando de 1 a 7: alcanza, porque el formulario no deja otra cosa.
 
+## Mejoras de la revisión de diseño (12/10/2026)
+
+Se revisó la app con las guías de Impeccable (revisión de diseño y revisión técnica, por separado). Lo que se hizo:
+
+- **Invitación:** el aviso de una invitación ya no se cierra solo (queda hasta que respondés o hasta que se cae), se ve destacado (borde azul, punto que late) y trae Aceptar, Ver y Ahora no. El celular vibra. El cartel de "Te invitan a jugar" muestra la sala en grande y avisa que hay que responder rápido.
+- **Match listo:** el nombre de la sala va grande para leerlo desde la compu; en el celular aparece "Mandar a la compu" (el menú de compartir: WhatsApp, Discord, mail); debajo de "Ya entré a la sala" se explica para qué sirve.
+- **HaxBall:** el número grande cuenta personas (un grupo de 3 son 3): "jugadores buscando ahora".
+- **Técnico:** los carteles toman el foco, Tab no se sale de ellos, Escape cierra los que tienen "Cancelar" o "Cerrar" y el foco vuelve a donde estaba; la animación de entrada es más liviana (menos desenfoque, no se aplica al video de Clips ni a los avisos de error); las barras de abajo ya no usan desenfoque; los campos de texto tienen un borde más visible; el botón de borrar del chat es más grande; el botón de sonido de Clips se acomoda al alto del aviso de búsqueda; con nicks largos se corta el nick y no los distintivos; "Quitar de amigos" pasó a un botón discreto.
+
 ## Transición en todas las pantallas y el ícono que no cambiaba (10/10/2026)
 
 - La animación de aparecer del Inicio (de a uno, desde un desenfoque) ahora se usa en cada cambio de pantalla.

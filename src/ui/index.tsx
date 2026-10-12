@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { REAL } from '../config'
 import { YO, buscarMia, chatSinLeer, miRacha, misPuntos, nombreDe, useStore, usuarioDe, type Toast } from '../data/store'
@@ -157,7 +157,7 @@ export function FichaJugador() {
   const cargando = REAL && datos === undefined
   return (
     <div className="scrim" style={{ zIndex: 40 }} onClick={(e) => { if (e.target === e.currentTarget) cerrar() }}>
-      <div className="sheet ficha" role="dialog" aria-label={`Perfil de ${u.username}`}>
+      <Dialogo key={id} className="sheet ficha" label={`Perfil de ${u.username}`} onCerrar={cerrar}>
         <div className="row" style={{ gap: 14 }}>
           <Avatar user={u} size="lg" />
           <div className="grow">
@@ -209,7 +209,7 @@ export function FichaJugador() {
               <button className="btn btn--danger" onClick={() => { s.quitarAmigo(id); cerrar() }}>Sí, quitar de amigos</button>
             </>
           ) : (
-            <button className="btn btn--sec" onClick={() => setQuitar(true)}>Quitar de amigos</button>
+            <button className="btn btn--ghost" onClick={() => setQuitar(true)}>Quitar de amigos</button>
           )
         ) : recibida ? (
           <>
@@ -230,7 +230,7 @@ export function FichaJugador() {
         )}
         <button className="btn btn--ghost" onClick={() => { cerrar(); nav(`/reportar/${id}`) }}>Reportar o bloquear</button>
         <button className="btn btn--sec" onClick={cerrar}>Cerrar</button>
-      </div>
+      </Dialogo>
     </div>
   )
 }
@@ -370,10 +370,53 @@ export function TarjetaNivel({ enlace }: { enlace?: boolean }) {
     : <div className="card card--col nivel">{dentro}</div>
 }
 
-export function Sheet({ title, children, clear }: { title: string; children: ReactNode; clear?: boolean }) {
+/**
+ * Un cartel que se abre encima de la pantalla: al abrirse recibe el foco, con Tab no se sale
+ * de él, Escape lo cierra (si se puede cerrar) y al cerrarse el foco vuelve a donde estaba.
+ */
+export function useDialogo(ref: RefObject<HTMLElement>, onCerrar?: () => void) {
+  const cerrarRef = useRef(onCerrar)
+  cerrarRef.current = onCerrar
+  useEffect(() => {
+    const antes = document.activeElement as HTMLElement | null
+    const el = ref.current
+    if (el && !el.contains(document.activeElement)) el.focus({ preventScroll: true })
+    const tecla = (e: KeyboardEvent) => {
+      if (!el) return
+      if (e.key === 'Escape' && cerrarRef.current) {
+        e.preventDefault()
+        cerrarRef.current()
+        return
+      }
+      if (e.key !== 'Tab') return
+      const foco = [...el.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), textarea, select, [tabindex]:not([tabindex="-1"])')]
+      if (foco.length === 0) return
+      const primero = foco[0]
+      const ultimo = foco[foco.length - 1]
+      if (e.shiftKey && (document.activeElement === primero || document.activeElement === el)) { e.preventDefault(); ultimo.focus() }
+      else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primero.focus() }
+    }
+    document.addEventListener('keydown', tecla)
+    return () => {
+      document.removeEventListener('keydown', tecla)
+      if (antes && document.contains(antes)) antes.focus({ preventScroll: true })
+    }
+  }, [ref])
+}
+
+/** Cartel propio (la ficha de un jugador) con el mismo manejo del foco que `Sheet`. */
+function Dialogo({ className, label, onCerrar, children }: { className: string; label: string; onCerrar?: () => void; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useDialogo(ref, onCerrar)
+  return <div className={className} role="dialog" aria-modal="true" aria-label={label} ref={ref} tabIndex={-1}>{children}</div>
+}
+
+export function Sheet({ title, children, clear, onCerrar }: { title: string; children: ReactNode; clear?: boolean; onCerrar?: () => void }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useDialogo(ref, onCerrar)
   return (
     <div className={`scrim${clear ? ' scrim--clear' : ''}`}>
-      <div className="sheet" role="dialog" aria-label={title}>
+      <div className="sheet" role="dialog" aria-modal={clear ? undefined : true} aria-label={title} ref={ref} tabIndex={-1}>
         <div className="h">{title}</div>
         {children}
       </div>
@@ -444,22 +487,28 @@ function ToastItem({ t }: { t: Toast }) {
   const cerrar = useStore((s) => s.cerrarToast)
   const responder = useStore((s) => s.responderMensaje)
   const nav = useNavigate()
+  // Lo que espera una respuesta (una invitación, un pedido) no se cierra solo: queda hasta que
+  // respondés o hasta que se cae (la sala se llenó, la retiraron). El resto se va a los 5 segundos.
   useEffect(() => {
-    const timer = setTimeout(() => cerrar(t.id), t.mensajeId ? 20000 : 5000)
+    if (t.mensajeId) return
+    const timer = setTimeout(() => cerrar(t.id), 5000)
     return () => clearTimeout(timer)
   }, [t.id, t.mensajeId, cerrar])
   return (
-    <div className="toast" role="status">
+    <div className={`toast${t.mensajeId ? ' toast--llama' : ''}`} role={t.mensajeId ? 'alert' : 'status'}>
+      {t.mensajeId && <span className="latido toast__latido" aria-hidden="true" />}
       <div className="grow">
         <div className="strong">{t.texto}</div>
         {t.detalle && <div className="m">{t.detalle}</div>}
+        {t.mensajeId && (
+          <div className="acts toast__acts">
+            <button className="btn" onClick={() => responder(t.mensajeId!, true)}>Aceptar</button>
+            <button className="btn btn--sec" onClick={() => { cerrar(t.id); nav('/buscando') }}>Ver</button>
+            <button className="btn btn--ghost" onClick={() => responder(t.mensajeId!, false)}>Ahora no</button>
+          </div>
+        )}
       </div>
-      {t.mensajeId ? (
-        <div className="acts">
-          <button className="btn" onClick={() => responder(t.mensajeId!, true)}>Aceptar</button>
-          <button className="btn btn--sec btn--icon" aria-label="Rechazar" onClick={() => responder(t.mensajeId!, false)}><Icon name="x" size={18} /></button>
-        </div>
-      ) : (
+      {t.mensajeId ? null : (
         <div className="acts">
           {t.to && <button className="btn" onClick={() => { cerrar(t.id); nav(t.to!) }}>{t.toLabel ?? 'Ver'}</button>}
           <button className="x" aria-label="Cerrar aviso" onClick={() => cerrar(t.id)}><Icon name="x" size={18} /></button>
@@ -491,7 +540,7 @@ export function CerrarSesion() {
     <>
       <button className="btn btn--ghost" style={{ alignSelf: 'center' }} onClick={() => setAbierto(true)}>Cerrar sesión</button>
       {abierto && (
-        <Sheet title="¿Cerrar sesión?">
+        <Sheet title="¿Cerrar sesión?" onCerrar={() => setAbierto(false)}>
           <div>Vas a tener que volver a entrar con Discord. Si estás buscando, la búsqueda se cancela.</div>
           <button className="btn btn--danger" onClick={() => { cerrar(); nav('/ingresar') }}>Sí, cerrar sesión</button>
           <button className="btn btn--sec" onClick={() => setAbierto(false)}>Cancelar</button>

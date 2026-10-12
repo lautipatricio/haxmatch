@@ -110,7 +110,7 @@ export function App() {
     <div className="app">
       <Luces />
       {/* Cada cambio de pantalla monta la vista de nuevo: así su contenido entra con la animación de aparecer. */}
-      <div className="vista" key={pathname}>
+      <div className="vista" key={pathname} role="main">
       <Routes>
         {/* Términos y Privacidad son páginas comunes (public/*.html), para que se puedan leer sin entrar ni cargar la app. */}
         <Route path="/terminos" element={<PaginaFija archivo="/terminos.html" />} />

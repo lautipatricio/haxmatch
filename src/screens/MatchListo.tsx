@@ -7,6 +7,22 @@ import { Avatar, Empty, Head, Icon, LinkSala, Persona, Sheet, copiar } from '../
 /** Matches donde ya se mostró el cartel "No te olvides", para no repetirlo al volver. */
 const recordados = new Set<string>()
 
+/**
+ * Mandarse la sala a la compu: abre el menú de compartir del celular (WhatsApp, Discord,
+ * mail…). Solo aparece donde el navegador lo permite (en la compu no hace falta).
+ */
+function EnviarALaCompu({ nombre, link }: { nombre: string; link?: string | null }) {
+  const [listo, setListo] = useState(false)
+  if (typeof navigator.share !== 'function' || !window.matchMedia('(pointer: coarse)').matches) return null
+  const enviar = async () => {
+    try {
+      await navigator.share({ title: 'Sala de HaxBall', text: `Sala "${nombre}"${link ? `: ${link}` : ''}` })
+      setListo(true)
+    } catch { /* cerró el menú sin compartir */ }
+  }
+  return <button className="btn btn--sec" onClick={() => void enviar()}>{listo ? 'Enviado' : 'Mandar a la compu'}</button>
+}
+
 /** "Mati_", "Mati_ y Nico", "Mati_, Nico y Lucho". */
 function enumerar(nombres: string[]): string {
   if (nombres.length <= 1) return nombres[0] ?? ''
@@ -122,13 +138,15 @@ export function MatchListo() {
           <div className="check"><Icon name="check" size={38} stroke={3} /></div>
           <div className="h center" style={{ fontSize: 30 }}>{titulo}</div>
 
-          <div className="card card--col">
+          <div className="card card--col sala-match">
             <div className="m">Nombre de la sala en HaxBall</div>
-            <div className="row">
-              <div className="h grow" style={{ fontSize: 28, overflowWrap: 'anywhere' }}>{m.nombreSala}</div>
+            {/* Grande, para leerlo desde la compu con el celular al lado. */}
+            <div className="sala-match__nombre">{m.nombreSala}</div>
+            <div className="row sala-match__acciones">
               <button className="btn btn--sec" onClick={async () => setCopiado(await copiar(m.nombreSala))}>
                 <Icon name="copiar" size={18} />{copiado ? 'Copiado' : 'Copiar'}
               </button>
+              <EnviarALaCompu nombre={m.nombreSala} link={m.linkSala} />
             </div>
             <div className="m">
               {copiado === false
@@ -149,7 +167,10 @@ export function MatchListo() {
           )}
 
           {!confirme && (
-            <button className="btn btn--lg" onClick={() => s.confirmarMatch(m.id)}>Ya entré a la sala</button>
+            <div className="lista">
+              <button className="btn btn--lg" onClick={() => s.confirmarMatch(m.id)}>Ya entré a la sala</button>
+              <div className="m center">Tocalo cuando ya estés adentro de la sala en HaxBall: así el amistoso cuenta y suma puntos.</div>
+            </div>
           )}
 
           {confirme && (

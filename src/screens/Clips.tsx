@@ -185,6 +185,19 @@ export function Clips() {
   const [gustan, setGustan] = useState<string[]>([])
   /** Con una búsqueda abierta, arriba va su cartel: lo que está debajo se corre. */
   const conCartel = useStore(buscarMia) !== undefined
+  // Lo que va encima de los videos (título y aviso de búsqueda) cambia de alto según el texto:
+  // se mide, para que el botón de sonido y los avisos queden siempre justo debajo.
+  const cabecera = useRef<HTMLDivElement>(null)
+  const [altoArriba, setAltoArriba] = useState<number | null>(null)
+  useEffect(() => {
+    const el = cabecera.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const medir = () => setAltoArriba(Math.round(el.getBoundingClientRect().height))
+    medir()
+    const ro = new ResizeObserver(medir)
+    ro.observe(el)
+    return () => ro.disconnect()
+  })
 
   // Llegar directo a un clip (desde el perfil): /clips?v=<clip>.
   const [parametros, setParametros] = useSearchParams()
@@ -293,7 +306,7 @@ export function Clips() {
 
   return (
     <div className="screen">
-      <div className="screen">
+      <div className="screen" style={altoArriba ? { '--alto-arriba': `${altoArriba}px` } as CSSProperties : undefined}>
         <div className={`feed${conCartel ? ' feed--cartel' : ''}`} ref={lista} aria-label="Clips. Deslizá para pasar al siguiente. En el primero, deslizá hacia abajo para buscar clips nuevos"
           onTouchStart={alTocar} onTouchMove={alMover} onTouchEnd={alSoltar} onTouchCancel={alSoltar} onWheel={alRodar}>
           {reels.map((r, i) => {
@@ -359,7 +372,7 @@ export function Clips() {
             {buscando ? 'Buscando clips nuevos…' : novedad ?? (tiron >= UMBRAL ? 'Soltá para actualizar' : 'Deslizá para actualizar')}
           </div>
         )}
-        <div className="feed-top">
+        <div className="feed-top" ref={cabecera}>
           <Head title="Clips">
             {!s.tiktok && TIKTOK_PRONTO
               ? <Pronto />

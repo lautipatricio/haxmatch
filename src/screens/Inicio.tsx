@@ -174,6 +174,8 @@ export function HaxBall() {
   /** Por qué no se pudo entrar a la cola (sin conexión, por ejemplo). */
   const [error, setError] = useState<string | null>(null)
   const activas = s.busquedas.filter((b) => b.estado === 'activa')
+  // Se cuentan personas (un grupo de 3 son 3), igual que "en línea" en el Inicio.
+  const personas = activas.reduce((n, b) => n + 1 + (b.grupo?.length ?? 0), 0)
   const otras = activas.filter((b) => b.userId !== YO && !s.bloqueados.includes(b.userId))
   const jugadores = otras.filter((b) => b.modo === 'jugador')
   const salas = otras.filter((b) => b.modo === 'sala' && (b.faltan ?? 0) > 0 && !b.completaAt)
@@ -189,10 +191,10 @@ export function HaxBall() {
         <div className="pad haxball">
           <div className="avisos"><BannerBusqueda /><BannerMatch /></div>
           <div className="marcador">
-            <div className="marcador__n num">{s.colaLista ? activas.length : '–'}</div>
+            <div className="marcador__n num">{s.colaLista ? personas : '–'}</div>
             <div className="marcador__d">
               <span className={`vivo${s.colaLista && activas.length > 0 ? ' vivo--si' : ''}`}>
-                <span>{!s.colaLista ? s.errorCola ?? 'Buscando jugadores…' : 'buscando partido ahora'}</span>
+                <span>{!s.colaLista ? s.errorCola ?? 'Buscando jugadores…' : personas === 1 ? 'jugador buscando ahora' : 'jugadores buscando ahora'}</span>
               </span>
               {s.colaLista && activas.length === 0 && <span className="m">Sumate y te avisamos apenas una sala necesite gente.</span>}
             </div>

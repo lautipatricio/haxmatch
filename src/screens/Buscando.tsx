@@ -55,8 +55,9 @@ export function FilaDisponible({ b, detalle, soloVer }: { b: Busqueda; detalle?:
   return (
     <div className="card card--row">
       <Persona user={u}>
-        <span className="strong cut">
-          {u.username}<Conectado id={u.id} /><EtiquetaKick id={u.id} />{son > 1 && ` +${son - 1}`}
+        {/* Si el nick es largo se corta solo el nick: los distintivos (en vivo, amigo) siempre se ven. */}
+        <span className="strong fila-nombre">
+          <span className="cut">{u.username}</span><Conectado id={u.id} /><EtiquetaKick id={u.id} />{son > 1 && ` +${son - 1}`}
           {s.amigos.includes(u.id) && <span className="tag tag--linea">AMIGO</span>}
           {/* Solo se marca cuando hay un grupo de por medio: con un jugador suelto no dice nada. */}
           {encajaJusto(s, b) && Math.max(somos, son) > 1 && <span className="tag">JUSTO</span>}
@@ -333,10 +334,20 @@ export function Buscando() {
     const suSala = s.busquedas.find((b) => b.userId === invitacion.de && b.modo === 'sala' && b.estado === 'activa')
     cartel = (
       <Sheet title="Te invitan a jugar">
+        {suSala?.nombreSala && (
+          <div className="invita">
+            <span className="latido" aria-hidden="true" />
+            <div className="grow">
+              <div className="invita__sala">{suSala.nombreSala}</div>
+              <div className="m">{[concretas(suSala.cancha).join(', '), faltan(suSala.faltan)].filter(Boolean).join(' · ')}</div>
+            </div>
+          </div>
+        )}
         <div>{invitacion.texto}</div>
         <div className="m">
           Sala de {dueno.username}{dueno.nivel !== null && ` · Nivel ${dueno.nivel}`}.{' '}
           {grupo.length ? `Si aceptás, entran los ${grupo.length + 1} del grupo.` : 'Si aceptás, entrás directo.'}
+          {' '}Respondé rápido: si no, el lugar lo puede ocupar otro.
         </div>
         {suSala?.linkSala && (
           <div className="card card--col">

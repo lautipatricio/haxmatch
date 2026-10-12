@@ -63,7 +63,11 @@ export function vigilarLlamadas() {
   window.addEventListener('focus', alVolver)
   document.addEventListener('visibilitychange', alVolver)
   useStore.subscribe((s, antes) => {
-    if (s.llamada && s.llamada.id !== antes.llamada?.id) titilar(s.llamada.texto, s.llamada.mensajeId)
+    if (s.llamada && s.llamada.id !== antes.llamada?.id) {
+      titilar(s.llamada.texto, s.llamada.mensajeId)
+      // En el celular, además vibra: suele estar al lado de la compu, boca arriba.
+      try { navigator.vibrate?.([180, 90, 180]) } catch { /* sin vibración */ }
+    }
     // La invitación se cayó (la retiraron o la sala se llenó): ya no hay por qué llamar.
     const id = actual?.mensajeId
     if (id && !s.mensajes.some((m) => m.id === id && m.estado === 'pendiente')) dejarDeTitilar()
