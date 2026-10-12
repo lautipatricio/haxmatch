@@ -367,6 +367,15 @@ Pedido de Lauti: en "Necesito un jugador", primero se elige la cancha, y de ella
 - Al cambiar de cancha, lo ya elegido se acomoda: si faltaban más de los que entran, queda el máximo; las posiciones que esa cancha no tiene se sacan (si no queda ninguna, Polifuncional).
 - Las reglas viven en la app (`src/domain/rules.ts`). El servidor sigue aceptando de 1 a 7: alcanza, porque el formulario no deja otra cosa.
 
+## Versión para compu y la pelota del Inicio (12/10/2026)
+
+- **Inicio:** en el centro del círculo va una pelota (blanca con borde oscuro, al estilo HaxBall pero dibujada por nosotros); tu foto queda chiquita al costado, con el puntito verde. Así queda claro que tocarla es entrar a jugar, no abrir tu perfil.
+- **Compu (pantallas de 1024 px o más, con la cuenta abierta):** menú a la izquierda (Jugar, Chat, Clips, Perfil, Notificaciones y tu foto abajo) en lugar de la barra de abajo; el contenido va en una columna cómoda y centrada; los carteles aparecen en el medio de la pantalla.
+  - HaxBall: los dos botones lado a lado y las listas en dos columnas; desde 1280 px, el chat queda abierto a la derecha.
+  - Perfil en dos columnas; Clips angosto y centrado (el video es vertical); Inicio más grande.
+- En el celular todo sigue igual. El ingreso y el registro se ven igual en la compu (la columna de siempre).
+- `scripts/recorrido-compu.mjs` saca capturas en compu y celular.
+
 ## Mejoras de la revisión de diseño (12/10/2026)
 
 Se revisó la app con las guías de Impeccable (revisión de diseño y revisión técnica, por separado). Lo que se hizo:

@@ -35,6 +35,10 @@ Reglas:
 - Tamaños: texto 16; secundario 14 (`.m`); título de pantalla 26; título de sección 14 en gris (`.sub`); etiquetas 11 a 13. Nada más chico que eso.
 - Los números que cambian (reloj, puntos) llevan `.num` para que no bailen.
 
+## Compu
+
+Desde 1024 px de ancho (con la cuenta abierta) la app usa `.app--compu`: menú `Lateral` a la izquierda, contenido centrado de hasta 920 px, carteles al medio. HaxBall pone las listas en dos columnas y, desde 1280 px, el chat (`<Chat lateral />`) a la derecha. Perfil va en dos columnas.
+
 ## Inicio y HaxBall
 
 - El Inicio ("¿Qué querés jugar hoy?") va sin barra de abajo: saludo, en línea y jugadores, el título con un brillo que respira y tu foto en el centro con dos anillos que giran. Tocarla lleva a HaxBall.

@@ -490,7 +490,7 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
 .juego { align-self: center; margin-top: 48px; display: flex; flex-direction: column; align-items: center; gap: 24px; text-decoration: none; color: var(--fg); border-radius: 50%; transition: transform 250ms var(--ease-out); }
 .juego:active { transform: scale(.96); }
 .juego:focus-visible { outline: none; }
-.juego:focus-visible .juego__foto { outline: 2px solid var(--fg); outline-offset: 6px; }
+.juego:focus-visible .juego__pelota { outline: 2px solid var(--fg); outline-offset: 10px; }
 .juego__orbe { position: relative; width: 196px; height: 196px; display: grid; place-items: center; }
 .juego__halo { position: absolute; inset: -40px; border-radius: 50%; background: radial-gradient(circle, rgba(59, 130, 246, .22) 0%, rgba(59, 130, 246, 0) 62%); animation: respira 4s ease-in-out infinite; }
 .juego__arco { position: absolute; inset: 0; width: 100%; height: 100%; animation: gira 7s linear infinite; }
@@ -499,15 +499,22 @@ textarea.field { padding: 12px 14px; min-height: 96px; resize: none; line-height
 .juego__pista--2 { stroke: var(--card); }
 .juego__luz { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-linecap: round; }
 .juego__luz--2 { stroke: var(--fg); stroke-opacity: .5; stroke-width: 1; }
-.juego__foto {
-  position: relative; width: 112px; height: 112px; border-radius: 50%;
-  display: grid; place-items: center; font-size: 44px; font-weight: 500; color: var(--fg);
-  background: linear-gradient(145deg, #2A4A7F 0%, #16243D 100%);
-  border: 2px solid var(--accent); box-shadow: 0 0 0 4px var(--bg), 0 0 28px rgba(59, 130, 246, .45);
+.juego__pelota {
+  position: relative; width: 104px; height: 104px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #FFFFFF 0%, #EAF2FF 45%, #C9D6EA 100%);
+  box-shadow: 0 0 0 5px var(--bg), 0 0 0 7px var(--accent), 0 0 34px rgba(59, 130, 246, .5);
   animation: flota 3.5s ease-in-out infinite;
 }
-.juego__foto img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
-.juego__punto { position: absolute; right: 6px; bottom: 6px; width: 16px; height: 16px; border-radius: 50%; background: var(--vivo); border: 3px solid var(--bg); }
+.juego__pelota::after { content: ''; position: absolute; inset: 0; border-radius: 50%; box-shadow: inset 0 0 0 6px #090D14; }
+/* Tu foto, chiquita, al costado de la pelota. */
+.juego__yo {
+  position: absolute; right: 18px; bottom: 18px; width: 46px; height: 46px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 18px; font-weight: 600; color: var(--fg);
+  background: linear-gradient(145deg, #2A4A7F 0%, #16243D 100%);
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 4px var(--line);
+}
+.juego__yo img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+.juego__punto { position: absolute; right: -2px; bottom: -2px; width: 13px; height: 13px; border-radius: 50%; background: var(--vivo); border: 3px solid var(--bg); }
 .juego__nombre { font-size: 22px; font-weight: 500; letter-spacing: -0.01em; }
 .juegos__mas { margin-top: auto; padding-top: 40px; display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--fg2); font-size: 13px; }
 .juegos__mas > span { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; }
@@ -794,3 +801,79 @@ a.nivel:active { transform: scale(.98); }
 .fila-nombre > .cut { min-width: 0; }
 .fila-nombre > :not(.cut) { flex: none; }
 .reel__toque:focus-visible { outline-offset: -4px; }
+
+/* ---------- HaxBall: estructura (en la compu ancha, con el chat al lado) ---------- */
+.haxball-centro { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+.haxball__listas { display: flex; flex-direction: column; gap: var(--gap); }
+
+/* ---------- Menú de la izquierda (solo compu) ---------- */
+.lateral { display: none; }
+
+/* ---------- Compu: la app usa todo el ancho, con el menú a la izquierda ---------- */
+@media (min-width: 1024px) {
+  .app.app--compu { max-width: none; flex-direction: row; border: 0; }
+  .app--compu .tabbar { display: none; }
+  .app--compu .vista { min-width: 0; }
+  .lateral {
+    display: flex; flex-direction: column; gap: 4px; width: 240px; flex: none;
+    padding: 24px 16px 20px; border-right: 1px solid var(--mute); background: rgba(9, 13, 20, .6);
+  }
+  .lateral a { display: flex; align-items: center; gap: 12px; min-height: 46px; padding: 0 12px; border-radius: 12px; color: var(--fg2); text-decoration: none; font-size: 15px; font-weight: 500; transition: background-color 150ms ease-out, color 150ms ease-out; }
+  .lateral a:hover { background: var(--card); color: var(--fg); }
+  .lateral a.on { background: var(--card); color: var(--fg); font-weight: 600; }
+  .lateral a.on svg { color: var(--accent); }
+  .lateral .lateral__marca { min-height: 0; padding: 4px 12px 24px; font-size: 12px; font-weight: 600; letter-spacing: .32em; color: var(--fg2); background: none; }
+  .lateral .lateral__marca:hover { background: none; }
+  .lateral__punto { margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
+  .lateral__cuenta { margin-left: auto; font-size: 12px; font-weight: 600; color: #FFFFFF; background: var(--accent-fondo); border-radius: 8px; padding: 1px 7px; }
+  .lateral .lateral__yo { margin-top: auto; min-height: 64px; padding: 10px 12px; background: var(--card); border: 1px solid var(--mute); border-radius: 14px; }
+  .lateral__yo .grow { display: flex; flex-direction: column; min-width: 0; }
+  .lateral__yo .strong { color: var(--fg); font-size: 14px; }
+  .lateral__yo .m { font-size: 12px; }
+  .lateral__foto { position: relative; width: 40px; height: 40px; flex: none; border-radius: 50%; display: grid; place-items: center; font-weight: 600; color: var(--fg); background: linear-gradient(145deg, #2A4A7F, #16243D); }
+  .lateral__foto img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .lateral__en-linea { position: absolute; right: -1px; bottom: -1px; width: 11px; height: 11px; border-radius: 50%; background: var(--vivo); border: 2px solid var(--card); }
+
+  /* El contenido no se estira de lado a lado: columna cómoda y centrada. */
+  .app--compu .head, .app--compu .scroll > .pad, .app--compu .chat__escribir, .app--compu .foot { width: 100%; max-width: 920px; margin-inline: auto; }
+  .app--compu .head { padding-top: 28px; }
+
+  /* Carteles: en el medio de la pantalla, no pegados abajo. */
+  .app--compu .scrim { align-items: center; justify-content: center; }
+  .app--compu .sheet { max-width: 520px; border-radius: 24px; border: 1px solid var(--line); animation: fade 200ms ease-out; }
+  .app--compu .toasts { left: auto; right: 24px; width: 420px; }
+
+  /* Inicio, más grande. */
+  .app--compu .juegos > .head { display: none; }
+  .app--compu .juegos__pad { padding-top: 32px; }
+  .app--compu .juegos__titulo { font-size: 64px; margin-top: 56px; }
+  .app--compu .juego { margin-top: 64px; }
+  .app--compu .juego__orbe { width: 260px; height: 260px; }
+  .app--compu .juego__pelota { width: 136px; height: 136px; }
+  .app--compu .juego__yo { width: 56px; height: 56px; right: 26px; bottom: 26px; font-size: 22px; }
+
+  /* HaxBall: botones lado a lado y las dos listas en columnas. */
+  .app--compu .haxball .modos { flex-direction: row; }
+  .app--compu .haxball .modos > .modo { flex: 1; }
+  .app--compu .haxball__listas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; align-items: start; }
+
+  /* Perfil: en dos columnas. */
+  .app--compu .pad.perfil { display: block; columns: 2; column-gap: 32px; }
+  .app--compu .pad.perfil > * { break-inside: avoid; margin-bottom: 20px; }
+
+  /* Clips: el video es vertical, va angosto y al medio. */
+  .app--compu .feed { width: 100%; max-width: 520px; margin: 0 auto; }
+  .app--compu .feed-top { width: 100%; max-width: 520px; margin: 0 auto; }
+}
+
+@media (min-width: 1280px) {
+  .app--compu .haxball-pantalla { flex-direction: row; }
+  .chat-lateral {
+    width: 380px; flex: none; min-height: 0; display: flex; flex-direction: column;
+    border-left: 1px solid var(--mute); background: rgba(9, 13, 20, .6);
+  }
+  .chat-lateral__head { padding: 26px 22px 12px; border-bottom: 1px solid var(--mute); }
+  .chat-lateral__head .h { font-size: 18px; }
+  .chat-lateral .scroll > .pad { max-width: none; }
+  .chat-lateral .chat__escribir { max-width: none; }
+}

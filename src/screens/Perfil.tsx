@@ -369,7 +369,7 @@ export function Perfil() {
     <div className="screen">
       <Head title="Perfil"><Campana /></Head>
       <div className="scroll">
-        <div className="pad" style={{ '--gap': '20px' } as CSSProperties}>
+        <div className="pad perfil" style={{ '--gap': '20px' } as CSSProperties}>
           <div className="lista">
             <div className="row" style={{ gap: 14 }}>
               <FotoDePerfil onElegida={setPorAjustar} onError={setErrorFoto} />

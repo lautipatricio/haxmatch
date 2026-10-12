@@ -15,7 +15,7 @@ import { Notificaciones } from './screens/Notificaciones'
 import { Perfil } from './screens/Perfil'
 import { Referir } from './screens/Referir'
 import { Reportar } from './screens/Reportar'
-import { Empty, FichaJugador, Luces, Toasts } from './ui'
+import { Empty, FichaJugador, Lateral, Luces, Toasts, useEsCompu } from './ui'
 
 /** Solo deja pasar a quien ya entró con Discord y terminó el onboarding. */
 function ConSesion() {
@@ -61,6 +61,7 @@ export function App() {
   const registrado = !!perfil?.onboarding
   const nav = useNavigate()
   const { pathname } = useLocation()
+  const esCompu = useEsCompu()
 
   // Con servidor: recupera la sesión abierta (o la que vuelve de Discord).
   useEffect(() => { iniciarSesion() }, [iniciarSesion])
@@ -106,9 +107,12 @@ export function App() {
     )
   }
 
+  // En la compu, con la cuenta abierta, el menú va a la izquierda y la app usa todo el ancho.
+  const conLateral = esCompu && registrado && !['/ingresar', '/bienvenida', '/terminos', '/privacidad'].includes(pathname)
   return (
-    <div className="app">
+    <div className={`app${conLateral ? ' app--compu' : ''}`}>
       <Luces />
+      {conLateral && <Lateral />}
       {/* Cada cambio de pantalla monta la vista de nuevo: así su contenido entra con la animación de aparecer. */}
       <div className="vista" key={pathname} role="main">
       <Routes>

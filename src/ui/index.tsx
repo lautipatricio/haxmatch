@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { REAL } from '../config'
-import { YO, buscarMia, chatSinLeer, miRacha, misPuntos, nombreDe, useStore, usuarioDe, type Toast } from '../data/store'
+import { YO, buscarMia, chatSinLeer, miNivelUsuario, miRacha, misPuntos, nombreDe, useStore, usuarioDe, type Toast } from '../data/store'
 import { leerFicha } from '../data/servidor'
 import { enlaceKick } from '../data/kick'
 import { linkDeSala, progresoNivel } from '../domain/rules'
@@ -626,5 +626,49 @@ export function Luces() {
       <div className="luz" aria-hidden="true" />
       <div className="luz luz--2" aria-hidden="true" />
     </>
+  )
+}
+
+/** Pantalla de compu (ancha): ahí el menú va a la izquierda y algunas pantallas usan más columnas. */
+export function useEsCompu(desde = 1024): boolean {
+  const consulta = `(min-width: ${desde}px)`
+  const [es, setEs] = useState(() => typeof window !== 'undefined' && window.matchMedia(consulta).matches)
+  useEffect(() => {
+    const mq = window.matchMedia(consulta)
+    const cambio = () => setEs(mq.matches)
+    cambio()
+    mq.addEventListener('change', cambio)
+    return () => mq.removeEventListener('change', cambio)
+  }, [consulta])
+  return es
+}
+
+/** Menú de la izquierda, solo en la compu (en el celular está la barra de abajo). */
+export function Lateral() {
+  const { pathname } = useLocation()
+  const perfil = useStore((s) => s.perfil)
+  const nivel = useStore(miNivelUsuario)
+  const chatNuevo = useStore(chatSinLeer)
+  const sinLeer = useStore((s) => s.notifs.filter((n) => !n.leida).length)
+  const jugando = pathname === '/' || ['/haxball', '/sala', '/buscando', '/match'].some((r) => pathname.startsWith(r))
+  const item = (to: string, nombre: string, icono: IconName, on: boolean, extra?: ReactNode) => (
+    <Link to={to} className={on ? 'on' : ''} aria-current={on ? 'page' : undefined}>
+      <Icon name={icono} size={22} stroke={1.6} />{nombre}{extra}
+    </Link>
+  )
+  const inicial = (perfil?.nick ?? '?').replace(/[^a-zA-Z0-9]/g, '').slice(0, 1).toUpperCase() || '?'
+  return (
+    <nav className="lateral" aria-label="Secciones">
+      <Link to="/" className="lateral__marca">HAXMATCH</Link>
+      {item('/haxball', 'Jugar', 'joystick', jugando)}
+      {item('/chat', 'Chat', 'chat', pathname === '/chat', chatNuevo && pathname !== '/chat' ? <span className="lateral__punto" aria-label="hay mensajes sin leer" /> : null)}
+      {item('/clips', 'Clips', 'clips', pathname.startsWith('/clips'))}
+      {item('/perfil', 'Perfil', 'perfil', pathname.startsWith('/perfil') && pathname !== '/perfil/notificaciones')}
+      {item('/perfil/notificaciones', 'Notificaciones', 'campana', pathname === '/perfil/notificaciones', sinLeer > 0 ? <span className="lateral__cuenta" aria-label={`${sinLeer} sin leer`}>{sinLeer}</span> : null)}
+      <Link to="/perfil" className="lateral__yo">
+        <span className="lateral__foto">{perfil?.foto ? <img src={perfil.foto} alt="" /> : inicial}<span className="lateral__en-linea" /></span>
+        <span className="grow"><span className="strong cut">{perfil?.nick}</span><span className="m">Nivel {nivel} · en línea</span></span>
+      </Link>
+    </nav>
   )
 }

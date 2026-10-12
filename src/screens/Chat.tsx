@@ -50,7 +50,8 @@ function Mensaje({ m, conAutor, u, puedeBorrar, porBorrar, onBorrar }: {
   )
 }
 
-export function Chat() {
+/** Chat general. `lateral`: la versión angosta que va a la derecha de HaxBall en la compu. */
+export function Chat({ lateral }: { lateral?: boolean } = {}) {
   const s = useStore()
   const [texto, setTexto] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -110,20 +111,28 @@ export function Chat() {
   }
 
   const largo = texto.trim().length
+  const Caja = lateral ? 'aside' : 'div'
   return (
-    <div className="screen">
-      <Head title="Chat">
-        {s.admin && (
-          <button className="btn btn--sec" aria-pressed={moderar} onClick={() => setModerar(!moderar)}>{moderar ? 'Listo' : 'Moderar'}</button>
-        )}
-        <Campana desde="/chat" />
-      </Head>
+    <Caja className={lateral ? 'chat-lateral' : 'screen'} aria-label={lateral ? 'Chat general' : undefined}>
+      {lateral ? (
+        <div className="chat-lateral__head">
+          <h2 className="h">Chat</h2>
+          <div className="m">Toda la comunidad · los mensajes duran 24 horas</div>
+        </div>
+      ) : (
+        <Head title="Chat">
+          {s.admin && (
+            <button className="btn btn--sec" aria-pressed={moderar} onClick={() => setModerar(!moderar)}>{moderar ? 'Listo' : 'Moderar'}</button>
+          )}
+          <Campana desde="/chat" />
+        </Head>
+      )}
       <div className="scroll" ref={lista} onScroll={(e) => {
         const el = e.currentTarget
         abajo.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120
       }}>
         <div className="pad chat">
-          <p className="m chat__nota">Chat de toda la comunidad. Los mensajes duran 24 horas. Tocá un nombre para ver su perfil, reportarlo o bloquearlo.</p>
+          {!lateral && <p className="m chat__nota">Chat de toda la comunidad. Los mensajes duran 24 horas. Tocá un nombre para ver su perfil, reportarlo o bloquearlo.</p>}
           {!s.chatListo ? (
             <div className="m center">Cargando mensajes…</div>
           ) : s.errorChat && mensajes.length === 0 ? (
@@ -153,7 +162,7 @@ export function Chat() {
           <div className="m">{s.suspension} Mientras tanto no podés escribir en el chat.</div>
         ) : (
           <div className="row">
-            <input id="chat-texto" className="field grow" value={texto} maxLength={MAX} autoComplete="off" enterKeyHint="send"
+            <input id={lateral ? 'chat-texto-lateral' : 'chat-texto'} className="field grow" value={texto} maxLength={MAX} autoComplete="off" enterKeyHint="send"
               placeholder="Escribí un mensaje" aria-label="Mensaje" onChange={(e) => { setTexto(e.target.value); if (error) setError(null) }} />
             <button className="btn btn--icon" type="submit" aria-label="Enviar" disabled={enviando || largo === 0}>
               <Icon name="enviar" size={20} />
@@ -162,7 +171,7 @@ export function Chat() {
         )}
         {largo > MAX - 50 && <div className="m chat__quedan">Te quedan {MAX - largo} letras</div>}
       </form>
-      <TabBar on="chat" />
-    </div>
+      {!lateral && <TabBar on="chat" />}
+    </Caja>
   )
 }

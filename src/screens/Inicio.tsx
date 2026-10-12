@@ -4,7 +4,8 @@ import { REAL } from '../config'
 import { YO, buscarMia, nivelTexto, useStore, usuarioDe } from '../data/store'
 import { enlaceKick } from '../data/kick'
 import type { Busqueda } from '../domain/types'
-import { BannerBusqueda, BannerMatch, Campana, Conectado, EtiquetaKick, Head, Icon, Persona, TabBar, hace, useAhora } from '../ui'
+import { BannerBusqueda, BannerMatch, Campana, Conectado, EtiquetaKick, Head, Icon, Persona, TabBar, hace, useAhora, useEsCompu } from '../ui'
+import { Chat } from './Chat'
 import { FilaDisponible, resumenBusqueda } from './Buscando'
 
 /** Lo que va adentro de cada una de las dos entradas: el título es su nombre y el renglón de abajo, su descripción. */
@@ -150,7 +151,9 @@ export function Inicio() {
               <span className="juego__halo" />
               <svg className="juego__arco" viewBox="0 0 196 196"><circle cx="98" cy="98" r="96" className="juego__pista" /><circle cx="98" cy="98" r="96" className="juego__luz" strokeDasharray="90 513" /></svg>
               <svg className="juego__arco juego__arco--2" viewBox="0 0 168 168"><circle cx="84" cy="84" r="83" className="juego__pista juego__pista--2" /><circle cx="84" cy="84" r="83" className="juego__luz juego__luz--2" strokeDasharray="40 482" /></svg>
-              <span className="juego__foto">
+              {/* En el centro, la pelota: tocarla es entrar a jugar. Tu foto va chiquita al costado. */}
+              <span className="juego__pelota" />
+              <span className="juego__yo">
                 {perfil?.foto ? <img src={perfil.foto} alt="" /> : inicial}
                 <span className="juego__punto" />
               </span>
@@ -171,6 +174,7 @@ export function Inicio() {
 export function HaxBall() {
   const s = useStore()
   const ahora = useAhora()
+  const chatAlLado = useEsCompu(1280)
   /** Por qué no se pudo entrar a la cola (sin conexión, por ejemplo). */
   const [error, setError] = useState<string | null>(null)
   const activas = s.busquedas.filter((b) => b.estado === 'activa')
@@ -185,7 +189,8 @@ export function HaxBall() {
       detalle={`${nivelTexto(s.usuarios[b.userId])}${resumenBusqueda(b)} · ${hace(ahora - b.creadaAt)}`} />
   )
   return (
-    <div className="screen">
+    <div className="screen haxball-pantalla">
+      <div className="haxball-centro">
       <Head title="HaxBall" back="/"><Campana desde="/haxball" /></Head>
       <div className="scroll">
         <div className="pad haxball">
@@ -209,6 +214,7 @@ export function HaxBall() {
             <BotonSala />
             {error && !s.suspension && <div className="err" role="alert">{error}</div>}
           </div>
+          <div className="haxball__listas">
           <section className="lista" aria-label="Quieren jugar un amistoso">
             <h2 className="h sub">Quieren jugar un amistoso</h2>
             {jugadores.length === 0
@@ -221,10 +227,14 @@ export function HaxBall() {
               ? <div className="vacio"><span className="m">Ningún equipo está buscando jugadores ahora.</span></div>
               : salas.map(fila)}
           </section>
+          </div>
           {otras.length > 0 && !buscando && REAL && <div className="m">Para escribirles, sumate a la cola o abrí tu sala.</div>}
           <EnVivo />
         </div>
       </div>
+      </div>
+      {/* En una compu ancha, el chat queda abierto a la derecha. */}
+      {chatAlLado && <Chat lateral />}
       <TabBar on="inicio" />
     </div>
   )
