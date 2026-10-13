@@ -129,7 +129,7 @@ export function Ingresar() {
           <footer className="m">
             <p>HaxMatch es un proyecto independiente de la comunidad. No está afiliado a HaxBall, Discord ni TikTok.</p>
             <p>
-              <a href="/terminos">Términos y condiciones</a> · <a href="/privacidad">Política de privacidad</a> ·{' '}
+              <a href="/web/">Sitio de HaxMatch</a> · <a href="/terminos">Términos y condiciones</a> · <a href="/privacidad">Política de privacidad</a> ·{' '}
               <a href="mailto:lpatriciogauna@outlook.com">Contacto</a>
             </p>
           </footer>

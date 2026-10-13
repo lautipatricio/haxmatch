@@ -15,6 +15,7 @@ La revisión tarda entre unos días y dos semanas.
 
 ## 1. Lo que ya está hecho en la app
 
+- El sitio público `https://haxmatch.lauti.workers.dev/web/` (en español e inglés) explica qué es HaxMatch, cómo funciona, qué hace con TikTok y tiene preguntas frecuentes, con capturas y los enlaces a Términos, Privacidad, Borrar cuenta y Contacto. Se armó porque la primera revisión (13/10/2026) rechazó la pantalla de ingreso como Website URL.
 - La dirección `https://haxmatch.lauti.workers.dev`, sin entrar, muestra qué es HaxMatch, cómo funciona y qué hace con TikTok, con los enlaces a Términos, Privacidad y Contacto.
 - `/terminos` y `/privacidad` se leen sin entrar.
 - La app pide solo `user.info.basic` y `video.list`.
@@ -27,12 +28,12 @@ En [developers.tiktok.com](https://developers.tiktok.com) > Manage apps > la app
 |---|---|
 | App icon | `haxmatch-icono-1024.png` (1024 × 1024) |
 | App name | `HaxMatch` |
-| Category | Gaming (o la más parecida) |
+| Category | Entertainment (si aparece Games/Gaming, mejor esa) |
 | Description | `HaxMatch helps HaxBall players find friendly matches and watch community clips.` |
 | Terms of Service URL | `https://haxmatch.lauti.workers.dev/terminos` |
 | Privacy Policy URL | `https://haxmatch.lauti.workers.dev/privacidad` |
 | Platforms | Web |
-| Website URL | `https://haxmatch.lauti.workers.dev` |
+| Website URL | `https://haxmatch.lauti.workers.dev/web/` (el sitio público, no la pantalla de ingreso) |
 | Products | **Login Kit**, con Redirect URI `https://haxmatch.lauti.workers.dev/api/tiktok/volver` |
 | Scopes | `user.info.basic` y `video.list`. Ninguno más |
 
@@ -40,10 +41,10 @@ Si quedó agregado algún otro producto (Share Kit, Content Posting API, Webhook
 
 ## 3. La explicación (se pega en "App review")
 
-El campo acepta hasta 1000 caracteres; este texto tiene 981.
+El campo acepta hasta 1000 caracteres; este texto tiene 986.
 
 ```
-HaxMatch (https://haxmatch.lauti.workers.dev) is a free web app for the HaxBall gaming community: players sign in with Discord, find friendly matches and watch community clips.
+HaxMatch (https://haxmatch.lauti.workers.dev/web/) is a free web app for the HaxBall gaming community: players sign in with Discord, find friendly matches and watch community clips.
 
 Login Kit: lets a signed-in user link their own TikTok account (Clips > Mis videos > Vincular TikTok). Sign-in to HaxMatch itself uses Discord.
 
