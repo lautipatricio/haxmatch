@@ -18,8 +18,7 @@ function Autor({ u, at, mio }: { u: Usuario; at: number; mio: boolean }) {
       <span className="strong cut">{u.username}</span>
       <Conectado id={u.id} />
       <EtiquetaKick id={u.id} />
-      {u.nivel !== null && <span className="pill">Nivel {u.nivel}</span>}
-      <span className="m chat__hora">{hora(at)}</span>
+      <span className="m chat__hora">{u.nivel !== null && `Nivel ${u.nivel} · `}{hora(at)}</span>
     </>
   )
   if (mio) return <div className="chat__autor">{contenido}</div>

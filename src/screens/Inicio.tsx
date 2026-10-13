@@ -151,9 +151,8 @@ export function Inicio() {
               <span className="juego__halo" />
               <svg className="juego__arco" viewBox="0 0 196 196"><circle cx="98" cy="98" r="96" className="juego__pista" /><circle cx="98" cy="98" r="96" className="juego__luz" strokeDasharray="90 513" /></svg>
               <svg className="juego__arco juego__arco--2" viewBox="0 0 168 168"><circle cx="84" cy="84" r="83" className="juego__pista juego__pista--2" /><circle cx="84" cy="84" r="83" className="juego__luz juego__luz--2" strokeDasharray="40 482" /></svg>
-              {/* En el centro, la pelota: tocarla es entrar a jugar. Tu foto va chiquita al costado. */}
-              <span className="juego__pelota" />
-              <span className="juego__yo">
+              {/* En el centro, tu foto: tocarla es entrar a jugar. */}
+              <span className="juego__foto">
                 {perfil?.foto ? <img src={perfil.foto} alt="" /> : inicial}
                 <span className="juego__punto" />
               </span>

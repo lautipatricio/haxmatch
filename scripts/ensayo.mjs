@@ -203,9 +203,8 @@ try {
   await titila(beto, 'Ana te invita a su sala'); await quieta(ana)
   await vuelve(beto); await quieta(beto)
   await beto.ver('Sala de Ana · Nivel 0'); await beto.ver('Si aceptás, entrás directo')
-  // Con la invitación le llega el link de la sala (antes de la invitación, no lo veía).
-  const href = await beto.page.getByRole('link', { name: 'Abrir la sala' }).getAttribute('href')
-  if (href !== 'https://www.haxball.com/play?c=SalaDeAna1') throw new Error(`La invitación no trae el link de la sala: ${href}`)
+  // El link de la sala le llega recién al aceptar, en Match listo.
+  if (await beto.page.getByRole('link', { name: 'Abrir la sala' }).count()) throw new Error('La invitación no tiene que mostrar el link de la sala')
   await beto.foto('invitacion')
   await beto.boton('Sí, quiero jugar').click()
   await beto.ver('sala de ana'); await beto.ver('No te olvides'); await beto.foto('match-listo')
@@ -751,7 +750,10 @@ try {
   await filaKick.getByText('Conectado como tere_kick').waitFor()
   if (tere.page.url().includes('kick=')) throw new Error('Después de mostrar el resultado, la dirección queda limpia')
   await ulises.page.reload()
-  await ulises.page.locator('.chat__autor', { hasText: 'Tere' }).first().locator('img.kick-logo').waitFor()
+  // El logo de Kick (sin estar en vivo) se ve en su ficha.
+  await ulises.page.getByRole('button', { name: 'Ver a Tere' }).first().click()
+  await ulises.page.locator('img.kick-logo').first().waitFor()
+  await ulises.boton('Cerrar').click()
   servidor.kick.enVivo('tere_kick', true, 'Practicando con la comunidad')
   await servidor.revisarKick()
   await ulises.page.goto(`${URL}/haxball`)

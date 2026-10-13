@@ -101,9 +101,11 @@ export function Conectado({ id }: { id: string }) {
 }
 
 /** Logo de Kick al lado del nombre (el archivo oficial, public/kick.png). Mientras transmite dice EN VIVO. */
-export function EtiquetaKick({ id }: { id: string }) {
+export function EtiquetaKick({ id, logo }: { id: string; logo?: boolean }) {
   const canal = useStore((s) => s.kick[id])
   if (!canal) return null
+  // En las listas y el chat solo se marca cuando está EN VIVO; el logo va en su ficha y en el Perfil.
+  if (!canal.enVivo && !logo) return null
   return canal.enVivo
     ? <span className="kick kick--vivo" title={`En vivo en Kick: ${canal.usuario}`}><span className="kick__punto" aria-hidden="true" />EN VIVO</span>
     : <img className="kick-logo" src="/kick.png" alt={`Kick: ${canal.usuario}`} title={`Kick: ${canal.usuario}`} width={40} height={13} />
@@ -161,7 +163,7 @@ export function FichaJugador() {
         <div className="row" style={{ gap: 14 }}>
           <Avatar user={u} size="lg" />
           <div className="grow">
-            <div className="strong cut" style={{ fontSize: 22, lineHeight: 1.15 }}>{u.username}<Conectado id={u.id} /><EtiquetaKick id={u.id} /></div>
+            <div className="strong cut" style={{ fontSize: 22, lineHeight: 1.15 }}>{u.username}<Conectado id={u.id} /><EtiquetaKick id={u.id} logo /></div>
             <div className="m cut">
               {u.discord ? `Discord: ${u.discord}` : 'Jugador de HaxMatch'}
               {amigo && ' · es tu amigo'}
@@ -601,7 +603,7 @@ export async function copiar(texto: string): Promise<boolean> {
 }
 
 /** Link de la sala de HaxBall: abrirla directo o copiar el link. Solo se muestran links de salas de HaxBall. */
-export function LinkSala({ link, texto = 'Entrar a la sala', secundario }: { link?: string | null; texto?: string; secundario?: boolean }) {
+export function LinkSala({ link, texto = 'Entrar a la sala', secundario, onAbrir }: { link?: string | null; texto?: string; secundario?: boolean; onAbrir?: () => void }) {
   const [copiado, setCopiado] = useState<boolean | null>(null)
   const limpio = link ? linkDeSala(link) : null
   if (!limpio || !('link' in limpio) || !limpio.link) return null
@@ -609,7 +611,7 @@ export function LinkSala({ link, texto = 'Entrar a la sala', secundario }: { lin
   return (
     <div className="link-sala">
       <div className="row">
-        <a className={`btn grow${secundario ? ' btn--sec' : ''}`} href={url} target="_blank" rel="noopener noreferrer">{texto}</a>
+        <a className={`btn grow${secundario ? ' btn--sec' : ''}`} href={url} target="_blank" rel="noopener noreferrer" onClick={onAbrir}>{texto}</a>
         <button type="button" className="btn btn--sec" aria-label="Copiar el link de la sala" onClick={async () => setCopiado(await copiar(url))}>
           <Icon name="copiar" size={18} />{copiado ? 'Copiado' : 'Copiar'}
         </button>

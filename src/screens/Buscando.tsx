@@ -6,7 +6,7 @@ import {
 } from '../data/store'
 import { FALTAN, type Busqueda } from '../domain/types'
 import { TEXTO_AVISOS, activarAvisos, estadoAvisos, type EstadoAvisos } from '../data/push'
-import { Chips, Conectado, Empty, EtiquetaKick, Head, LinkSala, Persona, Sheet, TabBar, mmss, useAhora } from '../ui'
+import { Chips, Conectado, Empty, EtiquetaKick, Head, Persona, Sheet, TabBar, mmss, useAhora } from '../ui'
 
 const lista = (v: readonly string[] | null) => (v ?? []).join(', ')
 /** Lo que alguien eligió de verdad: "Cualquiera" y "Polifuncional" no dicen nada. */
@@ -349,12 +349,6 @@ export function Buscando() {
           {grupo.length ? `Si aceptás, entran los ${grupo.length + 1} del grupo.` : 'Si aceptás, entrás directo.'}
           {' '}Respondé rápido: si no, el lugar lo puede ocupar otro.
         </div>
-        {suSala?.linkSala && (
-          <div className="card card--col">
-            <div className="strong">Link de la sala</div>
-            <LinkSala link={suSala.linkSala} texto="Abrir la sala" secundario />
-          </div>
-        )}
         <button className="btn" onClick={() => s.responderMensaje(invitacion.id, true)}>Sí, quiero jugar</button>
         <button className="btn btn--sec" onClick={() => s.responderMensaje(invitacion.id, false)}>Ahora no</button>
       </Sheet>

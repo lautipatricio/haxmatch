@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { YO, buscarMia, enSala, nombreDe, useStore, usuarioDe } from '../data/store'
-import { DIAS_PENDIENTE } from '../domain/rules'
+import { DIAS_PENDIENTE, linkDeSala } from '../domain/rules'
 import { Avatar, Empty, Head, Icon, LinkSala, Persona, Sheet, copiar } from '../ui'
 
 /** Matches donde ya se mostró el cartel "No te olvides", para no repetirlo al volver. */
@@ -105,6 +105,8 @@ export function MatchListo() {
   const m = s.matches.find((x) => x.id === id)
   const [recordatorio, setRecordatorio] = useState(() => !recordados.has(id ?? ''))
   const [copiado, setCopiado] = useState<boolean | null>(null)
+  /** Ya tocó "Entrar a la sala": ahora el botón azul pasa a ser "Ya entré a la sala". */
+  const [abri, setAbri] = useState(false)
 
   if (!m) {
     return (
@@ -129,6 +131,10 @@ export function MatchListo() {
   const confirme = !!yo?.confirmadoAt || contado
   const puntos = s.eventos.find((e) => e.tipo === 'amistoso' && e.referencia === m.id)?.puntos ?? 0
   const titulo = m.formato && m.formato !== 'Cualquiera' ? `${m.formato} con ${creador}` : `Sala de ${creador}`
+  const limpio = m.linkSala ? linkDeSala(m.linkSala) : null
+  const hayLink = !!limpio && 'link' in limpio && !!limpio.link
+  // Un solo botón azul a la vez: con link, primero "Entrar a la sala"; después de abrirla, "Ya entré a la sala".
+  const yaEntreAzul = !hayLink || abri
 
   return (
     <div className="screen">
@@ -143,17 +149,20 @@ export function MatchListo() {
             {/* Grande, para leerlo desde la compu con el celular al lado. */}
             <div className="sala-match__nombre">{m.nombreSala}</div>
             <div className="row sala-match__acciones">
-              <button className="btn btn--sec" onClick={async () => setCopiado(await copiar(m.nombreSala))}>
-                <Icon name="copiar" size={18} />{copiado ? 'Copiado' : 'Copiar'}
-              </button>
+              {/* Con link no hace falta copiar el nombre: se entra con el link. */}
+              {!hayLink && (
+                <button className="btn btn--sec" onClick={async () => setCopiado(await copiar(m.nombreSala))}>
+                  <Icon name="copiar" size={18} />{copiado ? 'Copiado' : 'Copiar'}
+                </button>
+              )}
               <EnviarALaCompu nombre={m.nombreSala} link={m.linkSala} />
             </div>
-            <div className="m">
-              {copiado === false
-                ? 'No se pudo copiar. Mantené apretado el nombre para copiarlo.'
-                : m.linkSala ? 'O entrá directo con el link:' : 'Buscala por este nombre en HaxBall, desde tu computadora.'}
-            </div>
-            <LinkSala link={m.linkSala} />
+            {!hayLink && (
+              <div className="m">
+                {copiado === false ? 'No se pudo copiar. Mantené apretado el nombre para copiarlo.' : 'Buscala por este nombre en HaxBall, desde tu computadora.'}
+              </div>
+            )}
+            <LinkSala link={m.linkSala} onAbrir={() => setAbri(true)} />
           </div>
 
           {conmigo.length > 0 && (
@@ -168,7 +177,7 @@ export function MatchListo() {
 
           {!confirme && (
             <div className="lista">
-              <button className="btn btn--lg" onClick={() => s.confirmarMatch(m.id)}>Ya entré a la sala</button>
+              <button className={`btn btn--lg${yaEntreAzul ? '' : ' btn--sec'}`} onClick={() => s.confirmarMatch(m.id)}>Ya entré a la sala</button>
               <div className="m center">Tocalo cuando ya estés adentro de la sala en HaxBall: así el amistoso cuenta y suma puntos.</div>
             </div>
           )}

@@ -173,7 +173,7 @@ function CuentaKick() {
       <div className="card card--row">
         <Avatar nombre="Kick" />
         <div className="grow">
-          <div className="strong">Kick{canal && <EtiquetaKick id={YO} />}</div>
+          <div className="strong">Kick{canal && <EtiquetaKick id={YO} logo />}</div>
           <div className="m cut">{canal ? `Conectado como ${canal.usuario}` : 'Mostrá tu canal y avisá cuando estás en vivo'}</div>
         </div>
         {canal ? (

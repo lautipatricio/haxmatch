@@ -460,3 +460,11 @@ Pedido de Lauti:
 - **Cuentas duplicadas para sumar referidos o partidos:** hoy no se detectan. Es parte de la moderación.
 - **Vencimiento de salas** y de pendientes (propuesta del documento: 7 días, es lo que está puesto).
 - Los pendientes de la sección 7 del documento siguen igual: sorteo y marca.
+
+## Retoques de la revisión de diseño (13/10/2026)
+
+- **Inicio:** vuelve tu foto al centro del círculo (se saca la pelota). No le gustaba la foto separada al costado.
+- **Invitación:** ya no muestra el link de la sala. Llega recién al aceptar, en Match listo, para que nadie entre a la sala sin ocupar el lugar.
+- **Match listo:** un solo botón azul a la vez. Con link: "Entrar a la sala" en azul y "Ya entré a la sala" en gris; al abrir la sala, "Ya entré" pasa a azul. Con link no se muestra el "Copiar" del nombre (queda solo el del link). Sin link, como antes: copiar el nombre y "Ya entré" en azul.
+- **Menos etiquetas en las filas:** el logo de Kick solo en la ficha del jugador y en el Perfil; en listas y chat solo se marca quien está EN VIVO. "AMIGO" va como texto gris, sin recuadro. En el chat el nivel va en gris junto a la hora ("Nivel 7 · 16:18").
+- **Opciones elegidas en azul** (cancha, cuántos faltan, posición, región), como el resto de la app.
