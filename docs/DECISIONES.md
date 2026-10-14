@@ -481,3 +481,13 @@ Rediseño de `/web/` siguiendo la guía "taste-skill" que subió Lauti (direcci�
 ## Inicio sin menú en la compu (14/10/2026)
 
 En la compu, el Inicio ("¿Qué querés jugar hoy?") va sin el menú del costado. El menú (Jugar, Chat, Clips, Perfil, Notificaciones) aparece al entrar a HaxBall, igual que la barra de abajo en el celular.
+
+## Clips por link, con aprobación (14/10/2026)
+
+Mientras TikTok no apruebe la vinculación (y también después), los clips se pueden subir pegando un link:
+- **Qué se acepta:** videos públicos de TikTok (link completo o el corto del botón Compartir, que la web abre en `/api/clips/abrir`) y de YouTube (Shorts, videos comunes y youtu.be). Kick quedó afuera: no encontramos una forma confiable de mostrar sus clips dentro de otra página.
+- **Revisión:** cada clip queda "En revisión". A quienes administran (tabla `admins`) les llega un aviso al celular (si tienen los avisos activos) y una notificación en la app con el botón "Revisar", que lleva al panel. Ahí se ve el video y se aprueba o se rechaza (con un motivo opcional que ve quien lo subió).
+- **Al aprobarlo:** aparece en Clips para todos y suma como un reel (8 puntos, el primero de cada día). Reaccionar suma como en los de TikTok. A quien lo subió le llega el aviso, igual que si se rechaza.
+- **Límites:** hasta 3 en revisión a la vez y 10 por día por persona; el mismo video no se sube dos veces; una cuenta suspendida no puede subir; no se ven los clips de alguien bloqueado.
+- **Dónde:** botón "Subir clip" arriba en Clips; "Mis clips" (antes "Mis videos") muestra los subidos con su estado y la parte de TikTok; en el Perfil, la fila de YouTube ahora lleva a subir un clip.
+- Términos y Privacidad actualizados (vigentes desde el 14/10/2026).

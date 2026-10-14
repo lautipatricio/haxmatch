@@ -24,6 +24,12 @@ function Accion({ n }: { n: Notif }) {
   }
   if (n.tipo === 'solicitud' && s.solicitudes.includes(n.ref ?? '')) return <Link className="btn" to="/perfil/amigos">Ver</Link>
   if (n.tipo === 'match' && n.ref) return <Link className="btn" to={`/match/${n.ref}`}>Ver</Link>
+  if (n.tipo === 'clip_revisar') {
+    return s.pendientes.some((c) => c.id === n.ref)
+      ? <Link className="btn" to="/admin#clips">Revisar</Link>
+      : <span className="pill">Revisado</span>
+  }
+  if (n.tipo === 'clip_revisado' && s.reels.some((r) => r.id === n.ref)) return <Link className="btn" to={`/clips?v=${n.ref}`}>Ver</Link>
   return null
 }
 

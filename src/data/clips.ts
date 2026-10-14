@@ -1,7 +1,7 @@
 // Clips reales: los videos de TikTok de los usuarios que vincularon su cuenta.
 // La vinculación en sí pasa por la parte de servidor de la web (/api/tiktok/...),
 // que es la única que conoce la clave de TikTok. Acá solo se pide y se muestra.
-import type { Reel, Usuario } from '../domain/types'
+import type { ClipLink, Reel, Usuario } from '../domain/types'
 import { tokenDeSesion } from './cuenta'
 import { YO } from './seed'
 import { SUPABASE_URL } from './supabase'
@@ -137,4 +137,83 @@ export const RESULTADO_TIKTOK: Record<string, { ok: boolean; texto: string }> = 
   ocupada: { ok: false, texto: 'Esa cuenta de TikTok ya está vinculada a otro usuario de HaxMatch.' },
   permiso: { ok: false, texto: 'Para mostrar tus clips hace falta el permiso de ver tus videos. Probá de nuevo y dejalo marcado.' },
   error: { ok: false, texto: 'No pudimos vincular tu cuenta de TikTok. Probá de nuevo.' },
+}
+
+// ---------- Clips subidos por link (paso 13) ----------
+
+interface FilaLink {
+  id: string; user_id: string; plataforma: 'tiktok' | 'youtube'; video_id: string; enlace: string; titulo: string
+  estado: ClipLink['estado']; motivo: string | null; creado_at: string; revisado_at: string | null
+  nick: string; username: string; foto: string | null; nivel: number | null; reacciones: number; reaccione: boolean
+}
+interface EstadoLinks { feed: FilaLink[]; mios: FilaLink[]; pendientes: FilaLink[] | null }
+
+export interface LinksLocal {
+  /** Los aprobados, listos para el feed. */
+  reels: Reel[]
+  misReacciones: string[]
+  mios: ClipLink[]
+  /** Solo para quien administra: los que esperan revisión. null si no administro. */
+  pendientes: ClipLink[] | null
+  usuarios: Record<string, Usuario>
+}
+
+const aLink = (f: FilaLink, id: (u: string) => string): ClipLink => ({
+  id: f.id, userId: id(f.user_id), plataforma: f.plataforma, videoId: f.video_id, enlace: f.enlace, titulo: f.titulo,
+  estado: f.estado, motivo: f.motivo, creadoAt: Date.parse(f.creado_at), revisadoAt: f.revisado_at ? Date.parse(f.revisado_at) : null,
+})
+
+/** Un clip aprobado, como va en el feed. */
+export function reelDeLink(c: ClipLink, reacciones: number): Reel {
+  return {
+    id: c.id, userId: c.userId, origen: 'link', titulo: c.titulo, hashtags: [], visible: true,
+    publicadoAt: c.revisadoAt ?? c.creadoAt, reacciones, enlace: c.enlace,
+    ...(c.plataforma === 'tiktok' ? { tiktokId: c.videoId } : { youtubeId: c.videoId }),
+  }
+}
+
+/** Si la base todavía no tiene el paso 13, devuelve vacío sin error. */
+export async function leerLinks(miId: string): Promise<LinksLocal | null> {
+  const r = await rpc<EstadoLinks>('clips_link')
+  if (!r.data) return null
+  const id = (u: string) => (u === miId ? YO : u)
+  const usuarios: Record<string, Usuario> = {}
+  const anotar = (f: FilaLink) => {
+    const foto = f.foto !== null && SUPABASE_URL
+      ? `${SUPABASE_URL}/storage/v1/object/public/avatares/${f.user_id}/foto.jpg?v=${encodeURIComponent(f.foto)}`
+      : null
+    if (f.user_id !== miId) usuarios[f.user_id] = { id: f.user_id, username: f.nick, discord: f.username, nivel: typeof f.nivel === 'number' ? f.nivel : null, color: colorDe(f.user_id), foto }
+  }
+  const e = r.data
+  for (const f of [...(e.feed ?? []), ...(e.pendientes ?? [])]) anotar(f)
+  return {
+    // Como en los de TikTok, la reacción propia se suma en pantalla.
+    reels: (e.feed ?? []).map((f) => reelDeLink(aLink(f, id), f.reacciones - (f.reaccione ? 1 : 0))),
+    misReacciones: (e.feed ?? []).filter((f) => f.reaccione).map((f) => f.id),
+    mios: (e.mios ?? []).map((f) => aLink(f, id)),
+    pendientes: e.pendientes ? e.pendientes.map((f) => aLink(f, id)) : null,
+    usuarios,
+  }
+}
+
+export const linksApi = {
+  subir: async (enlace: string, titulo: string): Promise<{ error?: string }> => {
+    const r = await rpc('subir_clip', { p_enlace: enlace, p_titulo: titulo })
+    return r.error ? { error: r.error === SIN_BASE ? 'Subir clips todavía no está disponible.' : r.error } : {}
+  },
+  borrar: (id: string) => hacer('borrar_clip', { p_id: id }),
+  revisar: (id: string, aprobar: boolean, motivo: string) => hacer('admin_revisar_clip', { p_id: id, p_aprobar: aprobar, p_motivo: motivo || null }),
+  reaccionar: (id: string, marcar: boolean) => hacer('reaccionar_clip', { p_id: id, p_marcar: marcar }),
+}
+
+/** Abre un link corto de TikTok (el del botón Compartir del celular) y devuelve el link completo del video. */
+export async function abrirLinkCorto(url: string): Promise<{ url?: string; error?: string }> {
+  try {
+    const r = await fetch('/api/clips/abrir', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }), cache: 'no-store' })
+    const d = await r.json() as { url?: string; error?: string }
+    if (r.ok && d.url) return { url: d.url }
+    return { error: d.error ?? 'No pudimos abrir ese link. Abrí el video y copiá su link completo.' }
+  } catch {
+    return { error: 'No pudimos abrir ese link. Abrí el video y copiá su link completo.' }
+  }
 }

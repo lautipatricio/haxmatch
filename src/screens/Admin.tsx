@@ -4,6 +4,7 @@ import { REAL } from '../config'
 import { YO, useStore, type Store } from '../data/store'
 import { leerPanel, levantarDesdePanel, suspenderDesdePanel, type Panel, type PersonaPanel } from '../data/servidor'
 import { Avatar, Head, TabBar, hace, useAhora } from '../ui'
+import { RevisarClips } from './ClipsLink'
 
 const DIAS = [1, 3, 7, 30, 0] as const
 const textoDias = (d: number) => (d === 0 ? 'Sin fin' : d === 1 ? '1 día' : `${d} días`)
@@ -119,11 +120,13 @@ export function Admin() {
     } else setError(r.error ?? 'No pudimos cargar el panel.')
   }, [])
 
+  const cargarLinks = s.cargarLinks
   useEffect(() => {
     void cargar()
-    const cada = setInterval(() => void cargar(), 30_000)
+    void cargarLinks()
+    const cada = setInterval(() => { void cargar(); void cargarLinks() }, 30_000)
     return () => clearInterval(cada)
-  }, [cargar])
+  }, [cargar, cargarLinks])
 
   // Con servidor, si administro se sabe un momento después de abrir la app.
   if (!s.ajustesListos) {
@@ -145,12 +148,13 @@ export function Admin() {
   return (
     <div className="screen">
       <Head title="Panel" back="/perfil">
-        <button className="btn btn--sec" disabled={cargando} onClick={() => void cargar()}>{cargando ? 'Actualizando…' : 'Actualizar'}</button>
+        <button className="btn btn--sec" disabled={cargando} onClick={() => { void cargar(); void s.cargarLinks() }}>{cargando ? 'Actualizando…' : 'Actualizar'}</button>
       </Head>
       <div className="scroll">
         <div className="pad" style={{ '--gap': '20px' } as CSSProperties}>
           {aviso && <div className="ok" role="status">{aviso}</div>}
           {error && <div className="err" role="alert">{error}</div>}
+          <RevisarClips />
           {!panel ? (
             !error && <div className="m center">Cargando…</div>
           ) : (

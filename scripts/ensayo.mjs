@@ -511,7 +511,7 @@ try {
   servidor.tiktok.publicar('olga_tt', 'Asado del domingo', 1800)
   await olga.tab('Clips').click()
   await olga.ver('Clip de muestra'); await olga.foto('clips-de-muestra')
-  await olga.link('Vincular TikTok').click()
+  await olga.link('Mis clips').click()
   await olga.ver('Vinculá tu cuenta de TikTok'); await olga.foto('vincular')
   await olga.boton('Vincular TikTok').click()
   // Va a "TikTok", da el permiso y vuelve sola.
@@ -741,6 +741,27 @@ try {
   await tere.ver('ya no está suspendida')
   await ulises.page.reload()
   await caja(ulises).waitFor()
+
+  // Clips por link: Ulises sube uno, a Tere (que administra) le llega el aviso, lo aprueba y aparece en Clips.
+  await ulises.tab('Clips').click()
+  await ulises.boton('Subir clip').click()
+  await ulises.page.getByLabel('Link del video').fill('https://www.tiktok.com/@ulises.hx/video/7400000000000000001?is_from_webapp=1')
+  await ulises.page.getByLabel('Título').fill('Gol de taquito')
+  await ulises.boton('Mandar a revisar').click()
+  await ulises.ver('Clip enviado. Te avisamos cuando lo revisemos.')
+  await ulises.link('Mis clips').click(); await ulises.ver('En revisión')
+  await tere.page.goto(`${URL}/perfil/notificaciones`)
+  await tere.ver('Clip para revisar', 20000); await tere.ver('subió "Gol de taquito"')
+  await tere.link('Revisar').click()
+  await tere.ver('Clips para revisar (1)'); await tere.foto('clips-para-revisar')
+  await tere.boton('Aprobar').click()
+  await tere.ver('"Gol de taquito" ya está en Clips.')
+  await ulises.page.reload()
+  await ulises.ver('En Clips', 15000)
+  await ulises.ver('Tu clip ya está en Clips')
+  await ulises.tab('Clips').click()
+  await ulises.ver('Gol de taquito')
+  await ulises.tab('Chat').click(); await caja(ulises).waitFor()
 
   // Kick: Tere vincula su cuenta; Ulises ve la etiqueta y, cuando ella transmite, que está en vivo.
   await tere.tab('Perfil').click()

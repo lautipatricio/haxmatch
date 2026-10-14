@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  REGLAS_CANCHA, ajustarSala, linkDeSala, bonusRacha, esPendiente, matchCuenta, nivelDe,
+  REGLAS_CANCHA, ajustarSala, linkDeClip, linkDeSala, bonusRacha, esPendiente, matchCuenta, nivelDe,
   progresoNivel, puntosAmistoso, puntosReaccion, puntosReel, puntosReferido, rachaActual, rivalDe,
 } from './rules'
 import type { EventoPuntos, Match, Participante } from './types'
@@ -156,5 +156,30 @@ describe('link de la sala', () => {
     for (const malo of ['https://haxball.estafa.com/play?c=abc123', 'https://evil.com/?u=haxball.com/play?c=abc123', 'https://www.haxball.com/play', 'javascript:alert(1)', 'https://www.haxball.com/play?c=abc123&x=<script>']) {
       expect(linkDeSala(malo)).toHaveProperty('error')
     }
+  })
+})
+
+describe('linkDeClip', () => {
+  it('lee links completos de TikTok y los deja limpios', () => {
+    expect(linkDeClip(' https://www.tiktok.com/@ana.hax/video/7412345678901234567?is_from_webapp=1&sender_device=pc '))
+      .toEqual({ plataforma: 'tiktok', videoId: '7412345678901234567', enlace: 'https://www.tiktok.com/@ana.hax/video/7412345678901234567' })
+    expect(linkDeClip('m.tiktok.com/@x/video/123456')).toMatchObject({ plataforma: 'tiktok', videoId: '123456' })
+  })
+  it('separa los links cortos de TikTok, que hay que abrir', () => {
+    expect(linkDeClip('https://vm.tiktok.com/ZMabc123/')).toEqual({ corto: 'https://vm.tiktok.com/ZMabc123/' })
+    expect(linkDeClip('tiktok.com/t/ZTabc12345')).toEqual({ corto: 'https://tiktok.com/t/ZTabc12345' })
+  })
+  it('lee Shorts, videos comunes y links cortos de YouTube', () => {
+    const r = { plataforma: 'youtube', videoId: 'dQw4w9WgXcQ', enlace: 'https://youtu.be/dQw4w9WgXcQ' }
+    expect(linkDeClip('https://youtube.com/shorts/dQw4w9WgXcQ?si=abc')).toEqual(r)
+    expect(linkDeClip('https://www.youtube.com/watch?list=x&v=dQw4w9WgXcQ&t=3')).toEqual(r)
+    expect(linkDeClip('youtu.be/dQw4w9WgXcQ?si=1')).toEqual(r)
+    expect(linkDeClip('https://m.youtube.com/watch?v=dQw4w9WgXcQ')).toEqual(r)
+  })
+  it('rechaza lo demás', () => {
+    expect(linkDeClip('')).toHaveProperty('error')
+    expect(linkDeClip('https://ejemplo.com/video/1')).toHaveProperty('error')
+    expect(linkDeClip('https://www.tiktok.com/@x')).toHaveProperty('error')
+    expect(linkDeClip('https://youtube.com/shorts/corto')).toHaveProperty('error')
   })
 })

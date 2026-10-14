@@ -6,18 +6,18 @@
 import { create } from 'zustand'
 import {
   AMISTOSOS_REFERIDO, MINUTOS_DISPONIBLE, MINUTOS_OFERTA, bonusRacha, conectoHoy,
-  linkDeSala, matchCuenta, nivelDe, PUNTOS, puntosAmistoso, puntosReaccion, puntosReel, puntosReferido,
+  linkDeClip, linkDeSala, matchCuenta, nivelDe, PUNTOS, puntosAmistoso, puntosReaccion, puntosReel, puntosReferido,
   rachaActual, rivalDe, totalPuntos,
 } from '../domain/rules'
 import type {
-  Busqueda, Cancha, Duracion, EventoPuntos, Formato, Match, Mensaje, MensajeChat, Modo, MotivoReporte,
+  Busqueda, Cancha, ClipLink, Duracion, EventoPuntos, Formato, Match, Mensaje, MensajeChat, Modo, MotivoReporte,
   Notif, Participante, Posicion, PuntosServidor, Reel, Referido, Region, Reporte, TipoNotif, TipoPunto, Usuario,
 } from '../domain/types'
 import {
   borrarCuenta, codigoPendiente, completarRegistro, escucharSesion, guardarCodigoPendiente, ingresarConDiscord, miPerfil, quienInvita,
   quitarFoto, salir, subirFoto, type FilaPerfil,
 } from './cuenta'
-import { clipsApi, irATikTok, leerClips, type TikTokInfo } from './clips'
+import { abrirLinkCorto, clipsApi, irATikTok, leerClips, leerLinks, linksApi, reelDeLink, type TikTokInfo } from './clips'
 import { desvincularKick, irAKick, leerKick, type CanalKick } from './kick'
 import { sincronizarAvisos, soltarAvisos } from './push'
 import {
@@ -96,6 +96,10 @@ interface Datos {
   reels: Reel[]
   misReacciones: string[]
   tiktok: boolean
+  /** Clips que subí pegando un link: en revisión, aprobados o rechazados. */
+  misLinks: ClipLink[]
+  /** Si administro: los clips de todos que esperan revisión. */
+  pendientes: ClipLink[]
   notifs: Notif[]
   referidos: Referido[]
   reportes: Reporte[]
@@ -182,6 +186,13 @@ interface Acciones {
   desvincularTikTok: () => Promise<string | null>
   alternarVisible: (reelId: string) => void
   simularVideoNuevo: () => void
+  /** Subir un clip pegando su link. Devuelve el problema, si hubo. */
+  subirClip: (enlace: string, titulo: string) => Promise<string | null>
+  borrarClip: (id: string) => Promise<string | null>
+  /** Quien administra: aprobar o rechazar un clip. Devuelve el problema, si hubo. */
+  revisarClip: (id: string, aprobar: boolean, motivo: string) => Promise<string | null>
+  /** Con servidor: los clips por link (aprobados, los míos y, si administro, los que esperan). */
+  cargarLinks: () => Promise<void>
 
   /** Agregar a un amigo por su usuario de Discord. */
   enviarSolicitud: (username: string) => Promise<{ ok: boolean; texto: string }>
@@ -291,6 +302,8 @@ function datosIniciales(ahora: number): Datos {
     chatVistoAt: 0,
     misReacciones: [],
     tiktok: false,
+    misLinks: [],
+    pendientes: [],
     notifs: REAL ? [] : seedNotifs(ahora),
     referidos: REAL ? [] : SEED_REFERIDOS,
     reportes: [],
@@ -300,7 +313,7 @@ function datosIniciales(ahora: number): Datos {
 
 const CAMPOS: Array<keyof Datos> = [
   'perfil', 'cuentaId', 'resumen', 'offsetDias', 'usuarios', 'amigos', 'solicitudes', 'solicitudesEnviadas', 'bloqueados', 'bloqueosEnServidor',
-  'busquedas', 'matches', 'mensajes', 'eventos', 'puntosServidor', 'reels', 'misReacciones', 'tiktok', 'notifs',
+  'busquedas', 'matches', 'mensajes', 'eventos', 'puntosServidor', 'reels', 'misReacciones', 'tiktok', 'misLinks', 'pendientes', 'notifs',
   'referidos', 'reportes', 'programados', 'chatVistoAt',
 ]
 
@@ -979,9 +992,15 @@ export const useStore = create<Store>()((set, get) => {
     const cadaKick = setInterval(() => void get().cargarKick(), 30 * SEG)
     void get().cargarRegistrados()
     const cadaRegistro = setInterval(() => void get().cargarRegistrados(), 5 * 60 * SEG)
+    // Clips por link: quien administra se entera de los nuevos para revisar, y quien subió uno, de cómo le fue.
+    const cadaLinks = setInterval(() => {
+      const st = get()
+      if (st.admin || st.misLinks.some((c) => c.estado === 'pendiente')) void st.cargarLinks()
+    }, 60 * SEG)
     return () => {
       clearInterval(cadaKick)
       clearInterval(cadaRegistro)
+      clearInterval(cadaLinks)
       dejarDeEscuchar()
       dejarChat()
       if (esperaChat) clearTimeout(esperaChat)
@@ -1252,7 +1271,7 @@ export const useStore = create<Store>()((set, get) => {
       const buscaba = !!miBusqueda(get())
       canceleAt = Date.now()
       set({
-        perfil: null, toasts: [], busquedas: [], mensajes: [], colaLista: false, ficha: null, reels: [], misReacciones: [], tiktok: false, tiktokInfo: null, clipsListos: false, suspension: null,
+        perfil: null, toasts: [], busquedas: [], mensajes: [], colaLista: false, ficha: null, reels: [], misReacciones: [], tiktok: false, misLinks: [], pendientes: [], tiktokInfo: null, clipsListos: false, suspension: null,
         conectados: [], chat: [], chatListo: false, errorChat: null, admin: false, ajustesListos: false, mostrarConectado: true, kick: {}, registrados: null,
       })
       guardar(get())
@@ -1724,12 +1743,130 @@ export const useStore = create<Store>()((set, get) => {
         ? { texto: `Reel nuevo en Clips · +${puntos} puntos` }
         : { texto: 'Reel nuevo en Clips', detalle: 'Hoy ya sumaste por un reel. Mañana vuelve a sumar.' }) }
     }
+    // Los clips por link vienen aparte (cargarLinks): se conservan.
+    const links = get().reels.filter((x) => x.origen === 'link')
+    const idsLinks = new Set(links.map((x) => x.id))
     set({
       usuarios: st.usuarios, eventos: st.eventos, notifs: st.notifs, toasts: st.toasts,
-      reels: r.clips.reels, misReacciones: r.clips.misReacciones,
+      reels: [...r.clips.reels, ...links],
+      misReacciones: [...r.clips.misReacciones, ...get().misReacciones.filter((x) => idsLinks.has(x))],
       tiktok: r.clips.tiktok !== null, tiktokInfo: r.clips.tiktok, clipsListos: true,
     })
     guardar(get())
+    await get().cargarLinks()
+  },
+
+  cargarLinks: async () => {
+    const cuenta = get().perfil
+    const miId = cuenta?.id
+    if (!REAL || !miId || !cuenta?.onboarding) return
+    const r = await leerLinks(miId)
+    if (!r || get().perfil?.id !== miId) return
+    const s = get()
+    const ahora = s.ahora()
+    let notifs = s.notifs
+    let toasts = s.toasts
+    const usuarios = { ...s.usuarios, ...r.usuarios }
+    // Quien administra: un aviso por cada clip nuevo que espera revisión.
+    for (const c of r.pendientes ?? []) {
+      if (notifs.some((n) => n.tipo === 'clip_revisar' && n.ref === c.id)) continue
+      const nombre = usuarios[c.userId]?.username ?? 'Un jugador'
+      notifs = [{ id: id('n'), tipo: 'clip_revisar', titulo: 'Clip para revisar', detalle: `${nombre} subió "${c.titulo}"`, at: c.creadoAt, leida: false, ref: c.id }, ...notifs]
+    }
+    // Quien subió: cuando se revisa uno de sus clips.
+    for (const c of r.mios) {
+      const antes = s.misLinks.find((x) => x.id === c.id)
+      if (antes?.estado !== 'pendiente' || c.estado === 'pendiente') continue
+      if (notifs.some((n) => n.tipo === 'clip_revisado' && n.ref === c.id)) continue
+      const titulo = c.estado === 'aprobado' ? 'Tu clip ya está en Clips' : 'Tu clip no se aprobó'
+      const detalle = c.estado === 'aprobado' ? `"${c.titulo}"` : `"${c.titulo}"${c.motivo ? ` · ${c.motivo}` : ''}`
+      notifs = [{ id: id('n'), tipo: 'clip_revisado', titulo, detalle, at: c.revisadoAt ?? ahora, leida: false, ref: c.id }, ...notifs]
+      toasts = conToast({ ...s, toasts }, { texto: titulo, detalle })
+    }
+    set({
+      usuarios, notifs: notifs.slice(0, 50), toasts,
+      reels: [...get().reels.filter((x) => x.origen !== 'link'), ...r.reels],
+      misReacciones: [...get().misReacciones.filter((x) => !get().reels.some((y) => y.id === x && y.origen === 'link')), ...r.misReacciones],
+      misLinks: r.mios, pendientes: r.pendientes ?? [],
+    })
+    guardar(get())
+  },
+
+  subirClip: async (enlace, titulo) => {
+    let l = linkDeClip(enlace)
+    if ('corto' in l) {
+      if (!REAL) return 'En la versión de prueba pegá el link completo del video.'
+      const abierto = await abrirLinkCorto(l.corto)
+      if (!abierto.url) return abierto.error ?? 'No pudimos abrir ese link.'
+      l = linkDeClip(abierto.url)
+    }
+    if ('error' in l) return l.error
+    if ('corto' in l) return 'No pudimos abrir ese link. Abrí el video y copiá su link completo.'
+    const t = titulo.trim().replace(/\s+/g, ' ')
+    if (!t) return 'Ponele un título al clip'
+    if (t.length > 80) return 'El título puede tener hasta 80 letras'
+    const listo = 'Clip enviado. Te avisamos cuando lo revisemos.'
+    if (REAL) {
+      const r = await linksApi.subir(l.enlace, t)
+      if (r.error) return r.error
+      await get().cargarLinks()
+      set({ toasts: conToast(get(), { texto: listo }) })
+      return null
+    }
+    // Demostración: queda en revisión, y como en la demo se administra, llega el aviso para revisarlo.
+    const s = get()
+    const ahora = s.ahora()
+    const todos = [...s.misLinks, ...s.reels.filter((x) => x.origen === 'link')]
+    if (todos.some((x) => ('videoId' in x ? x.videoId : x.tiktokId ?? x.youtubeId) === l.videoId)) return 'Ya subiste ese clip'
+    if (s.misLinks.filter((x) => x.estado === 'pendiente').length >= 3) return 'Ya tenés 3 clips en revisión. Esperá a que los revisemos para subir otro.'
+    const c: ClipLink = { id: id('c'), userId: YO, plataforma: l.plataforma, videoId: l.videoId, enlace: l.enlace, titulo: t, estado: 'pendiente', motivo: null, creadoAt: ahora, revisadoAt: null }
+    set({
+      misLinks: [c, ...s.misLinks],
+      pendientes: [...s.pendientes, c],
+      notifs: [{ id: id('n'), tipo: 'clip_revisar', titulo: 'Clip para revisar', detalle: `${nombreDe(s, YO)} subió "${t}"`, at: ahora, leida: false, ref: c.id }, ...s.notifs],
+      toasts: conToast(s, { texto: listo }),
+    })
+    guardar(get())
+    return null
+  },
+
+  borrarClip: async (cid) => {
+    if (REAL) {
+      const error = await linksApi.borrar(cid)
+      await get().cargarLinks()
+      return error
+    }
+    set((s) => ({
+      misLinks: s.misLinks.filter((x) => x.id !== cid),
+      pendientes: s.pendientes.filter((x) => x.id !== cid),
+      reels: s.reels.filter((x) => x.id !== cid),
+    }))
+    guardar(get())
+    return null
+  },
+
+  revisarClip: async (cid, aprobar, motivo) => {
+    if (REAL) {
+      const error = await linksApi.revisar(cid, aprobar, motivo.trim())
+      await get().cargarLinks()
+      return error
+    }
+    const s = get()
+    const ahora = s.ahora()
+    const c = s.pendientes.find((x) => x.id === cid)
+    if (!c) return 'Ese clip ya fue revisado o lo borraron'
+    const listo: ClipLink = { ...c, estado: aprobar ? 'aprobado' : 'rechazado', motivo: aprobar ? null : motivo.trim() || null, revisadoAt: ahora }
+    const titulo = aprobar ? 'Tu clip ya está en Clips' : 'Tu clip no se aprobó'
+    set({
+      pendientes: s.pendientes.filter((x) => x.id !== cid),
+      misLinks: s.misLinks.map((x) => (x.id === cid ? listo : x)),
+      reels: aprobar ? [reelDeLink(listo, 0), ...s.reels] : s.reels,
+      notifs: c.userId === YO
+        ? [{ id: id('n'), tipo: 'clip_revisado', titulo, detalle: `"${c.titulo}"${listo.motivo ? ` · ${listo.motivo}` : ''}`, at: ahora, leida: false, ref: cid }, ...s.notifs]
+        : s.notifs,
+    })
+    guardar(get())
+    return null
   },
 
   reaccionar: (reelId) => {
@@ -1747,6 +1884,14 @@ export const useStore = create<Store>()((set, get) => {
         misReacciones: [...s.misReacciones, reelId],
         ...(puntos > 0 ? sumar(s, ahora, 'reaccion', puntos, reelId) : {}),
       })
+    }
+    // Los clips por link guardan la reacción con su propia función.
+    if (REAL && reel.origen === 'link') {
+      void linksApi.reaccionar(reelId, marcar).then((error) => {
+        if (error) set({ toasts: conToast(get(), { texto: error }) })
+        void get().cargarLinks()
+      })
+      return
     }
     // Los clips de TikTok guardan la reacción en el servidor; los de muestra, solo acá.
     if (REAL && reel.tiktokId) {
@@ -2171,7 +2316,7 @@ export function miSala(s: Store): Match | undefined {
 
 export function feed(s: Store): Reel[] {
   return s.reels
-    .filter((r) => r.visible && r.hashtags.some((h) => h === 'haxball' || h === 'haxmatch') && !s.bloqueados.includes(r.userId))
+    .filter((r) => r.visible && (r.origen === 'link' || r.hashtags.some((h) => h === 'haxball' || h === 'haxmatch')) && !s.bloqueados.includes(r.userId))
     .sort((a, b) => b.publicadoAt - a.publicadoAt)
 }
 

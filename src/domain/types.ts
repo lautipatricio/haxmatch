@@ -139,7 +139,8 @@ export interface Mensaje {
 export interface Reel {
   id: string
   userId: string
-  origen: 'tiktok'
+  /** tiktok: vino de la vinculación con TikTok. link: lo subió alguien pegando el link y se aprobó. */
+  origen: 'tiktok' | 'link'
   titulo: string
   hashtags: string[]
   visible: boolean
@@ -149,6 +150,8 @@ export interface Reel {
   formato?: Formato
   /** Número del video en TikTok: con eso se arma el reproductor. */
   tiktokId?: string
+  /** Número del video en YouTube (clips subidos por link). */
+  youtubeId?: string
   /** Dirección del video en TikTok. */
   enlace?: string
   duracion?: number
@@ -161,6 +164,10 @@ export interface Reel {
 export type TipoNotif =
   | 'amigo_disponible' | 'amigo_sala' | 'mensaje' | 'respuesta'
   | 'solicitud' | 'referido' | 'nivel' | 'match'
+  /** Para quien administra: un clip nuevo espera revisión. */
+  | 'clip_revisar'
+  /** Para quien subió un clip: se aprobó o no. */
+  | 'clip_revisado'
 
 export interface Notif {
   id: string
@@ -206,4 +213,19 @@ export interface Reporte {
   motivo: MotivoReporte
   detalle: string
   at: number
+}
+
+/** Clip subido pegando un link de TikTok o YouTube. Lo tiene que aprobar quien administra. */
+export interface ClipLink {
+  id: string
+  userId: string
+  plataforma: 'tiktok' | 'youtube'
+  videoId: string
+  enlace: string
+  titulo: string
+  estado: 'pendiente' | 'aprobado' | 'rechazado'
+  /** Por qué no se aprobó (si quien administra lo escribió). */
+  motivo: string | null
+  creadoAt: number
+  revisadoAt: number | null
 }

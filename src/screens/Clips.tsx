@@ -7,6 +7,7 @@ import { YO, buscarMia, feed, misPuntos, nombreDe, useStore } from '../data/stor
 import { nivelDe } from '../domain/rules'
 import type { Reel } from '../domain/types'
 import { Avatar, BannerBusqueda, Empty, Head, Icon, Portada, Sheet, TabBar, hace, useAhora } from '../ui'
+import { MisClipsSubidos, ReproductorYouTube, SubirClip } from './ClipsLink'
 
 const TIKTOK = 'https://www.tiktok.com'
 // Reproductor de TikTok sin sus textos, sus videos relacionados ni su barra de controles:
@@ -168,6 +169,8 @@ const UMBRAL = 64
 export function Clips() {
   const s = useStore()
   const ahora = useAhora()
+  // Subir un clip por link: el botón de arriba, o llegar con /clips?subir=1 (desde el Perfil).
+  const [subir, setSubir] = useState(false)
   const cargar = s.cargarClips
   const reales = feed(s)
   // Mientras nadie haya vinculado su TikTok, se muestran clips de muestra para que la pantalla no quede vacía.
@@ -202,6 +205,11 @@ export function Clips() {
   // Llegar directo a un clip (desde el perfil): /clips?v=<clip>.
   const [parametros, setParametros] = useSearchParams()
   const pedido = parametros.get('v')
+  useEffect(() => {
+    if (parametros.get('subir') !== '1') return
+    setSubir(true)
+    setParametros({}, { replace: true })
+  }, [parametros]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!pedido || !lista.current) return
     const el = [...lista.current.querySelectorAll<HTMLElement>('.reel')].find((x) => x.dataset.id === pedido)
@@ -279,6 +287,15 @@ export function Clips() {
     return () => mirar.disconnect()
   }, [ids])
 
+  const verMisClips = s.misLinks.length > 0 || s.tiktok || !TIKTOK_PRONTO
+  const botones = (
+    <>
+      <button className="btn" onClick={() => setSubir(true)}>Subir clip</button>
+      {verMisClips && <Link className="btn btn--sec" to="/clips/mis-videos">Mis clips</Link>}
+    </>
+  )
+  const hojaSubir = subir && <SubirClip onCerrar={() => setSubir(false)} />
+
   if (REAL && !s.clipsListos) {
     return (
       <div className="screen">
@@ -292,13 +309,12 @@ export function Clips() {
   if (reels.length === 0) {
     return (
       <div className="screen">
-        <Head title="Clips" />
+        <Head title="Clips">{verMisClips && <Link className="btn btn--sec" to="/clips/mis-videos">Mis clips</Link>}</Head>
         <BannerBusqueda detalle="Te avisamos cuando encontremos una coincidencia" />
-        <Empty title="Sin clips todavía" text={TIKTOK_PRONTO
-          ? 'Los clips salen de TikTok. Muy pronto vas a poder vincular tu cuenta.'
-          : 'Los clips salen de TikTok. Vinculá tu cuenta y usá #haxball o #haxmatch en tus videos.'}>
-          {TIKTOK_PRONTO ? <Pronto /> : <Link className="btn" to="/clips/mis-videos">Vincular TikTok</Link>}
+        <Empty title="Sin clips todavía" text="Pegá el link de un clip tuyo de TikTok o YouTube. Lo revisamos y aparece acá para toda la comunidad.">
+          <button className="btn" onClick={() => setSubir(true)}>Subir clip</button>
         </Empty>
+        {hojaSubir}
         <TabBar on="clips" />
       </div>
     )
@@ -333,19 +349,21 @@ export function Clips() {
                     <Icon name="corazon" size={20} fill={reaccione} />{r.reacciones + (reaccione ? 1 : 0)}
                   </button>
                   <span className="m cut grow">{detalle}</span>
-                  {r.enlace && <a className="reel__enlace" href={r.enlace} target="_blank" rel="noopener noreferrer">Ver en TikTok</a>}
+                  {r.enlace && <a className="reel__enlace" href={r.enlace} target="_blank" rel="noopener noreferrer">{r.youtubeId ? 'Ver en YouTube' : 'Ver en TikTok'}</a>}
                 </div>
               </div>
             )
             return (
-              <article key={r.id} data-id={r.id} className={`reel${r.tiktokId ? ' reel--video' : ''}`} style={{ '--tinte': autor?.color } as CSSProperties}
+              <article key={r.id} data-id={r.id} className={`reel${r.tiktokId || r.youtubeId ? ' reel--video' : ''}`} style={{ '--tinte': autor?.color } as CSSProperties}
                 aria-label={`${r.titulo}, de ${nombreDe(s, r.userId)}`}>
-                {r.tiktokId ? (
+                {r.tiktokId || r.youtubeId ? (
                   <>
                     {/* Solo el clip en pantalla carga el reproductor; los demás muestran su miniatura. */}
-                    {i === activo
-                      ? <Reproductor key={r.tiktokId} id={r.tiktokId} titulo={r.titulo} />
-                      : <div className="reel__video reel__video--espera"><Portada src={r.portada} /><span><Icon name="play" size={40} /></span></div>}
+                    {i !== activo
+                      ? <div className="reel__video reel__video--espera"><Portada src={r.portada ?? (r.youtubeId ? `https://i.ytimg.com/vi/${r.youtubeId}/hqdefault.jpg` : undefined)} /><span><Icon name="play" size={40} /></span></div>
+                      : r.youtubeId
+                        ? <ReproductorYouTube key={r.youtubeId} id={r.youtubeId} titulo={r.titulo} />
+                        : <Reproductor key={r.tiktokId} id={r.tiktokId!} titulo={r.titulo} />}
                     {info}
                   </>
                 ) : (
@@ -373,22 +391,14 @@ export function Clips() {
           </div>
         )}
         <div className="feed-top" ref={cabecera}>
-          <Head title="Clips">
-            {!s.tiktok && TIKTOK_PRONTO
-              ? <Pronto />
-              : <Link className="btn btn--sec" to="/clips/mis-videos">{s.tiktok ? 'Mis videos' : 'Vincular TikTok'}</Link>}
-          </Head>
+          <Head title="Clips">{botones}</Head>
           <BannerBusqueda detalle="Te avisamos cuando encontremos una coincidencia" />
         </div>
       </div>
+      {hojaSubir}
       <TabBar on="clips" />
     </div>
   )
-}
-
-/** Vincular TikTok todavía no está abierto: se muestra, pero no se puede tocar. */
-function Pronto() {
-  return <button className="btn btn--sec" disabled aria-label="Vincular TikTok: pronto">TikTok · Pronto</button>
 }
 
 const conHashtag = (h: string[]) => h.some((x) => x === 'haxball' || x === 'haxmatch')
@@ -456,7 +466,9 @@ export function MisVideos() {
   const [aviso, setAviso] = useState(vuelta ?? null)
   const [habilitado, setHabilitado] = useState<boolean | null>(TIKTOK_PRONTO ? false : REAL ? null : true)
   const [ocupado, setOcupado] = useState(false)
-  const mios = s.reels.filter((r) => r.userId === YO).sort((a, b) => b.publicadoAt - a.publicadoAt)
+  const [subir, setSubir] = useState(false)
+  // Acá van los de TikTok; los subidos por link tienen su propia lista.
+  const mios = s.reels.filter((r) => r.userId === YO && r.origen !== 'link').sort((a, b) => b.publicadoAt - a.publicadoAt)
 
   useEffect(() => {
     void cargar()
@@ -485,10 +497,12 @@ export function MisVideos() {
 
   return (
     <div className="screen">
-      <Head title="Mis videos" back="/clips" />
+      <Head title="Mis clips" back="/clips" />
       <div className="scroll">
         <div className="pad">
           {aviso && <div className={aviso.ok ? 'ok' : 'err'} role="status">{aviso.texto}</div>}
+          <MisClipsSubidos onSubir={() => setSubir(true)} />
+          <h2 className="h sub">TikTok</h2>
           {REAL && !s.clipsListos ? (
             <div role="status" aria-label="Cargando"><div className="skeleton" /><div className="skeleton" /></div>
           ) : !s.tiktok ? (
@@ -551,6 +565,7 @@ export function MisVideos() {
           )}
         </div>
       </div>
+      {subir && <SubirClip onCerrar={() => setSubir(false)} />}
       <TabBar on="clips" />
     </div>
   )

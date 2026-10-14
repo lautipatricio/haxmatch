@@ -869,3 +869,9 @@ a.nivel:active { transform: scale(.98); }
   .chat-lateral .scroll > .pad { max-width: none; }
   .chat-lateral .chat__escribir { max-width: none; }
 }
+
+/* ---------- Clips por link ---------- */
+.pill--ok { background: rgba(74, 222, 128, .14); color: var(--vivo); }
+.pill--no { background: rgba(255, 138, 122, .14); color: var(--danger); }
+.clip-previa { width: min(100%, 260px); aspect-ratio: 9 / 16; border-radius: 16px; overflow: hidden; background: #000; align-self: center; }
+.clip-previa iframe { width: 100%; height: 100%; border: 0; display: block; }
