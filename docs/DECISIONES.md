@@ -477,3 +477,7 @@ Rediseño de `/web/` siguiendo la guía "taste-skill" que subió Lauti (direcci�
 - Reglas de la guía: sin degradados ni brillos, sin sombras salvo la invitación que flota, sin etiquetas chiquitas arriba de los títulos, títulos de dos renglones como mucho, preguntas una al lado de la otra (sin acordeón), cierre en azul y el nombre en grande al pie.
 - Manrope servida desde `/web/fuentes/` (licencia OFL). Capturas con `scripts/capturas-web.mjs`.
 - Los scripts de la guía (draw, inspect, assets) no se ejecutaron: se usaron como referencia su texto y sus datos.
+
+## Inicio sin menú en la compu (14/10/2026)
+
+En la compu, el Inicio ("¿Qué querés jugar hoy?") va sin el menú del costado. El menú (Jugar, Chat, Clips, Perfil, Notificaciones) aparece al entrar a HaxBall, igual que la barra de abajo en el celular.

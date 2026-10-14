@@ -16,7 +16,10 @@ async function vuelta(w, h, pref) {
   await page.getByRole('button', { name: 'Entrar con Discord', exact: true }).click()
   await page.getByRole('button', { name: 'Empezar', exact: true }).click()
   await foto('1-inicio')
+  // El Inicio va sin menú al costado; el menú aparece al entrar a HaxBall.
+  if (await page.locator('.lateral').count()) errores.push('El Inicio no lleva el menú del costado')
   await page.getByRole('link', { name: 'Jugar HaxBall' }).click(); await foto('2-haxball')
+  if (w >= 1024 && !(await page.locator('.lateral').count())) errores.push('En HaxBall tiene que estar el menú del costado')
   await page.goto(U + '/perfil'); await foto('3-perfil')
   await page.goto(U + '/chat'); await foto('4-chat')
   await page.goto(U + '/clips'); await foto('5-clips')

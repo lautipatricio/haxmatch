@@ -112,7 +112,8 @@ export function App() {
   return (
     <div className={`app${conLateral ? ' app--compu' : ''}`}>
       <Luces />
-      {conLateral && <Lateral />}
+      {/* En el Inicio (¿Qué querés jugar hoy?) va sin menú: aparece al entrar a HaxBall. */}
+      {conLateral && pathname !== '/' && <Lateral />}
       {/* Cada cambio de pantalla monta la vista de nuevo: así su contenido entra con la animación de aparecer. */}
       <div className="vista" key={pathname} role="main">
       <Routes>

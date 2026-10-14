@@ -838,7 +838,6 @@ a.nivel:active { transform: scale(.98); }
   .app--compu .toasts { left: auto; right: 24px; width: 420px; }
 
   /* Inicio, más grande. */
-  .app--compu .juegos > .head { display: none; }
   .app--compu .juegos__pad { padding-top: 32px; }
   .app--compu .juegos__titulo { font-size: 64px; margin-top: 56px; }
   .app--compu .juego { margin-top: 64px; }
