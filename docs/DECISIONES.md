@@ -468,3 +468,12 @@ Pedido de Lauti:
 - **Match listo:** un solo botón azul a la vez. Con link: "Entrar a la sala" en azul y "Ya entré a la sala" en gris; al abrir la sala, "Ya entré" pasa a azul. Con link no se muestra el "Copiar" del nombre (queda solo el del link). Sin link, como antes: copiar el nombre y "Ya entré" en azul.
 - **Menos etiquetas en las filas:** el logo de Kick solo en la ficha del jugador y en el Perfil; en listas y chat solo se marca quien está EN VIVO. "AMIGO" va como texto gris, sin recuadro. En el chat el nivel va en gris junto a la hora ("Nivel 7 · 16:18").
 - **Opciones elegidas en azul** (cancha, cuántos faltan, posición, región), como el resto de la app.
+
+## Sitio público rediseñado (14/10/2026)
+
+Rediseño de `/web/` siguiendo la guía "taste-skill" que subió Lauti (dirección "el producto en acción"):
+- La portada tiene la cola funcionando: tocás "Quiero jugar un amistoso", entrás a la cola, llega una invitación y llegás a Match listo. Es un ejemplo con nombres inventados y lo dice abajo.
+- "Así se arma un partido": en compu la captura de la app queda quieta y cambia con cada paso; en el celular va una captura por paso.
+- Reglas de la guía: sin degradados ni brillos, sin sombras salvo la invitación que flota, sin etiquetas chiquitas arriba de los títulos, títulos de dos renglones como mucho, preguntas una al lado de la otra (sin acordeón), cierre en azul y el nombre en grande al pie.
+- Manrope servida desde `/web/fuentes/` (licencia OFL). Capturas con `scripts/capturas-web.mjs`.
+- Los scripts de la guía (draw, inspect, assets) no se ejecutaron: se usaron como referencia su texto y sus datos.

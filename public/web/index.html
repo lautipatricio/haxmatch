@@ -7,10 +7,11 @@
   <title>HaxMatch · Amistosos de HaxBall</title>
   <meta name="description" content="HaxMatch es una app web gratuita para que jugadores de HaxBall encuentren amistosos, armen equipos y vean clips de la comunidad.">
   <meta property="og:title" content="HaxMatch · Amistosos de HaxBall">
-  <meta property="og:description" content="Encontrá amistosos de HaxBall, armá tu equipo y mirá clips de la comunidad.">
-  <meta property="og:image" content="https://haxmatch.lauti.workers.dev/icon-512.png?v=2">
+  <meta property="og:description" content="Te anotás en la cola, una sala que necesita jugadores te invita, y entrás.">
+  <meta property="og:image" content="https://haxmatch.lauti.workers.dev/web/compu.webp">
   <link rel="icon" href="/icon.svg?v=2" type="image/svg+xml">
   <link rel="canonical" href="https://haxmatch.lauti.workers.dev/web/">
+  <link rel="preload" href="/web/fuentes/manrope-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
   <script>
     // Idioma: el que se eligió antes, o el del navegador (español o inglés).
     (function () {
@@ -19,269 +20,447 @@
       if (l !== 'es' && l !== 'en') l = /^es\b/i.test(navigator.language || 'es') ? 'es' : 'en'
       document.documentElement.dataset.l = l
       document.documentElement.lang = l
+      document.documentElement.classList.add('js')
     })()
   </script>
   <style>
+    @font-face { font-family: Manrope; font-weight: 400; font-display: swap; src: url(/web/fuentes/manrope-latin-400-normal.woff2) format('woff2'); }
+    @font-face { font-family: Manrope; font-weight: 500; font-display: swap; src: url(/web/fuentes/manrope-latin-500-normal.woff2) format('woff2'); }
+    @font-face { font-family: Manrope; font-weight: 600; font-display: swap; src: url(/web/fuentes/manrope-latin-600-normal.woff2) format('woff2'); }
+    @font-face { font-family: Manrope; font-weight: 700; font-display: swap; src: url(/web/fuentes/manrope-latin-700-normal.woff2) format('woff2'); }
+    @font-face { font-family: Manrope; font-weight: 800; font-display: swap; src: url(/web/fuentes/manrope-latin-800-normal.woff2) format('woff2'); }
+
     :root {
       color-scheme: dark;
-      --bg: #090D14; --card: #111827; --mute: #1A2333; --line: #293241;
-      --fg: #EAF2FF; --fg2: #8A9AB5; --accent: #3B82F6; --accent-fondo: #2563EB; --vivo: #4ADE80;
+      /* Los colores de la app (paleta "Noche"). */
+      --fondo: #090D14;
+      --escenario: #111827;
+      --paso: #1A2333;
+      --linea: #293241;
+      --tinta: #EAF2FF;
+      --tinta2: #A3B1C9;
+      --azul: #3B82F6;
+      --azul-fondo: #2563EB;
+      --vivo: #4ADE80;
+      --margen: clamp(20px, 3vw, 40px);
+      --entre: clamp(112px, 14vw, 200px);
+      --sale: cubic-bezier(.2, .7, .2, 1);
     }
     * { box-sizing: border-box; }
     html[data-l="es"] [lang="en"], html[data-l="en"] [lang="es"] { display: none !important; }
+    html { scroll-behavior: smooth; }
     body {
-      margin: 0; background: var(--bg); color: var(--fg);
-      font: 17px/1.6 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      margin: 0; background: var(--fondo); color: var(--tinta);
+      font: 400 18px/1.55 Manrope, system-ui, sans-serif;
       -webkit-font-smoothing: antialiased; overflow-x: hidden;
     }
-    body::before, body::after {
-      content: ''; position: fixed; z-index: -1; border-radius: 50%; filter: blur(90px); pointer-events: none;
-    }
-    body::before { width: 520px; height: 520px; top: -220px; left: -160px; background: rgba(59,130,246,.22); }
-    body::after { width: 460px; height: 460px; bottom: -240px; right: -160px; background: rgba(37,99,235,.14); }
-    a { color: var(--accent); }
-    .envoltura { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+    a { color: inherit; }
+    img { display: block; max-width: 100%; height: auto; }
+    h1, h2, h3, p { margin: 0; }
+    h1, h2 { text-wrap: balance; }
+    p { text-wrap: pretty; }
+    :focus-visible { outline: 2px solid var(--azul); outline-offset: 3px; }
+    .saltar { position: absolute; left: -9999px; top: 8px; background: var(--tinta); color: var(--fondo); padding: 10px 16px; border-radius: 999px; z-index: 10; }
+    .saltar:focus { left: 8px; }
 
-    /* Arriba */
-    .barra { display: flex; align-items: center; gap: 16px; padding: 20px 0; }
-    .marca { display: flex; align-items: center; gap: 10px; color: var(--fg); text-decoration: none; font-weight: 800; letter-spacing: .14em; font-size: 15px; }
-    .marca img { width: 32px; height: 32px; border-radius: 8px; }
-    .barra nav { margin-left: auto; display: flex; align-items: center; gap: 18px; font-size: 15px; }
-    .barra nav a { color: var(--fg2); text-decoration: none; }
-    .barra nav a:hover { color: var(--fg); }
-    .idioma { display: flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
-    .idioma button {
-      font: inherit; font-size: 13px; font-weight: 700; color: var(--fg2); background: none; border: 0;
-      padding: 4px 10px; border-radius: 999px; cursor: pointer; min-height: 32px;
+    /* Botones: llenos, de un solo color y redondos del todo. */
+    .boton {
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      min-height: 52px; padding: 0 26px; border-radius: 999px; border: 0;
+      background: var(--azul-fondo); color: #fff; font: 700 17px/1 Manrope, sans-serif; text-decoration: none;
+      cursor: pointer; transition: transform 200ms var(--sale), background-color 200ms;
     }
-    html[data-l="es"] .idioma [data-ir="es"], html[data-l="en"] .idioma [data-ir="en"] { background: var(--mute); color: var(--fg); }
-    @media (max-width: 720px) { .barra nav .ocultable { display: none; } }
+    .boton:hover { background: var(--azul); }
+    .boton:active { transform: scale(.97); }
+    .boton--claro { background: var(--tinta); color: var(--fondo); }
+    .boton--claro:hover { background: #fff; }
+    .enlace { font-weight: 600; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+    .enlace:hover { text-decoration-thickness: 2px; }
 
-    /* Portada */
-    .portada { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; padding: 48px 0 72px; }
-    .etiqueta { display: inline-flex; align-items: center; gap: 8px; color: var(--fg2); font-size: 14px; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; }
-    .etiqueta i { width: 8px; height: 8px; border-radius: 50%; background: var(--vivo); }
-    h1 { font-size: clamp(38px, 6vw, 64px); line-height: 1.04; letter-spacing: -.03em; margin: 18px 0 18px; font-weight: 700; text-wrap: balance; }
-    h1 em { font-style: normal; color: var(--accent); }
-    .bajada { color: var(--fg2); font-size: 19px; max-width: 34em; margin: 0 0 28px; }
-    .botones { display: flex; flex-wrap: wrap; gap: 12px; }
-    .btn {
-      display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 24px;
-      border-radius: 14px; font-weight: 700; text-decoration: none; font-size: 16px;
+    /* Arriba: la marca, tres links y una acción. */
+    .barra {
+      display: flex; align-items: center; gap: 28px; padding: 22px var(--margen);
+      position: relative; z-index: 2;
     }
-    .btn--pri { background: var(--accent-fondo); color: #fff; box-shadow: 0 10px 30px rgba(37,99,235,.35); }
-    .btn--pri:hover { background: var(--accent); }
-    .btn--sec { border: 1px solid var(--line); color: var(--fg); background: var(--card); }
-    .gratis { color: var(--fg2); font-size: 14px; margin-top: 14px; }
-    .telefonos { position: relative; height: 560px; }
-    .tel {
-      position: absolute; width: 240px; border-radius: 32px; border: 1px solid var(--line);
-      box-shadow: 0 30px 80px rgba(0,0,0,.55); overflow: hidden; background: var(--card);
+    .marca { font-weight: 800; font-size: 19px; letter-spacing: -.02em; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+    .marca img { width: 30px; height: 30px; border-radius: 8px; }
+    .barra nav { display: flex; gap: 24px; margin-left: auto; font-size: 16px; }
+    .barra nav a { text-decoration: none; color: var(--tinta2); transition: color 200ms; }
+    .barra nav a:hover { color: var(--tinta); }
+    .idioma { display: flex; background: var(--escenario); border-radius: 999px; padding: 4px; }
+    .idioma button { font: 700 14px/1 Manrope, sans-serif; color: var(--tinta2); background: none; border: 0; border-radius: 999px; padding: 0 12px; min-height: 36px; cursor: pointer; }
+    html[data-l="es"] [data-ir="es"], html[data-l="en"] [data-ir="en"] { background: var(--paso); color: var(--tinta); }
+    .barra .boton { min-height: 44px; padding: 0 20px; font-size: 15px; }
+    @media (max-width: 860px) { .barra nav { display: none; } .idioma { margin-left: auto; } }
+    @media (max-width: 420px) { .barra .boton { display: none; } }
+
+    /* Portada: el título a la izquierda y, al lado, la cola funcionando. */
+    .portada {
+      display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 520px); gap: clamp(32px, 5vw, 96px);
+      align-items: center; padding: clamp(32px, 6vw, 88px) var(--margen) var(--entre);
+      max-width: 1440px; margin: 0 auto;
     }
-    .tel img { display: block; width: 100%; height: auto; }
-    .tel--1 { left: 0; top: 40px; transform: rotate(-4deg); }
-    .tel--2 { right: 0; top: 0; transform: rotate(3deg); }
-    @media (max-width: 880px) {
-      .portada { grid-template-columns: 1fr; padding-top: 24px; }
-      .telefonos { height: 440px; max-width: 420px; margin: 0 auto; width: 100%; }
-      .tel { width: 190px; }
+    .portada h1 { font-size: clamp(44px, 5.6vw, 92px); line-height: .98; letter-spacing: -.045em; font-weight: 700; max-width: 10.5em; }
+    .portada .bajada { font-size: clamp(18px, 1.6vw, 22px); max-width: 30em; margin: 28px 0 36px; }
+    .acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px; }
+    .gratis { margin-top: 28px; color: var(--tinta2); font-size: 16px; }
+    @media (max-width: 960px) { .portada { grid-template-columns: 1fr; } }
+
+    /* Pedazos de la app (data-ui): ahí valen las reglas de la app, con sus bordes y radios. */
+    [data-ui] { font-size: 15px; line-height: 1.4; }
+    .cola { background: var(--escenario); border-radius: 28px; padding: 24px; position: relative; overflow: hidden; }
+    .cola__cuenta { display: flex; align-items: baseline; gap: 14px; margin-bottom: 18px; }
+    .cola__num { font-size: 64px; font-weight: 300; line-height: .9; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+    .cola__cuenta span:last-child { color: var(--tinta2); display: flex; align-items: center; gap: 8px; }
+    .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--vivo); flex: none; display: inline-block; }
+    .cola__boton {
+      width: 100%; display: flex; align-items: center; justify-content: space-between; text-align: left;
+      background: var(--azul-fondo); color: #fff; border: 0; border-radius: 18px; padding: 16px 18px; cursor: pointer;
+      font: inherit; transition: transform 200ms var(--sale), background-color 200ms;
     }
+    .cola__boton:hover { background: var(--azul); }
+    .cola__boton:active { transform: scale(.98); }
+    .cola__boton b { display: block; font-size: 18px; font-weight: 700; }
+    .cola__boton small { font-size: 13px; opacity: .85; }
+    .cola__boton[disabled] { background: var(--paso); color: var(--tinta2); cursor: default; }
+    .cola__titulo { color: var(--tinta2); font-size: 14px; margin: 20px 0 6px; }
+    .fila { display: flex; align-items: center; gap: 12px; padding: 9px 0; }
+    .fila + .fila { border-top: 1px solid var(--linea); }
+    .ava { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-weight: 600; flex: none; color: var(--tinta); }
+    .fila b { font-weight: 600; }
+    .fila .sub { color: var(--tinta2); font-size: 13px; }
+    .tag { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--tinta2); margin-left: 6px; }
+    .fila--yo { animation: entra 500ms var(--sale) both; }
+    .fila--yo .ava { background: var(--azul-fondo); }
+    .reloj { margin-left: auto; color: var(--azul); font-variant-numeric: tabular-nums; font-weight: 600; }
+    /* La invitación sube desde abajo, como en la app. */
+    .hoja {
+      position: absolute; left: 0; right: 0; bottom: 0; background: #151E30; border-radius: 24px 24px 28px 28px;
+      padding: 22px 24px 24px; transform: translateY(105%); visibility: hidden; transition: transform 450ms var(--sale), visibility 0s 450ms;
+      box-shadow: 0 -20px 40px rgba(0, 0, 0, .45);
+    }
+    .hoja.abierta { transform: none; visibility: visible; transition: transform 450ms var(--sale); }
+    .hoja h3 { font-size: 21px; margin-bottom: 12px; }
+    .invita { border: 1.5px solid var(--azul); border-radius: 16px; padding: 12px 14px; display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+    .invita b { font-size: 19px; }
+    .invita .sub { color: var(--tinta2); font-size: 13px; }
+    .hoja p { margin-bottom: 14px; }
+    .hoja .botones { display: grid; gap: 8px; }
+    .hoja button { border: 0; border-radius: 14px; min-height: 46px; font: 700 15px/1 Manrope, sans-serif; cursor: pointer; transition: transform 200ms var(--sale), background-color 200ms; }
+    .hoja button:active { transform: scale(.98); }
+    .si { background: var(--azul-fondo); color: #fff; }
+    .si:hover { background: var(--azul); }
+    .no { background: var(--paso); color: var(--tinta); }
+    .listo { text-align: center; padding: 6px 0 4px; }
+    .listo .check { width: 56px; height: 56px; border-radius: 50%; background: var(--azul-fondo); display: grid; place-items: center; margin: 0 auto 12px; }
+    .listo .sala { background: var(--escenario); border-radius: 16px; padding: 14px; margin: 14px 0; text-align: left; }
+    .listo .sala .sub { color: var(--tinta2); font-size: 13px; }
+    .listo .sala b { display: block; font-size: 26px; letter-spacing: -.02em; }
+    .ejemplo { color: var(--tinta2); font-size: 14px; margin-top: 14px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .ejemplo button { background: none; border: 0; color: var(--tinta); font: 600 14px Manrope, sans-serif; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 0; min-height: 24px; }
+    @keyframes entra { from { opacity: 0; transform: translateY(-10px); } }
 
     /* Secciones */
-    section { padding: 64px 0; border-top: 1px solid var(--line); }
-    h2 { font-size: clamp(28px, 4vw, 38px); line-height: 1.15; letter-spacing: -.02em; margin: 0 0 12px; font-weight: 700; text-wrap: balance; }
-    .intro { color: var(--fg2); max-width: 40em; margin: 0 0 36px; }
-    .pasos { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; counter-reset: p; }
-    .pasos li { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 24px; counter-increment: p; }
-    .pasos li::before {
-      content: counter(p); display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
-      background: var(--mute); color: var(--accent); font-weight: 800; margin-bottom: 16px;
+    section { padding: 0 var(--margen) var(--entre); max-width: 1440px; margin: 0 auto; }
+    h2 { font-size: clamp(36px, 4.6vw, 68px); line-height: 1; letter-spacing: -.035em; font-weight: 700; max-width: 14em; }
+    .texto { max-width: 34em; margin-top: 22px; }
+
+    /* Cómo funciona: la pantalla queda quieta y cambia mientras pasan los tres pasos. */
+    .historia { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(32px, 6vw, 112px); margin-top: 72px; }
+    .pantalla { position: sticky; top: 40px; align-self: start; width: min(100%, 360px); aspect-ratio: 390 / 844; justify-self: center; }
+    .pantalla img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 32px; opacity: 0; transition: opacity 500ms var(--sale); }
+    .pantalla img.ve { opacity: 1; }
+    .pasos { list-style: none; margin: 0; padding: 0; }
+    .pasos li { min-height: 78vh; display: flex; flex-direction: column; justify-content: center; }
+    .pasos h3 { font-size: clamp(28px, 3vw, 44px); line-height: 1.05; letter-spacing: -.03em; font-weight: 700; }
+    .pasos p { margin-top: 16px; max-width: 26em; color: var(--tinta2); transition: color 400ms; }
+    .pasos li.activo p { color: var(--tinta); }
+    .pasos .foto-cel { display: none; }
+    @media (max-width: 860px) {
+      .historia { grid-template-columns: 1fr; margin-top: 48px; }
+      .pantalla { display: none; }
+      .pasos li { min-height: 0; margin-bottom: 72px; }
+      .pasos p { color: var(--tinta); }
+      .pasos .foto-cel { display: block; width: min(100%, 340px); border-radius: 28px; margin-top: 28px; }
     }
-    .pasos h3, .funciones h3 { margin: 0 0 6px; font-size: 18px; }
-    .pasos p, .funciones p { margin: 0; color: var(--fg2); font-size: 16px; }
-    .funciones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px 32px; }
-    .funciones div { padding-left: 16px; border-left: 2px solid var(--line); }
-    @media (max-width: 880px) { .pasos, .funciones { grid-template-columns: 1fr; } }
 
-    .dos { display: grid; grid-template-columns: .8fr 1.2fr; gap: 48px; align-items: center; }
-    .dos .tel { position: static; transform: none; width: 100%; max-width: 280px; margin: 0 auto; }
-    .lista { padding: 0; margin: 0; list-style: none; }
-    .lista li { padding: 12px 0 12px 30px; border-bottom: 1px solid var(--line); position: relative; color: var(--fg2); }
-    .lista li::before { content: ''; position: absolute; left: 4px; top: 21px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
-    .lista strong { color: var(--fg); }
-    @media (max-width: 880px) { .dos { grid-template-columns: 1fr; } .dos .tel { order: 2; } }
+    /* Tu sala: dos partes, el texto y la pieza del formulario. */
+    .dividida { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(32px, 6vw, 112px); align-items: center; }
+    @media (max-width: 860px) { .dividida { grid-template-columns: 1fr; } }
+    .form { background: var(--escenario); border-radius: 28px; padding: clamp(20px, 3vw, 36px); }
+    .form h4 { margin: 0 0 10px; font-size: 14px; font-weight: 500; color: var(--tinta2); }
+    .form h4 ~ h4 { margin-top: 20px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { border: 1px solid var(--linea); border-radius: 999px; padding: 9px 16px; font-weight: 500; }
+    .chip.si-elegido { background: var(--azul-fondo); border-color: var(--azul-fondo); color: #fff; font-weight: 600; }
+    .campo { border: 1px solid #4B5A70; border-radius: 14px; padding: 13px 16px; }
+    .vista-previa { margin-top: 24px; background: var(--fondo); border-radius: 18px; padding: 18px; }
+    .vista-previa .sub { color: var(--tinta2); font-size: 13px; margin-bottom: 6px; }
 
-    .tiktok { background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 32px; }
-    .tiktok h2 { font-size: 28px; }
+    /* En la compu: un campo de otro color, de punta a punta. */
+    .campo-azul { background: #0E1626; max-width: none; padding: var(--entre) 0; margin-bottom: var(--entre); }
+    .campo-azul > div { max-width: 1440px; margin: 0 auto; padding: 0 var(--margen); }
+    .compu { margin-top: 64px; display: grid; grid-template-columns: minmax(0, 9fr) minmax(0, 3fr); gap: clamp(20px, 3vw, 48px); align-items: end; }
+    .compu figure { margin: 0; overflow: hidden; border-radius: 20px; }
+    .compu figure img { transform: scale(1.04); transition: transform 1.2s var(--sale); }
+    .compu figure.en-vista img { transform: none; }
+    .compu .cel { border-radius: 28px; margin-bottom: clamp(0px, 6vw, 96px); }
+    @media (max-width: 760px) { .compu { grid-template-columns: 1fr; } .compu .cel { display: none; } }
 
-    details { border-bottom: 1px solid var(--line); padding: 4px 0; }
-    summary { cursor: pointer; font-weight: 600; padding: 14px 0; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
-    summary::after { content: '+'; color: var(--fg2); font-weight: 400; font-size: 22px; line-height: 1; }
-    details[open] summary::after { content: '–'; }
-    details p { margin: 0 0 16px; color: var(--fg2); }
+    /* Todo lo demás: una lista de nombres grandes, con la pantalla del Perfil al costado. */
+    .resto { display: grid; grid-template-columns: minmax(0, 8fr) minmax(0, 4fr); gap: clamp(32px, 6vw, 112px); align-items: start; margin-top: 64px; }
+    .resto dl { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 44px clamp(24px, 4vw, 64px); }
+    .resto dt { font-size: clamp(24px, 2.2vw, 30px); font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+    .resto dd { margin: 10px 0 0; }
+    .resto img { border-radius: 28px; width: min(100%, 340px); justify-self: end; }
+    @media (max-width: 960px) { .resto { grid-template-columns: 1fr; } .resto img { justify-self: start; } }
+    @media (max-width: 560px) { .resto dl { grid-template-columns: 1fr; } }
 
-    .final { text-align: center; }
-    .final .botones { justify-content: center; }
+    /* Clips con TikTok */
+    .tiktok { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(32px, 6vw, 112px); align-items: center; }
+    @media (max-width: 860px) { .tiktok { grid-template-columns: 1fr; } }
+    .hechos { list-style: none; padding: 0; margin: 32px 0 0; display: grid; gap: 20px; max-width: 34em; }
+    .hechos li { padding-left: 22px; position: relative; }
+    .hechos li::before { content: ''; position: absolute; left: 0; top: 11px; width: 8px; height: 8px; border-radius: 50%; background: var(--azul); }
+    .cuentas { background: var(--escenario); border-radius: 28px; padding: 10px 22px; }
+    .cuenta { display: flex; align-items: center; gap: 14px; padding: 14px 0; }
+    .cuenta + .cuenta { border-top: 1px solid var(--linea); }
+    .cuenta .ava { background: var(--paso); }
+    .cuenta .sub { color: var(--tinta2); font-size: 13px; }
+    .cuenta .grow { flex: 1; min-width: 0; }
+    .mini-boton { background: var(--azul-fondo); color: #fff; border-radius: 12px; padding: 9px 14px; font-weight: 700; font-size: 14px; }
+    .interruptor { width: 46px; height: 28px; border-radius: 999px; background: var(--azul-fondo); position: relative; flex: none; }
+    .interruptor::after { content: ''; position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; border-radius: 50%; background: #fff; }
 
-    footer { border-top: 1px solid var(--line); padding: 32px 0 48px; color: var(--fg2); font-size: 15px; }
-    footer .links { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-bottom: 14px; }
-    footer .links a { color: var(--fg); text-decoration: none; }
-    footer .links a:hover { text-decoration: underline; }
-    footer p { margin: 6px 0; }
-    :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+    /* Preguntas: pregunta a la izquierda, respuesta a la derecha. */
+    .preguntas { margin-top: 56px; display: grid; gap: 40px; }
+    .pregunta { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 12px clamp(24px, 6vw, 112px); }
+    .pregunta h3 { font-size: 22px; font-weight: 700; letter-spacing: -.01em; line-height: 1.25; }
+    @media (max-width: 900px) { .pregunta { grid-template-columns: 1fr; } }
+
+    /* Cierre: el campo entero en azul. */
+    .cierre { background: var(--azul-fondo); color: #fff; max-width: none; padding: var(--entre) var(--margen); margin: 0; }
+    .cierre > div { max-width: 1440px; margin: 0 auto; }
+    .cierre h2 { font-size: clamp(44px, 7vw, 108px); }
+    .cierre p { margin: 24px 0 40px; max-width: 30em; font-size: 20px; }
+
+    footer { padding: 72px var(--margen) 40px; max-width: 1440px; margin: 0 auto; }
+    .nombre-grande { font-size: clamp(56px, 16.5vw, 248px); font-weight: 800; letter-spacing: -.06em; line-height: .8; margin: 0 0 48px -.04em; white-space: nowrap; }
+    .pie { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 24px 48px; color: var(--tinta2); font-size: 15px; }
+    .pie nav { display: flex; flex-wrap: wrap; gap: 10px 24px; }
+    .pie nav a { color: var(--tinta); text-decoration: none; }
+    .pie nav a:hover { text-decoration: underline; text-underline-offset: 4px; }
+    .pie p { max-width: 36em; }
+
+    /* Aparecer: el título, después el texto, después la imagen. Sin script, todo se ve. */
+    .js .sube { opacity: 0; transform: translateY(24px); transition: opacity 700ms var(--sale), transform 700ms var(--sale); transition-delay: calc(var(--i, 0) * 80ms); }
+    .js .sube.en-vista { opacity: 1; transform: none; }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .js .sube { opacity: 1; transform: none; transition: none; }
+      .hoja, .pantalla img, .compu figure img { transition: none; }
+      .compu figure img { transform: none; }
+      .fila--yo { animation: none; }
+    }
   </style>
 </head>
 <body>
-  <div class="envoltura">
-    <header class="barra">
-      <a class="marca" href="/web/"><img src="/icon-192.png?v=2" alt="" width="32" height="32">HAXMATCH</a>
-      <nav aria-label="Secciones">
-        <a class="ocultable" href="#como-funciona"><span lang="es">Cómo funciona</span><span lang="en">How it works</span></a>
-        <a class="ocultable" href="#clips"><span lang="es">Clips</span><span lang="en">Clips</span></a>
-        <a class="ocultable" href="#preguntas"><span lang="es">Preguntas</span><span lang="en">FAQ</span></a>
-        <div class="idioma" role="group" aria-label="Idioma / Language">
-          <button type="button" data-ir="es">ES</button>
-          <button type="button" data-ir="en">EN</button>
-        </div>
-      </nav>
-    </header>
+  <a class="saltar" href="#contenido"><span lang="es">Ir al contenido</span><span lang="en">Skip to content</span></a>
 
-    <main>
-      <div class="portada">
-        <div>
-          <span class="etiqueta"><i></i><span lang="es">Gratis · en el celular y en la compu</span><span lang="en">Free · on your phone and computer</span></span>
-          <h1>
-            <span lang="es">Encontrá con quién jugar <em>HaxBall</em>, en segundos.</span>
-            <span lang="en">Find people to play <em>HaxBall</em> with, in seconds.</span>
-          </h1>
-          <p class="bajada">
-            <span lang="es">HaxMatch junta a los jugadores que quieren un amistoso con los equipos a los que les falta gente. Te anotás, te invitan, y entrás a la sala.</span>
-            <span lang="en">HaxMatch connects players who want a friendly match with teams that are short of players. Join the queue, get invited, and jump into the room.</span>
-          </p>
-          <div class="botones">
-            <a class="btn btn--pri" href="/"><span lang="es">Abrir HaxMatch</span><span lang="en">Open HaxMatch</span></a>
-            <a class="btn btn--sec" href="#como-funciona"><span lang="es">Cómo funciona</span><span lang="en">How it works</span></a>
-          </div>
-          <p class="gratis">
-            <span lang="es">Entrás con tu cuenta de Discord. Se instala como app desde el navegador.</span>
-            <span lang="en">Sign in with your Discord account. Install it as an app from your browser.</span>
-          </p>
+  <header class="barra">
+    <a class="marca" href="/web/"><img src="/icon-192.png?v=2" alt="" width="30" height="30">HaxMatch</a>
+    <nav aria-label="Secciones">
+      <a href="#como"><span lang="es">Cómo funciona</span><span lang="en">How it works</span></a>
+      <a href="#clips">Clips</a>
+      <a href="#preguntas"><span lang="es">Preguntas</span><span lang="en">FAQ</span></a>
+    </nav>
+    <div class="idioma" role="group" aria-label="Idioma / Language">
+      <button type="button" data-ir="es">ES</button>
+      <button type="button" data-ir="en">EN</button>
+    </div>
+    <a class="boton" href="/"><span lang="es">Abrir la app</span><span lang="en">Open the app</span></a>
+  </header>
+
+  <main id="contenido">
+    <div class="portada">
+      <div>
+        <h1 class="sube">
+          <span lang="es">Armá tu amistoso de HaxBall</span>
+          <span lang="en">Set up your next HaxBall match</span>
+        </h1>
+        <p class="bajada sube" style="--i:1">
+          <span lang="es">Te anotás en la cola, una sala a la que le falta gente te invita, y entrás. Gratis, en el celular o en la compu.</span>
+          <span lang="en">Join the queue, a room that's short of players invites you, and you're in. Free, on your phone or your computer.</span>
+        </p>
+        <div class="acciones sube" style="--i:2">
+          <a class="boton" href="/"><span lang="es">Abrir HaxMatch</span><span lang="en">Open HaxMatch</span></a>
+          <a class="enlace" href="#como"><span lang="es">Cómo funciona</span><span lang="en">How it works</span></a>
         </div>
-        <div class="telefonos" aria-hidden="true">
-          <div class="tel tel--1"><img src="/web/inicio.webp" alt="" width="390" height="844"></div>
-          <div class="tel tel--2"><img src="/web/haxball.webp" alt="" width="390" height="844"></div>
-        </div>
+        <p class="gratis sube" style="--i:3"><span lang="es">Entrás con tu cuenta de Discord. Se instala como app desde el navegador.</span><span lang="en">Sign in with Discord. Install it as an app straight from your browser.</span></p>
       </div>
 
-      <section id="como-funciona">
-        <h2><span lang="es">Cómo funciona</span><span lang="en">How it works</span></h2>
-        <p class="intro">
-          <span lang="es">Los partidos se juegan en HaxBall, como siempre. HaxMatch es el lugar donde se arman.</span>
-          <span lang="en">Matches are played on HaxBall, as always. HaxMatch is where they come together.</span>
-        </p>
+      <!-- La cola, funcionando: tocás el botón, entrás a la cola y te llega una invitación. -->
+      <div class="sube" style="--i:2">
+        <div class="cola" data-ui id="cola" aria-live="polite">
+          <div class="cola__cuenta">
+            <span class="cola__num" id="cuantos">7</span>
+            <span><i class="punto"></i><span lang="es">jugadores buscando ahora</span><span lang="en">players looking right now</span></span>
+          </div>
+          <button class="cola__boton" type="button" id="quiero">
+            <span>
+              <b><span lang="es">Quiero jugar un amistoso</span><span lang="en">I want to play a friendly</span></b>
+              <small><span lang="es">Entrás directo a la cola y las salas te invitan</span><span lang="en">Go straight into the queue and rooms invite you</span></small>
+            </span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+          </button>
+          <div class="cola__titulo"><span lang="es">Quieren jugar un amistoso</span><span lang="en">Want to play a friendly</span></div>
+          <div id="filas">
+            <div class="fila"><span class="ava" style="background:#4F7A6A">M</span><span><b>Mati_</b> <i class="punto"></i><span class="tag">AMIGO</span><br><span class="sub"><span lang="es">Nivel 4 · ARG · hace 2 min</span><span lang="en">Level 4 · ARG · 2 min ago</span></span></span></div>
+            <div class="fila"><span class="ava" style="background:#8C7650">T</span><span><b>Tobi_GK</b> <i class="punto"></i> +1<br><span class="sub"><span lang="es">Nivel 6 · Grupo de 2 · ARG</span><span lang="en">Level 6 · Group of 2 · ARG</span></span></span></div>
+            <div class="fila"><span class="ava" style="background:#6E5A8C">P</span><span><b>Pibe9</b><br><span class="sub"><span lang="es">Nivel 3 · ARG, CHI · hace 9 min</span><span lang="en">Level 3 · ARG, CHI · 9 min ago</span></span></span></div>
+          </div>
+          <div class="hoja" id="hoja" role="dialog" aria-label="Invitación" aria-hidden="true"></div>
+        </div>
+        <div class="ejemplo">
+          <span><span lang="es">Probalo: es un ejemplo, los nombres son inventados.</span><span lang="en">Try it: it's a demo, the names are made up.</span></span>
+          <button type="button" id="otra-vez" hidden><span lang="es">Empezar de nuevo</span><span lang="en">Start over</span></button>
+        </div>
+      </div>
+    </div>
+
+    <section id="como">
+      <h2 class="sube"><span lang="es">Así se arma un partido</span><span lang="en">How a match comes together</span></h2>
+      <p class="texto sube" style="--i:1"><span lang="es">Los partidos se juegan en HaxBall, como siempre. HaxMatch junta a la gente y te pasa la sala.</span><span lang="en">Matches are played on HaxBall, as always. HaxMatch brings people together and hands you the room.</span></p>
+      <div class="historia">
+        <div class="pantalla" aria-hidden="true">
+          <img class="ve" src="/web/buscando.webp" alt="" width="390" height="844">
+          <img src="/web/invitacion.webp" alt="" width="390" height="844" loading="lazy">
+          <img src="/web/match.webp" alt="" width="390" height="844" loading="lazy">
+        </div>
         <ol class="pasos">
-          <li>
-            <h3><span lang="es">Te anotás para jugar</span><span lang="en">Join the queue</span></h3>
-            <p><span lang="es">Tocás "Quiero jugar un amistoso" y quedás a la vista de las salas a las que les falta gente.</span><span lang="en">Tap "I want to play a friendly" and you become visible to rooms that need players.</span></p>
+          <li data-paso="0">
+            <h3><span lang="es">Te anotás con un toque</span><span lang="en">Join with one tap</span></h3>
+            <p><span lang="es">Sin formularios. Tocás "Quiero jugar un amistoso" y quedás a la vista de los equipos a los que les falta gente. Si venís con amigos, entran juntos.</span><span lang="en">No forms. Tap "I want to play a friendly" and teams that are short of players can see you. Bring friends and you join together.</span></p>
+            <img class="foto-cel" src="/web/buscando.webp" alt="La pantalla Buscando partido, con los equipos y jugadores en la cola" width="390" height="844" loading="lazy">
           </li>
-          <li>
-            <h3><span lang="es">O abrís tu sala</span><span lang="en">Or open your room</span></h3>
-            <p><span lang="es">Decís qué posición te falta y en qué cancha, y elegís a quién invitar. Le llega el aviso al instante.</span><span lang="en">Say which position you need and on which field, then pick who to invite. They get notified instantly.</span></p>
+          <li data-paso="1">
+            <h3><span lang="es">Te llega la invitación</span><span lang="en">The invite arrives</span></h3>
+            <p><span lang="es">La sala dice en qué cancha juega y qué posición busca. Te avisa aunque tengas la app cerrada. Respondé rápido: si no, el lugar lo ocupa otro.</span><span lang="en">The room says which field it plays on and which position it needs. You're notified even with the app closed. Answer fast, or someone else takes the spot.</span></p>
+            <img class="foto-cel" src="/web/invitacion.webp" alt="Una invitación de la sala futsal rolo, con los botones Sí, quiero jugar y Ahora no" width="390" height="844" loading="lazy">
           </li>
-          <li>
-            <h3><span lang="es">Juegan y confirman</span><span lang="en">Play and confirm</span></h3>
-            <p><span lang="es">Entran a la sala de HaxBall con el link del host. Cada amistoso confirmado suma puntos y te hace subir de nivel.</span><span lang="en">Join the HaxBall room through the host's link. Every confirmed match earns points and levels you up.</span></p>
+          <li data-paso="2">
+            <h3><span lang="es">Entrás a la sala y suma</span><span lang="en">Join the room, earn points</span></h3>
+            <p><span lang="es">Match listo te da el nombre de la sala, o el link del host para entrar directo. Cada amistoso confirmado suma puntos y te sube de nivel.</span><span lang="en">Match ready gives you the room name, or the host's link to jump right in. Every confirmed match earns points and levels you up.</span></p>
+            <img class="foto-cel" src="/web/match.webp" alt="La pantalla Match listo con el nombre de la sala en grande" width="390" height="844" loading="lazy">
           </li>
         </ol>
-      </section>
+      </div>
+    </section>
 
-      <section>
-        <h2><span lang="es">Todo lo que trae</span><span lang="en">What's inside</span></h2>
-        <p class="intro"><span lang="es">Pensada para la comunidad de HaxBall de Argentina, Chile, Uruguay, Brasil y el resto de la región.</span><span lang="en">Built for the HaxBall community in Argentina, Chile, Uruguay, Brazil and the rest of the region.</span></p>
-        <div class="funciones">
-          <div><h3><span lang="es">Cola en vivo</span><span lang="en">Live queue</span></h3><p><span lang="es">Mirá quién está buscando partido ahora mismo y qué equipos necesitan jugadores.</span><span lang="en">See who is looking for a match right now and which teams need players.</span></p></div>
-          <div><h3><span lang="es">Invitaciones al instante</span><span lang="en">Instant invites</span></h3><p><span lang="es">Avisos en el celular o en la compu cuando una sala te invita, aunque tengas la app cerrada.</span><span lang="en">Notifications on your phone or computer when a room invites you, even with the app closed.</span></p></div>
-          <div><h3><span lang="es">Niveles y puntos</span><span lang="en">Levels and points</span></h3><p><span lang="es">Sumá puntos por cada amistoso jugado y por entrar seguido.</span><span lang="en">Earn points for every match played and for coming back regularly.</span></p></div>
-          <div><h3><span lang="es">Amigos</span><span lang="en">Friends</span></h3><p><span lang="es">Agregá amigos por su nick y enterate cuando se ponen a buscar partido.</span><span lang="en">Add friends by nickname and know when they start looking for a match.</span></p></div>
-          <div><h3><span lang="es">Chat de la comunidad</span><span lang="en">Community chat</span></h3><p><span lang="es">Un chat general con moderación, donde los mensajes duran 24 horas.</span><span lang="en">A moderated general chat where messages last 24 hours.</span></p></div>
-          <div><h3><span lang="es">Jugadores en vivo</span><span lang="en">Live streamers</span></h3><p><span lang="es">Mirá qué jugadores están transmitiendo en Kick en este momento.</span><span lang="en">See which players are streaming on Kick right now.</span></p></div>
+    <section>
+      <div class="dividida">
+        <div>
+          <h2 class="sube"><span lang="es">¿Tenés sala? Invitá vos</span><span lang="en">Got a room? You invite</span></h2>
+          <p class="texto sube" style="--i:1"><span lang="es">Decís la cancha, cuántos faltan y qué posición buscás. Elegís de la cola a quién invitar y, si el host te pasó el link, se lo mandamos con la invitación.</span><span lang="en">Choose the field, how many you need and the position. Pick who to invite from the queue, and if you have the host's link, we send it along once they accept.</span></p>
         </div>
-      </section>
-
-      <section id="perfil">
-        <div class="dos">
-          <div class="tel"><img src="/web/perfil.webp" alt="" width="390" height="844"></div>
-          <div>
-            <h2><span lang="es">Tu perfil de jugador</span><span lang="en">Your player profile</span></h2>
-            <p class="intro"><span lang="es">Todo lo tuyo en un lugar, y bajo tu control.</span><span lang="en">Everything about you in one place, and under your control.</span></p>
-            <ul class="lista">
-              <li><span lang="es"><strong>Nick y foto</strong> que elegís vos.</span><span lang="en"><strong>Nickname and photo</strong> of your choice.</span></li>
-              <li><span lang="es"><strong>Nivel, partidos jugados</strong> y asistencia a los partidos.</span><span lang="en"><strong>Level, matches played</strong> and match attendance.</span></li>
-              <li><span lang="es"><strong>Reportar o bloquear</strong> a cualquier jugador desde su ficha.</span><span lang="en"><strong>Report or block</strong> any player from their profile card.</span></li>
-              <li><span lang="es"><strong>Borrar tu cuenta</strong> cuando quieras, desde la app.</span><span lang="en"><strong>Delete your account</strong> anytime, from inside the app.</span></li>
-            </ul>
+        <div class="form sube" style="--i:2" data-ui aria-label="Ejemplo del formulario Necesito un jugador">
+          <h4><span lang="es">Cancha</span><span lang="en">Field</span></h4>
+          <div class="chips"><span class="chip">Classic</span><span class="chip si-elegido">Big</span><span class="chip">Futsal</span><span class="chip">Real Soccer</span></div>
+          <h4><span lang="es">Nombre de la sala</span><span lang="en">Room name</span></h4>
+          <div class="campo">nico 3v3 amistoso</div>
+          <h4><span lang="es">Cuántos faltan</span><span lang="en">Players needed</span></h4>
+          <div class="chips"><span class="chip">1</span><span class="chip si-elegido">2</span></div>
+          <h4><span lang="es">Posición que buscás</span><span lang="en">Position needed</span></h4>
+          <div class="chips"><span class="chip">Polifuncional</span><span class="chip si-elegido">GK</span><span class="chip">MC</span><span class="chip">DC</span></div>
+          <div class="vista-previa">
+            <div class="sub"><span lang="es">Lo que le llega al jugador</span><span lang="en">What the player receives</span></div>
+            <span lang="es">"nico 3v3 amistoso" está necesitando un GK en la cancha Big. ¿Querés jugar?</span>
+            <span lang="en">"nico 3v3 amistoso" needs a GK on the Big field. Want to play?</span>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section id="clips">
-        <div class="tiktok">
-          <h2><span lang="es">Clips de la comunidad, con TikTok</span><span lang="en">Community clips, with TikTok</span></h2>
-          <p class="intro">
-            <span lang="es">Si vinculás tu cuenta de TikTok, tus videos públicos con <strong>#haxball</strong> o <strong>#haxmatch</strong> aparecen en la sección Clips, con tu nombre de TikTok, para que los vea el resto de la comunidad. Vincularla es opcional.</span>
-            <span lang="en">If you link your TikTok account, your public videos tagged <strong>#haxball</strong> or <strong>#haxmatch</strong> show up in the Clips section, under your TikTok name, for the rest of the community to watch. Linking is optional.</span>
-          </p>
-          <ul class="lista">
-            <li><span lang="es">Solo leemos tu <strong>nombre de TikTok</strong> y la <strong>lista de tus videos públicos</strong>.</span><span lang="en">We only read your <strong>TikTok display name</strong> and your <strong>list of public videos</strong>.</span></li>
-            <li><span lang="es">Los videos se reproducen desde el reproductor de TikTok: <strong>no los descargamos ni publicamos nada</strong> en tu cuenta.</span><span lang="en">Videos play through TikTok's embedded player: <strong>we never download them or post anything</strong> to your account.</span></li>
-            <li><span lang="es">Podés <strong>ocultar</strong> cualquier video, o <strong>desvincular</strong> tu cuenta cuando quieras: borramos todo lo que trajimos y cancelamos el acceso.</span><span lang="en">You can <strong>hide</strong> any video, or <strong>unlink</strong> your account anytime: we delete everything we fetched and revoke access.</span></li>
+    <section class="campo-azul">
+      <div>
+        <h2 class="sube"><span lang="es">En la compu, todo a la vista</span><span lang="en">On a computer, all in view</span></h2>
+        <p class="texto sube" style="--i:1"><span lang="es">La cola, los equipos y el chat de la comunidad en una sola pantalla. En el celular, una pantalla para cada cosa. Sin tiendas: se instala desde el navegador.</span><span lang="en">The queue, the teams and the community chat on one screen. On your phone, one screen for each. No app store: install it from your browser.</span></p>
+        <div class="compu">
+          <figure class="sube" style="--i:2"><img src="/web/compu.webp" alt="HaxMatch en la compu: la cola de jugadores, los equipos buscando jugadores y el chat al costado" width="2000" height="1250" loading="lazy"></figure>
+          <img class="cel sube" style="--i:3" src="/web/inicio.webp" alt="El Inicio en el celular: ¿Qué querés jugar hoy?, con la foto del jugador en el centro" width="390" height="844" loading="lazy">
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="sube"><span lang="es">Y todo lo que pasa alrededor</span><span lang="en">And everything around it</span></h2>
+      <div class="resto">
+        <dl class="sube" style="--i:1">
+          <div><dt><span lang="es">Amigos</span><span lang="en">Friends</span></dt><dd><span lang="es">Agregalos por su nick y enterate cuando se ponen a buscar partido. Los ves primero en la cola.</span><span lang="en">Add them by nickname and know when they start looking for a match. They show first in the queue.</span></dd></div>
+          <div><dt><span lang="es">Niveles y puntos</span><span lang="en">Levels and points</span></dt><dd><span lang="es">Cada amistoso confirmado por los dos lados suma. También entrar varios días seguidos.</span><span lang="en">Every match confirmed by both sides counts. So does coming back several days in a row.</span></dd></div>
+          <div><dt><span lang="es">Chat de la comunidad</span><span lang="en">Community chat</span></dt><dd><span lang="es">Un chat para todos, con moderación. Los mensajes duran 24 horas.</span><span lang="en">One chat for everyone, moderated. Messages last 24 hours.</span></dd></div>
+          <div><dt><span lang="es">En vivo en Kick</span><span lang="en">Live on Kick</span></dt><dd><span lang="es">Si un jugador está transmitiendo, lo ves marcado y entrás a su directo con un toque.</span><span lang="en">If a player is streaming, you see it and open their stream with one tap.</span></dd></div>
+          <div><dt><span lang="es">Reportar y bloquear</span><span lang="en">Report and block</span></dt><dd><span lang="es">Desde la ficha de cualquier jugador. Revisamos cada reporte.</span><span lang="en">From any player's profile card. We review every report.</span></dd></div>
+          <div><dt><span lang="es">Tu cuenta, tuya</span><span lang="en">Your account, yours</span></dt><dd><span lang="es">Nick y foto que elegís vos. Borrás la cuenta cuando quieras, desde la app.</span><span lang="en">Nickname and photo of your choice. Delete your account anytime, from the app.</span></dd></div>
+        </dl>
+        <img class="sube" style="--i:2" src="/web/perfil.webp" alt="El Perfil: nivel, partidos por confirmar, amistosos jugados y amigos" width="390" height="844" loading="lazy">
+      </div>
+    </section>
+
+    <section id="clips">
+      <div class="tiktok">
+        <div>
+          <h2 class="sube"><span lang="es">Tus clips, en la comunidad</span><span lang="en">Your clips, in the community</span></h2>
+          <p class="texto sube" style="--i:1"><span lang="es">Si vinculás tu TikTok, tus videos públicos con #haxball o #haxmatch aparecen en Clips, con tu nombre de TikTok. Vincularlo es opcional.</span><span lang="en">Link your TikTok and your public videos tagged #haxball or #haxmatch show up in Clips, under your TikTok name. Linking is optional.</span></p>
+          <ul class="hechos sube" style="--i:2">
+            <li><span lang="es">Solo leemos tu nombre de TikTok y la lista de tus videos públicos.</span><span lang="en">We only read your TikTok display name and your list of public videos.</span></li>
+            <li><span lang="es">Los videos se ven con el reproductor de TikTok. No los descargamos ni publicamos nada en tu cuenta.</span><span lang="en">Videos play in TikTok's own player. We never download them or post anything to your account.</span></li>
+            <li><span lang="es">Ocultás el video que quieras. Si desvinculás, borramos todo lo que trajimos y cancelamos el acceso.</span><span lang="en">Hide any video you like. If you unlink, we delete everything we fetched and revoke access.</span></li>
           </ul>
         </div>
-      </section>
+        <div class="cuentas sube" style="--i:2" data-ui aria-label="Ejemplo: tus cuentas en el Perfil">
+          <div class="cuenta"><span class="ava">D</span><span class="grow"><b>Discord</b><br><span class="sub"><span lang="es">Conectado como lauti</span><span lang="en">Connected as lauti</span></span></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></div>
+          <div class="cuenta"><span class="ava">T</span><span class="grow"><b>TikTok</b><br><span class="sub"><span lang="es">Sin vincular</span><span lang="en">Not linked</span></span></span><span class="mini-boton"><span lang="es">Vincular</span><span lang="en">Link</span></span></div>
+          <div class="cuenta"><span class="ava">#</span><span class="grow"><b><span lang="es">Golazo desde mitad de cancha</span><span lang="en">Goal from the halfway line</span></b><br><span class="sub">#haxball · <span lang="es">se ve en Clips</span><span lang="en">shown in Clips</span></span></span><span class="interruptor" aria-hidden="true"></span></div>
+        </div>
+      </div>
+    </section>
 
-      <section id="preguntas">
-        <h2><span lang="es">Preguntas frecuentes</span><span lang="en">Frequently asked questions</span></h2>
-        <details>
-          <summary><span lang="es">¿Cuánto cuesta?</span><span lang="en">How much does it cost?</span></summary>
-          <p><span lang="es">Nada. HaxMatch es gratis y no tiene publicidad.</span><span lang="en">Nothing. HaxMatch is free and has no ads.</span></p>
-        </details>
-        <details>
-          <summary><span lang="es">¿Necesito descargar algo?</span><span lang="en">Do I need to download anything?</span></summary>
-          <p><span lang="es">No. Funciona en el navegador del celular o de la compu. Si querés, la instalás como app desde el mismo navegador.</span><span lang="en">No. It works in your phone or computer browser. If you like, you can install it as an app from the browser itself.</span></p>
-        </details>
-        <details>
-          <summary><span lang="es">¿Por qué se entra con Discord?</span><span lang="en">Why do I sign in with Discord?</span></summary>
-          <p><span lang="es">Porque la comunidad de HaxBall ya está en Discord, y así cada jugador tiene una sola cuenta. No vemos tu contraseña: solo tu nombre de usuario y tu foto de Discord.</span><span lang="en">Because the HaxBall community already lives on Discord, and it keeps every player to a single account. We never see your password: only your Discord username and avatar.</span></p>
-        </details>
-        <details>
-          <summary><span lang="es">¿Los partidos se juegan dentro de HaxMatch?</span><span lang="en">Are matches played inside HaxMatch?</span></summary>
-          <p><span lang="es">No. Se juegan en HaxBall. HaxMatch te ayuda a encontrar jugadores y te pasa el link de la sala.</span><span lang="en">No. They are played on HaxBall. HaxMatch helps you find players and gives you the room link.</span></p>
-        </details>
-        <details>
-          <summary><span lang="es">¿Cómo borro mi cuenta?</span><span lang="en">How do I delete my account?</span></summary>
-          <p><span lang="es">Desde Perfil › Borrar mi cuenta. También lo explicamos en <a href="/borrar-cuenta.html">esta página</a>.</span><span lang="en">From Profile › Delete my account. It's also explained on <a href="/borrar-cuenta.html">this page</a>.</span></p>
-        </details>
-      </section>
+    <section id="preguntas">
+      <h2 class="sube"><span lang="es">Preguntas</span><span lang="en">Questions</span></h2>
+      <div class="preguntas">
+        <div class="pregunta sube"><h3><span lang="es">¿Cuánto cuesta?</span><span lang="en">How much is it?</span></h3><p><span lang="es">Nada. HaxMatch es gratis y no tiene publicidad.</span><span lang="en">Nothing. HaxMatch is free and has no ads.</span></p></div>
+        <div class="pregunta sube"><h3><span lang="es">¿Tengo que descargar algo?</span><span lang="en">Do I need to download anything?</span></h3><p><span lang="es">No. Anda en el navegador del celular o de la compu. Si querés, la instalás como app desde el mismo navegador.</span><span lang="en">No. It works in your phone or computer browser. If you like, install it as an app from the browser itself.</span></p></div>
+        <div class="pregunta sube"><h3><span lang="es">¿Por qué se entra con Discord?</span><span lang="en">Why sign in with Discord?</span></h3><p><span lang="es">Porque la comunidad de HaxBall ya está ahí, y así cada jugador tiene una sola cuenta. No vemos tu contraseña: solo tu nombre de usuario y tu foto.</span><span lang="en">Because the HaxBall community already lives there, and it keeps each player to one account. We never see your password: only your username and avatar.</span></p></div>
+        <div class="pregunta sube"><h3><span lang="es">¿Se juega adentro de HaxMatch?</span><span lang="en">Do you play inside HaxMatch?</span></h3><p><span lang="es">No. Se juega en HaxBall. HaxMatch encuentra a los jugadores y te pasa la sala.</span><span lang="en">No. You play on HaxBall. HaxMatch finds the players and hands you the room.</span></p></div>
+        <div class="pregunta sube"><h3><span lang="es">¿Cómo borro mi cuenta?</span><span lang="en">How do I delete my account?</span></h3><p><span lang="es">Desde Perfil › Borrar mi cuenta. Lo explicamos paso a paso en <a class="enlace" href="/borrar-cuenta.html">esta página</a>.</span><span lang="en">From Profile › Delete my account. Step by step on <a class="enlace" href="/borrar-cuenta.html">this page</a>.</span></p></div>
+      </div>
+    </section>
 
-      <section class="final">
-        <h2><span lang="es">¿Armamos un amistoso?</span><span lang="en">Up for a friendly?</span></h2>
-        <p class="intro" style="margin-left:auto;margin-right:auto"><span lang="es">Entrá, anotate y esperá la invitación.</span><span lang="en">Sign in, join the queue and wait for the invite.</span></p>
-        <div class="botones"><a class="btn btn--pri" href="/"><span lang="es">Abrir HaxMatch</span><span lang="en">Open HaxMatch</span></a></div>
-      </section>
-    </main>
+    <section class="cierre">
+      <div>
+        <h2 class="sube"><span lang="es">¿Armamos un amistoso?</span><span lang="en">Up for a friendly?</span></h2>
+        <p class="sube" style="--i:1"><span lang="es">Entrá con Discord, anotate en la cola y esperá la invitación.</span><span lang="en">Sign in with Discord, join the queue and wait for the invite.</span></p>
+        <a class="boton boton--claro sube" style="--i:2" href="/"><span lang="es">Abrir HaxMatch</span><span lang="en">Open HaxMatch</span></a>
+      </div>
+    </section>
+  </main>
 
-    <footer>
-      <div class="links">
+  <footer>
+    <div class="nombre-grande" aria-hidden="true">HaxMatch</div>
+    <div class="pie">
+      <nav aria-label="Legales">
         <a href="/terminos"><span lang="es">Términos y condiciones</span><span lang="en">Terms of Service</span></a>
         <a href="/privacidad"><span lang="es">Política de privacidad</span><span lang="en">Privacy Policy</span></a>
         <a href="/borrar-cuenta.html"><span lang="es">Borrar cuenta</span><span lang="en">Delete account</span></a>
         <a href="mailto:lpatriciogauna@outlook.com"><span lang="es">Contacto</span><span lang="en">Contact</span></a>
-      </div>
-      <p><span lang="es">HaxMatch es un proyecto independiente de la comunidad. No está afiliado a HaxBall, Discord, TikTok ni Kick.</span><span lang="en">HaxMatch is an independent community project. It is not affiliated with HaxBall, Discord, TikTok or Kick.</span></p>
-      <p>© 2026 HaxMatch · lpatriciogauna@outlook.com</p>
-    </footer>
-  </div>
+      </nav>
+      <p><span lang="es">HaxMatch es un proyecto independiente de la comunidad. No está afiliado a HaxBall, Discord, TikTok ni Kick.</span><span lang="en">HaxMatch is an independent community project, not affiliated with HaxBall, Discord, TikTok or Kick.</span> © 2026 · lpatriciogauna@outlook.com</p>
+    </div>
+  </footer>
+
   <script>
+    // Idioma
     document.querySelectorAll('[data-ir]').forEach(function (b) {
       b.addEventListener('click', function () {
         var l = b.dataset.ir
@@ -289,6 +468,103 @@
         document.documentElement.lang = l
         try { localStorage.setItem('hm-idioma', l) } catch (e) {}
       })
+    })
+
+    // Aparecer al entrar en pantalla.
+    var vistos = document.querySelectorAll('.sube, .compu figure')
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('en-vista'); io.unobserve(e.target) } })
+      }, { rootMargin: '0px 0px -8% 0px' })
+      vistos.forEach(function (el) { io.observe(el) })
+    } else {
+      vistos.forEach(function (el) { el.classList.add('en-vista') })
+    }
+
+    // Cómo funciona: la pantalla de al lado cambia según el paso que se está leyendo.
+    var fotos = document.querySelectorAll('.pantalla img')
+    var pasos = document.querySelectorAll('.pasos li')
+    if ('IntersectionObserver' in window) {
+      var io2 = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (!e.isIntersecting) return
+          var n = +e.target.dataset.paso
+          pasos.forEach(function (p) { p.classList.toggle('activo', p === e.target) })
+          fotos.forEach(function (f, i) { f.classList.toggle('ve', i === n) })
+        })
+      }, { rootMargin: '-45% 0px -45% 0px' })
+      pasos.forEach(function (p) { io2.observe(p) })
+    }
+
+    // La cola de la portada: entrar, recibir una invitación, aceptarla.
+    var t = function (es, en) { return '<span lang="es">' + es + '</span><span lang="en">' + en + '</span>' }
+    var salas = [
+      { nombre: 'futsal rolo', dueno: 'Rolo', cancha: 'Futsal', falta: t('falta 1', '1 needed'),
+        texto: t('"futsal rolo" está necesitando un jugador en la cancha Futsal. ¿Querés jugar?', '"futsal rolo" needs a player on the Futsal field. Want to play?') },
+      { nombre: 'nico 3v3 amistoso', dueno: 'Nico', cancha: 'Big', falta: t('faltan 2', '2 needed'),
+        texto: t('"nico 3v3 amistoso" está necesitando un GK en la cancha Big. ¿Querés jugar?', '"nico 3v3 amistoso" needs a GK on the Big field. Want to play?') },
+    ]
+    var quiero = document.getElementById('quiero')
+    var filas = document.getElementById('filas')
+    var hoja = document.getElementById('hoja')
+    var cuantos = document.getElementById('cuantos')
+    var otraVez = document.getElementById('otra-vez')
+    var reloj = null, espera = null, seg = 0, cual = 0
+    var mmss = function (s) { return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0') }
+
+    function abrirHoja(html) { hoja.innerHTML = html; hoja.classList.add('abierta'); hoja.setAttribute('aria-hidden', 'false') }
+    function cerrarHoja() { hoja.classList.remove('abierta'); hoja.setAttribute('aria-hidden', 'true') }
+    function invitar() {
+      var s = salas[cual % salas.length]
+      abrirHoja(
+        '<h3>' + t('Te invitan a jugar', "You're invited to play") + '</h3>' +
+        '<div class="invita"><i class="punto"></i><span><b>' + s.nombre + '</b><br><span class="sub">' + s.cancha + ' · ' + s.falta + '</span></span></div>' +
+        '<p>' + s.texto + '</p>' +
+        '<div class="botones"><button class="si" type="button" data-r="si">' + t('Sí, quiero jugar', 'Yes, I want to play') + '</button>' +
+        '<button class="no" type="button" data-r="no">' + t('Ahora no', 'Not now') + '</button></div>')
+      hoja.querySelector('.si').focus({ preventScroll: true })
+    }
+    function entrar() {
+      quiero.disabled = true
+      quiero.querySelector('b').innerHTML = t('Ya estás en la cola', "You're in the queue")
+      cuantos.textContent = '8'
+      var yo = document.createElement('div')
+      yo.className = 'fila fila--yo'
+      yo.innerHTML = '<span class="ava">V</span><span><b>' + t('Vos', 'You') + '</b> <i class="punto"></i><br><span class="sub">' + t('Buscando partido', 'Looking for a match') + '</span></span><span class="reloj">00:00</span>'
+      filas.prepend(yo)
+      seg = 0
+      reloj = setInterval(function () { seg++; var r = yo.querySelector('.reloj'); if (r) r.textContent = mmss(seg) }, 1000)
+      espera = setTimeout(invitar, 2600)
+      otraVez.hidden = false
+    }
+    function reiniciar() {
+      clearInterval(reloj); clearTimeout(espera); cerrarHoja(); cual = 0
+      var yo = filas.querySelector('.fila--yo'); if (yo) yo.remove()
+      quiero.disabled = false
+      quiero.querySelector('b').innerHTML = t('Quiero jugar un amistoso', 'I want to play a friendly')
+      cuantos.textContent = '7'
+      otraVez.hidden = true
+      quiero.focus({ preventScroll: true })
+    }
+    quiero.addEventListener('click', entrar)
+    otraVez.addEventListener('click', reiniciar)
+    hoja.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return
+      if (b.dataset.r === 'no') {
+        cerrarHoja(); cual++
+        espera = setTimeout(invitar, 2400)
+      } else if (b.dataset.r === 'si') {
+        clearInterval(reloj)
+        var s = salas[cual % salas.length]
+        abrirHoja(
+          '<div class="listo"><div class="check"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></div>' +
+          '<h3>' + t('Match listo · Sala de ', 'Match ready · ') + s.dueno + '</h3>' +
+          '<div class="sala"><span class="sub">' + t('Nombre de la sala en HaxBall', 'Room name on HaxBall') + '</span><b>' + s.nombre + '</b></div>' +
+          '<div class="botones"><button class="si" type="button" data-r="fin">' + t('Ya entré a la sala', "I'm in the room") + '</button></div></div>')
+      } else if (b.dataset.r === 'fin') {
+        abrirHoja('<div class="listo"><h3>' + t('Partido válido · +10 puntos', 'Match counted · +10 points') + '</h3><p>' + t('Así de simple. En la app es igual, con jugadores de verdad.', "That simple. It's the same in the app, with real players.") + '</p>' +
+          '<div class="botones"><a class="boton" href="/">' + t('Abrir HaxMatch', 'Open HaxMatch') + '</a></div></div>')
+      }
     })
   </script>
 </body>
