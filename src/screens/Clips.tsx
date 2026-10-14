@@ -338,12 +338,21 @@ export function Clips() {
             // Abajo de cada clip: quién lo subió, el título y la reacción.
             const info = (
               <div className="reel__info">
-                <div className="reel__autor">
-                  <Avatar user={autor} nombre={nombreDe(s, r.userId)} foto={mio ? s.perfil?.foto : null} size="sm" />
-                  <span className="strong cut">{nombreDe(s, r.userId)}</span>
-                  {nivel !== null && <span className="pill">Nivel {nivel}</span>}
-                </div>
-                <div className="titulo">{r.titulo}</div>
+                {/* Tocar a quien lo subió abre su perfil, para agregarlo a amigos (en los de muestra, no). */}
+                {mio || deMuestra ? (
+                  <div className="reel__autor">
+                    <Avatar user={autor} nombre={nombreDe(s, r.userId)} foto={mio ? s.perfil?.foto : null} size="sm" />
+                    <span className="strong cut">{nombreDe(s, r.userId)}</span>
+                    {nivel !== null && <span className="pill">Nivel {nivel}</span>}
+                  </div>
+                ) : (
+                  <button type="button" className="reel__autor reel__autor--boton" aria-label={`Ver a ${nombreDe(s, r.userId)}`} onClick={() => s.abrirFicha(r.userId)}>
+                    <Avatar user={autor} nombre={nombreDe(s, r.userId)} size="sm" />
+                    <span className="strong cut">{nombreDe(s, r.userId)}</span>
+                    {nivel !== null && <span className="pill">Nivel {nivel}</span>}
+                  </button>
+                )}
+                {r.titulo && <div className="titulo">{r.titulo}</div>}
                 <div className="reel__pie">
                   <button className="like num" aria-pressed={reaccione} aria-label={reaccione ? 'Quitar reacción' : 'Reaccionar'} onClick={reaccionar}>
                     <Icon name="corazon" size={20} fill={reaccione} />{r.reacciones + (reaccione ? 1 : 0)}
@@ -355,7 +364,7 @@ export function Clips() {
             )
             return (
               <article key={r.id} data-id={r.id} className={`reel${r.tiktokId || r.youtubeId ? ' reel--video' : ''}`} style={{ '--tinte': autor?.color } as CSSProperties}
-                aria-label={`${r.titulo}, de ${nombreDe(s, r.userId)}`}>
+                aria-label={`${r.titulo || 'Clip'}, de ${nombreDe(s, r.userId)}`}>
                 {r.tiktokId || r.youtubeId ? (
                   <>
                     {/* Solo el clip en pantalla carga el reproductor; los demás muestran su miniatura. */}

@@ -75,6 +75,12 @@ export function App() {
     const alAbrir = (e: MessageEvent) => {
       const d = e.data as { tipo?: string; ruta?: string } | null
       if (d?.tipo === 'abrir' && typeof d.ruta === 'string' && d.ruta.startsWith('/')) nav(d.ruta)
+      // Llegó un aviso con la app abierta: se trae lo nuevo enseguida.
+      if (d?.tipo === 'aviso') {
+        const st = useStore.getState()
+        void st.refrescar()
+        if (typeof (d as { tag?: unknown }).tag === 'string' && (d as { tag: string }).tag.startsWith('clip-')) void st.cargarLinks()
+      }
     }
     navigator.serviceWorker.addEventListener('message', alAbrir)
     return () => navigator.serviceWorker.removeEventListener('message', alAbrir)

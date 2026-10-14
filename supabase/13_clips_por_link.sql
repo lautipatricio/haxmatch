@@ -4,7 +4,7 @@
 --
 -- Cómo está pensado:
 -- - Un jugador pega el link de un video público de TikTok o de YouTube (Shorts o
---   común) y le pone un título. El video no se copia: se reproduce desde TikTok o
+--   común). Va sin título: el clip directo. El video no se copia: se reproduce desde TikTok o
 --   YouTube, como los de la vinculación con TikTok.
 -- - Queda "en revisión" y les llega un aviso a quienes administran (tabla admins).
 --   Hasta que alguien lo aprueba, solo lo ven su dueño y quienes administran.
@@ -23,7 +23,7 @@ create table if not exists public.clips_link (
   plataforma text not null check (plataforma in ('tiktok', 'youtube')),
   video_id text not null,
   enlace text not null,
-  titulo text not null check (char_length(titulo) between 1 and 80),
+  titulo text not null default '' check (char_length(titulo) <= 80),
   estado text not null default 'pendiente' check (estado in ('pendiente', 'aprobado', 'rechazado')),
   motivo text check (motivo is null or char_length(motivo) <= 200),
   creado_at timestamptz not null default now(),
@@ -34,6 +34,10 @@ create table if not exists public.clips_link (
     (plataforma = 'tiktok' and video_id ~ '^[0-9]{5,25}$') or
     (plataforma = 'youtube' and video_id ~ '^[A-Za-z0-9_-]{11}$'))
 );
+-- Antes el título era obligatorio: ahora es opcional (la app sube el clip sin título).
+alter table public.clips_link alter column titulo set default '';
+alter table public.clips_link drop constraint if exists clips_link_titulo_check;
+alter table public.clips_link add constraint clips_link_titulo_check check (char_length(titulo) <= 80);
 create index if not exists clips_link_por_estado on public.clips_link (estado, creado_at desc);
 create index if not exists clips_link_por_usuario on public.clips_link (user_id);
 
@@ -106,7 +110,7 @@ $$;
 -- ---------------------------------------------------------------------------
 
 -- Subir un clip. Devuelve el clip guardado (en revisión).
-create or replace function public.subir_clip(p_enlace text, p_titulo text)
+create or replace function public.subir_clip(p_enlace text, p_titulo text default null)
 returns json language plpgsql security definer set search_path = '' as $$
 declare
   yo uuid := (select auth.uid());
@@ -128,9 +132,6 @@ begin
   if v_plat is null then
     raise exception 'Ese link no es de un video de TikTok o de YouTube. Abrí el video y copiá su link.';
   end if;
-  if char_length(v_titulo) < 1 then
-    raise exception 'Ponele un título al clip';
-  end if;
   if char_length(v_titulo) > 80 then
     raise exception 'El título puede tener hasta 80 letras';
   end if;
@@ -150,7 +151,10 @@ begin
   values (yo, v_plat, v_vid, v_enl, v_titulo)
   returning * into c;
   select nick into v_nick from public.profiles where id = yo;
-  perform public._avisar_admins('Clip para revisar', coalesce(v_nick, 'Un jugador') || ' subió "' || left(v_titulo, 60) || '"', '/admin', 'clip-' || c.id);
+  perform public._avisar_admins('Clip para revisar',
+    coalesce(v_nick, 'Un jugador') || ' subió ' || case when v_titulo = '' then 'un clip de ' || case when v_plat = 'tiktok' then 'TikTok' else 'YouTube' end
+                                                     else '"' || left(v_titulo, 60) || '"' end,
+    '/admin', 'clip-' || c.id);
   return public._clip_json(c, yo)::json;
 end $$;
 
@@ -213,9 +217,9 @@ begin
   if p_aprobar then
     -- Suma como un reel nuevo: 8 puntos, el primero de cada día.
     perform public._dar_reel(c.user_id, 'link:' || c.id::text, now());
-    perform public._notificar(c.user_id, 'Tu clip ya está en Clips', '"' || left(c.titulo, 60) || '" fue aprobado.', '/clips?v=' || c.id, 'clip-' || c.id);
+    perform public._notificar(c.user_id, 'Tu clip ya está en Clips', 'Ya lo puede ver toda la comunidad.', '/clips?v=' || c.id, 'clip-' || c.id);
   else
-    perform public._notificar(c.user_id, 'Tu clip no se aprobó', '"' || left(c.titulo, 60) || '"' || coalesce('. Motivo: ' || v_motivo, '.'), '/clips/mis-videos', 'clip-' || c.id);
+    perform public._notificar(c.user_id, 'Tu clip no se aprobó', coalesce('Motivo: ' || v_motivo, 'Podés subir otro cuando quieras.'), '/clips/mis-videos', 'clip-' || c.id);
   end if;
   return public._clip_json(c, yo)::json;
 end $$;

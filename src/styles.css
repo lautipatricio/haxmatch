@@ -875,3 +875,17 @@ a.nivel:active { transform: scale(.98); }
 .pill--no { background: rgba(255, 138, 122, .14); color: var(--danger); }
 .clip-previa { width: min(100%, 260px); aspect-ratio: 9 / 16; border-radius: 16px; overflow: hidden; background: #000; align-self: center; }
 .clip-previa iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+/* ---------- Pestañas (Notificaciones) ---------- */
+.pestanas { display: flex; gap: 8px; padding: 0 var(--gutter) 12px; }
+.pestana {
+  flex: 1; min-height: 44px; border-radius: 999px; border: 1px solid var(--line); background: none; color: var(--fg2);
+  font: inherit; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;
+}
+.pestana[aria-selected="true"] { background: var(--accent-fondo); border-color: var(--accent-fondo); color: var(--on-accent); }
+.pestana__n { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: rgba(255, 255, 255, .2); font-size: 12px; display: inline-grid; place-items: center; }
+.app--compu .pestanas { width: 100%; max-width: 920px; margin-inline: auto; }
+
+/* Clips: el nombre de quien subió el clip se toca para ver su perfil. */
+.reel__autor--boton { background: none; border: 0; padding: 4px 8px 4px 0; margin: -4px 0; color: inherit; font: inherit; text-align: left; cursor: pointer; min-height: 44px; border-radius: 12px; max-width: 100%; }
+.reel__autor--boton:active { transform: scale(.98); }

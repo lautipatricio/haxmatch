@@ -5,7 +5,8 @@ import { YO, nombreDe, useStore, usuarioDe } from '../data/store'
 import type { ClipLink } from '../domain/types'
 import { Avatar, Sheet, hace, useAhora } from '../ui'
 
-const TITULO_MAX = 80
+/** Los clips van sin título: se los nombra por de dónde vienen. */
+export const nombreClip = (c: { titulo: string; plataforma: 'tiktok' | 'youtube' }) => c.titulo || `Clip de ${c.plataforma === 'tiktok' ? 'TikTok' : 'YouTube'}`
 
 /** Video de YouTube en el feed. Arranca solo y sin sonido (así lo permiten los navegadores); el sonido, con sus controles. */
 export function ReproductorYouTube({ id, titulo }: { id: string; titulo: string }) {
@@ -24,7 +25,7 @@ function VistaPrevia({ c }: { c: ClipLink }) {
     : `https://www.youtube-nocookie.com/embed/${c.videoId}?playsinline=1&rel=0`
   return (
     <div className="clip-previa">
-      <iframe src={src} title={`Vista previa: ${c.titulo}`} allow="encrypted-media; fullscreen" referrerPolicy="strict-origin-when-cross-origin" />
+      <iframe src={src} title={`Vista previa: ${nombreClip(c)}`} allow="encrypted-media; fullscreen" referrerPolicy="strict-origin-when-cross-origin" />
     </div>
   )
 }
@@ -35,7 +36,6 @@ const plataforma = (c: ClipLink) => (c.plataforma === 'tiktok' ? 'TikTok' : 'You
 export function SubirClip({ onCerrar }: { onCerrar: () => void }) {
   const subir = useStore((s) => s.subirClip)
   const [enlace, setEnlace] = useState('')
-  const [titulo, setTitulo] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [ocupado, setOcupado] = useState(false)
   const enviar = async (e: FormEvent) => {
@@ -43,7 +43,7 @@ export function SubirClip({ onCerrar }: { onCerrar: () => void }) {
     if (ocupado) return
     setOcupado(true)
     setError(null)
-    const problema = await subir(enlace, titulo)
+    const problema = await subir(enlace, '')
     setOcupado(false)
     if (problema) setError(problema)
     else onCerrar()
@@ -56,11 +56,8 @@ export function SubirClip({ onCerrar }: { onCerrar: () => void }) {
         <input id="clip-link" className="field" type="url" inputMode="url" autoComplete="off" autoCapitalize="none" spellCheck={false}
           value={enlace} maxLength={300} placeholder="https://www.tiktok.com/@vos/video/…" aria-invalid={!!error}
           onChange={(e) => { setEnlace(e.target.value); setError(null) }} />
-        <label className="h sub" htmlFor="clip-titulo">Título</label>
-        <input id="clip-titulo" className="field" type="text" autoComplete="off" value={titulo} maxLength={TITULO_MAX}
-          placeholder="Golazo desde mitad de cancha" onChange={(e) => { setTitulo(e.target.value); setError(null) }} />
         {error && <div className="err" role="alert">{error}</div>}
-        <button className="btn btn--lg" type="submit" disabled={ocupado || !enlace.trim() || !titulo.trim()}>
+        <button className="btn btn--lg" type="submit" disabled={ocupado || !enlace.trim()}>
           {ocupado ? 'Enviando…' : 'Mandar a revisar'}
         </button>
         <button className="btn btn--sec" type="button" onClick={onCerrar}>Cancelar</button>
@@ -94,12 +91,12 @@ export function MisClipsSubidos({ onSubir }: { onSubir: () => void }) {
       {mios.map((c) => (
         <div key={c.id} className="card card--row">
           <div className="grow" style={{ minWidth: 0 }}>
-            <div className="strong cut">{c.titulo}</div>
-            <div className="m cut">{plataforma(c)} · {hace(ahora - c.creadoAt)}</div>
+            <div className="strong cut">{nombreClip(c)}</div>
+            <div className="m cut">{hace(ahora - c.creadoAt)}</div>
             {c.estado === 'rechazado' && c.motivo && <div className="m">Motivo: {c.motivo}</div>}
           </div>
           <span className={`pill${c.estado === 'aprobado' ? ' pill--ok' : c.estado === 'rechazado' ? ' pill--no' : ''}`}>{ESTADO[c.estado]}</span>
-          <button className={porBorrar === c.id ? 'btn btn--danger' : 'btn btn--ghost'} aria-label={`Borrar "${c.titulo}"`} onClick={() => void confirmar(c.id)}>
+          <button className={porBorrar === c.id ? 'btn btn--danger' : 'btn btn--ghost'} aria-label={`Borrar ${nombreClip(c)}`} onClick={() => void confirmar(c.id)}>
             {porBorrar === c.id ? 'Borrar' : 'Quitar'}
           </button>
         </div>
@@ -124,7 +121,7 @@ export function RevisarClips() {
     setOcupado(null)
     setRechazando(null)
     setMotivo('')
-    setAviso(error ? { ok: false, texto: error } : { ok: true, texto: aprobar ? `"${c.titulo}" ya está en Clips.` : `Rechazaste "${c.titulo}".` })
+    setAviso(error ? { ok: false, texto: error } : { ok: true, texto: aprobar ? 'El clip ya está en Clips.' : 'Rechazaste el clip.' })
   }
   return (
     <section className="lista" id="clips" aria-labelledby="t-revisar">
@@ -138,8 +135,8 @@ export function RevisarClips() {
             <div className="row">
               <Avatar user={c.userId === YO ? undefined : u} nombre={nombreDe(s, c.userId)} size="sm" />
               <div className="grow" style={{ minWidth: 0 }}>
-                <div className="strong cut">{c.titulo}</div>
-                <div className="m cut">{nombreDe(s, c.userId)} · {plataforma(c)} · {hace(ahora - c.creadoAt)}</div>
+                <div className="strong cut">{nombreClip(c)}</div>
+                <div className="m cut">{nombreDe(s, c.userId)} · {hace(ahora - c.creadoAt)}</div>
               </div>
             </div>
             {viendo === c.id && <VistaPrevia c={c} />}

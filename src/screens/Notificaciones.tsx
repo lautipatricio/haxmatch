@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { YO, useStore } from '../data/store'
 import type { Notif } from '../domain/types'
@@ -39,20 +39,42 @@ export function Notificaciones() {
   const ahora = useAhora()
   // La flecha vuelve a donde se tocó la campana (Inicio o Perfil).
   const desde = (useLocation().state as { desde?: string } | null)?.desde
-  // Se marcan como leídas al salir, así se alcanza a ver cuáles eran nuevas.
-  useEffect(() => marcarLeidas, [marcarLeidas])
+  /**
+   * Las que estaban sin leer al entrar (y las que llegan mientras se mira "No leídos"):
+   * se ven en "No leídos" hasta salir, aunque ya queden marcadas como leídas.
+   */
+  const [nuevas, setNuevas] = useState<string[]>(() => notifs.filter((n) => !n.leida).map((n) => n.id))
+  const [pestana, setPestana] = useState<'nuevas' | 'leidas'>(() => (notifs.some((n) => !n.leida) ? 'nuevas' : 'leidas'))
+  // Mirar "No leídos" las marca como leídas en el momento (se apaga el puntito de la campana).
+  const sinLeer = notifs.filter((n) => !n.leida).map((n) => n.id).join(',')
+  useEffect(() => {
+    if (pestana !== 'nuevas' || !sinLeer) return
+    setNuevas((v) => [...new Set([...v, ...sinLeer.split(',')])])
+    marcarLeidas()
+  }, [pestana, sinLeer, marcarLeidas])
+
+  const lista = notifs.filter((n) => (pestana === 'nuevas' ? nuevas.includes(n.id) : !nuevas.includes(n.id)))
+  const vacio = pestana === 'nuevas'
+    ? { title: 'Nada sin leer', text: 'Te avisamos cuando te escriben, cuando entrás a una sala y cuando un amigo se pone a buscar.' }
+    : { title: 'Sin notificaciones leídas', text: 'Acá quedan las que ya viste.' }
 
   return (
     <div className="screen">
       <Head title="Notificaciones" back={desde === '/' ? '/' : '/perfil'} />
-      {notifs.length === 0 ? (
-        <Empty title="Sin notificaciones" text="Te avisamos cuando te escriben, cuando entrás a una sala y cuando un amigo se pone a buscar." />
+      <div className="pestanas" role="tablist" aria-label="Notificaciones">
+        <button role="tab" aria-selected={pestana === 'nuevas'} className="pestana" onClick={() => setPestana('nuevas')}>
+          No leídos{nuevas.length > 0 && <span className="pestana__n">{nuevas.length}</span>}
+        </button>
+        <button role="tab" aria-selected={pestana === 'leidas'} className="pestana" onClick={() => setPestana('leidas')}>Leídos</button>
+      </div>
+      {lista.length === 0 ? (
+        <Empty title={vacio.title} text={vacio.text} />
       ) : (
         <div className="scroll">
-          <div className="pad">
-            {notifs.map((n) => (
+          <div className="pad" role="tabpanel">
+            {lista.map((n) => (
               <div key={n.id} className="card card--row">
-                {!n.leida && <span className="punto" role="img" aria-label="Nueva" />}
+                {pestana === 'nuevas' && <span className="punto" role="img" aria-label="Nueva" />}
                 <div className="grow">
                   <div className="strong">{n.titulo}</div>
                   <div className="m">{n.detalle} · {hace(ahora - n.at)}</div>

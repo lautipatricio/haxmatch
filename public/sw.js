@@ -58,7 +58,7 @@ const ES_COMPU = !ES_IPHONE && !/android|mobile/i.test(self.navigator.userAgent)
 
 // La app pregunta qué versión de este archivo está funcionando, para saber si ya
 // puede confiar en que le va a contar cuando llegue el aviso de prueba.
-const VERSION = 2
+const VERSION = 3
 self.addEventListener('message', (e) => {
   if (e.data && e.data.tipo === 'version' && e.ports && e.ports[0]) e.ports[0].postMessage({ version: VERSION })
 })
@@ -98,8 +98,13 @@ self.addEventListener('push', (e) => {
     e.waitUntil(mostrar())
     return
   }
+  // Con la app a la vista no se muestra, pero se le cuenta: así trae lo nuevo en el momento
+  // (por ejemplo, un clip para revisar) en vez de esperar a la próxima vuelta.
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-    .then((ventanas) => (ventanas.some((v) => v.focused) ? undefined : mostrar()))
+    .then((ventanas) => {
+      ventanas.forEach((v) => v.postMessage({ tipo: 'aviso', tag: aviso.tag || '' }))
+      return ventanas.some((v) => v.focused) ? undefined : mostrar()
+    })
     .catch(mostrar))
 })
 

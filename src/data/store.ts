@@ -977,7 +977,11 @@ export const useStore = create<Store>()((set, get) => {
     // sabe que desde ese momento lo que pase tiene que llegar como notificación.
     const alVolver = () => {
       void get().refrescar()
-      if (document.visibilityState === 'visible') void get().cargarSeguridad()
+      if (document.visibilityState === 'visible') {
+        void get().cargarSeguridad()
+        const st = get()
+        if (st.admin || st.misLinks.some((c) => c.estado === 'pendiente')) void st.cargarLinks()
+      }
     }
     document.addEventListener('visibilitychange', alVolver)
     window.addEventListener('online', alVolver)
@@ -996,7 +1000,7 @@ export const useStore = create<Store>()((set, get) => {
     const cadaLinks = setInterval(() => {
       const st = get()
       if (st.admin || st.misLinks.some((c) => c.estado === 'pendiente')) void st.cargarLinks()
-    }, 60 * SEG)
+    }, 30 * SEG)
     return () => {
       clearInterval(cadaKick)
       clearInterval(cadaRegistro)
@@ -1771,7 +1775,7 @@ export const useStore = create<Store>()((set, get) => {
     for (const c of r.pendientes ?? []) {
       if (notifs.some((n) => n.tipo === 'clip_revisar' && n.ref === c.id)) continue
       const nombre = usuarios[c.userId]?.username ?? 'Un jugador'
-      notifs = [{ id: id('n'), tipo: 'clip_revisar', titulo: 'Clip para revisar', detalle: `${nombre} subió "${c.titulo}"`, at: c.creadoAt, leida: false, ref: c.id }, ...notifs]
+      notifs = [{ id: id('n'), tipo: 'clip_revisar', titulo: 'Clip para revisar', detalle: `${nombre} subió ${c.titulo ? `"${c.titulo}"` : `un clip de ${c.plataforma === 'tiktok' ? 'TikTok' : 'YouTube'}`}`, at: c.creadoAt, leida: false, ref: c.id }, ...notifs]
     }
     // Quien subió: cuando se revisa uno de sus clips.
     for (const c of r.mios) {
@@ -1779,7 +1783,7 @@ export const useStore = create<Store>()((set, get) => {
       if (antes?.estado !== 'pendiente' || c.estado === 'pendiente') continue
       if (notifs.some((n) => n.tipo === 'clip_revisado' && n.ref === c.id)) continue
       const titulo = c.estado === 'aprobado' ? 'Tu clip ya está en Clips' : 'Tu clip no se aprobó'
-      const detalle = c.estado === 'aprobado' ? `"${c.titulo}"` : `"${c.titulo}"${c.motivo ? ` · ${c.motivo}` : ''}`
+      const detalle = c.estado === 'aprobado' ? 'Ya lo puede ver toda la comunidad' : c.motivo ? `Motivo: ${c.motivo}` : 'Podés subir otro cuando quieras'
       notifs = [{ id: id('n'), tipo: 'clip_revisado', titulo, detalle, at: c.revisadoAt ?? ahora, leida: false, ref: c.id }, ...notifs]
       toasts = conToast({ ...s, toasts }, { texto: titulo, detalle })
     }
@@ -1802,9 +1806,8 @@ export const useStore = create<Store>()((set, get) => {
     }
     if ('error' in l) return l.error
     if ('corto' in l) return 'No pudimos abrir ese link. Abrí el video y copiá su link completo.'
-    const t = titulo.trim().replace(/\s+/g, ' ')
-    if (!t) return 'Ponele un título al clip'
-    if (t.length > 80) return 'El título puede tener hasta 80 letras'
+    // Va sin título: el clip directo (la base todavía acepta uno, por si algún día vuelve).
+    const t = titulo.trim().replace(/\s+/g, ' ').slice(0, 80)
     const listo = 'Clip enviado. Te avisamos cuando lo revisemos.'
     if (REAL) {
       const r = await linksApi.subir(l.enlace, t)
@@ -1823,7 +1826,7 @@ export const useStore = create<Store>()((set, get) => {
     set({
       misLinks: [c, ...s.misLinks],
       pendientes: [...s.pendientes, c],
-      notifs: [{ id: id('n'), tipo: 'clip_revisar', titulo: 'Clip para revisar', detalle: `${nombreDe(s, YO)} subió "${t}"`, at: ahora, leida: false, ref: c.id }, ...s.notifs],
+      notifs: [{ id: id('n'), tipo: 'clip_revisar', titulo: 'Clip para revisar', detalle: `${nombreDe(s, YO)} subió un clip de ${l.plataforma === 'tiktok' ? 'TikTok' : 'YouTube'}`, at: ahora, leida: false, ref: c.id }, ...s.notifs],
       toasts: conToast(s, { texto: listo }),
     })
     guardar(get())
@@ -1862,7 +1865,7 @@ export const useStore = create<Store>()((set, get) => {
       misLinks: s.misLinks.map((x) => (x.id === cid ? listo : x)),
       reels: aprobar ? [reelDeLink(listo, 0), ...s.reels] : s.reels,
       notifs: c.userId === YO
-        ? [{ id: id('n'), tipo: 'clip_revisado', titulo, detalle: `"${c.titulo}"${listo.motivo ? ` · ${listo.motivo}` : ''}`, at: ahora, leida: false, ref: cid }, ...s.notifs]
+        ? [{ id: id('n'), tipo: 'clip_revisado', titulo, detalle: aprobar ? 'Ya lo puede ver toda la comunidad' : listo.motivo ? `Motivo: ${listo.motivo}` : 'Podés subir otro cuando quieras', at: ahora, leida: false, ref: cid }, ...s.notifs]
         : s.notifs,
     })
     guardar(get())

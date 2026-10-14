@@ -491,3 +491,10 @@ Mientras TikTok no apruebe la vinculación (y también después), los clips se p
 - **Límites:** hasta 3 en revisión a la vez y 10 por día por persona; el mismo video no se sube dos veces; una cuenta suspendida no puede subir; no se ven los clips de alguien bloqueado.
 - **Dónde:** botón "Subir clip" arriba en Clips; "Mis clips" (antes "Mis videos") muestra los subidos con su estado y la parte de TikTok; en el Perfil, la fila de YouTube ahora lleva a subir un clip.
 - Términos y Privacidad actualizados (vigentes desde el 14/10/2026).
+
+## Clips sin título, avisos al instante y notificaciones en dos pestañas (14/10/2026)
+
+- **Clips sin título:** se sube solo el link. En las listas se nombran "Clip de TikTok" o "Clip de YouTube". El paso 13 se vuelve a correr para que la base acepte clips sin título.
+- **Aviso con la app abierta:** el celular no muestra el aviso si la app está a la vista (para no repetir), pero ahora el service worker le avisa a la app y esta trae lo nuevo en el momento. Antes, un clip para revisar tardaba hasta un minuto en aparecer. Además, quien administra revisa cada 30 segundos y al volver a la app.
+- **Notificaciones:** dos pestañas, "No leídos" y "Leídos". Entrar a "No leídos" las marca como leídas (se apaga el puntito), pero siguen ahí hasta salir; la próxima vez están en "Leídos".
+- **Clips:** tocar el nombre de quien subió un clip abre su perfil (agregar a amigos, reportar, bloquear).
