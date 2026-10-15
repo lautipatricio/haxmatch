@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { APOYO_URL, PREVIEW, REAL, TIKTOK_PRONTO } from '../config'
 import { cargarFoto, soltarFoto, type FotoElegida } from '../data/foto'
 import { RESULTADO_KICK } from '../data/kick'
+import { cualNavegador, instalarApp, useInstalar } from '../data/instalar'
 import { ACA, ES_COMPU, TEXTO_AVISOS, activarAvisos, desactivarAvisos, estadoAvisos, probarAviso, type EstadoAvisos } from '../data/push'
 import { DIAS_ENTRE_NICKS, YO, buscarMia, fechaCorta, idiomaDe, proximoCambioDeNick, rivalesDe, useStore } from '../data/store'
 import { nombrePais } from '../domain/paises'
@@ -223,15 +224,22 @@ function MostrarConectado() {
 
 /** Guía de instalación. En iPhone las notificaciones solo funcionan con la app en la pantalla de inicio. */
 function Instalar() {
-  const [evento, setEvento] = useState<Event & { prompt?: () => void } | null>(null)
-  const instalada = window.matchMedia('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true
+  const { puede, instalada, recien } = useInstalar()
+  const [ocupado, setOcupado] = useState(false)
   const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
-  useEffect(() => {
-    const guardar = (e: Event) => { e.preventDefault(); setEvento(e) }
-    window.addEventListener('beforeinstallprompt', guardar)
-    return () => window.removeEventListener('beforeinstallprompt', guardar)
-  }, [])
-  if (PREVIEW || instalada) return null
+  if (PREVIEW) return null
+  if (recien) {
+    return (
+      <div className="card card--col">
+        <div className="strong">¡Listo, HaxMatch quedó instalada!</div>
+        <div className="m">{ES_COMPU
+          ? 'La encontrás en el menú de inicio o en el escritorio, con su ícono.'
+          : 'La encontrás en la pantalla de inicio, con su ícono.'}</div>
+      </div>
+    )
+  }
+  if (instalada) return null
+  const instalar = async () => { setOcupado(true); await instalarApp(); setOcupado(false) }
   return (
     <div className="card card--col">
       <div className="strong">Instalá HaxMatch en tu {ES_COMPU ? 'computadora' : 'celular'}</div>
@@ -246,8 +254,57 @@ function Instalar() {
           ? 'Queda como un programa más, con su ícono y su propia ventana.'
           : 'Se abre como una app y te deja recibir avisos de tus amigos.'}</div>
       )}
-      {evento?.prompt && <button className="btn" onClick={() => evento.prompt?.()}>Instalar</button>}
+      {!esIOS && (puede
+        ? <button className="btn" onClick={instalar} disabled={ocupado}>{ES_COMPU ? 'Instalar en la compu' : 'Instalar'}</button>
+        : <PasosInstalar />)}
     </div>
+  )
+}
+
+/** Cuando el navegador no ofrece el botón directo: dónde está la opción en cada uno. */
+function PasosInstalar() {
+  const nav = cualNavegador()
+  if (!ES_COMPU) {
+    return (
+      <ol className="steps m">
+        <li>Abrí el menú del navegador (los tres puntitos).</li>
+        <li>Elegí "Instalar app" o "Agregar a la pantalla principal".</li>
+      </ol>
+    )
+  }
+  if (nav === 'firefox') {
+    return <div className="m">Firefox no deja instalar páginas como programa. Abrí HaxMatch en Chrome o Edge y vas a ver el botón para instalarla.</div>
+  }
+  if (nav === 'safari') {
+    return (
+      <ol className="steps m">
+        <li>En la barra de arriba, abrí el menú "Archivo".</li>
+        <li>Elegí "Agregar al Dock".</li>
+      </ol>
+    )
+  }
+  if (nav === 'edge') {
+    return (
+      <ol className="steps m">
+        <li>Abrí el menú de Edge (los tres puntitos de arriba a la derecha).</li>
+        <li>Entrá en "Aplicaciones".</li>
+        <li>Elegí "Instalar este sitio como una aplicación".</li>
+      </ol>
+    )
+  }
+  if (nav === 'chrome') {
+    return (
+      <ol className="steps m">
+        <li>Tocá el ícono de instalar que aparece a la derecha de la barra de direcciones.</li>
+        <li>Si no lo ves: menú de los tres puntitos › "Transmitir, guardar y compartir" › "Instalar página como app".</li>
+      </ol>
+    )
+  }
+  return (
+    <ol className="steps m">
+      <li>Abrí el menú del navegador.</li>
+      <li>Buscá la opción "Instalar HaxMatch" o "Instalar como app".</li>
+    </ol>
   )
 }
 

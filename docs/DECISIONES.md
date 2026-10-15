@@ -514,3 +514,9 @@ Mientras TikTok no apruebe la vinculación (y también después), los clips se p
 - **Lo que no se traduce:** lo que escribe la gente (chat, nombres de salas, títulos de clips, nicks) va con `translate="no"`; el logo tampoco. Las notificaciones que manda el servidor al celular siguen en español, igual que Términos y Privacidad.
 - **Para sumar textos nuevos:** `node scripts/i18n-faltan.mjs` lista los que no tienen traducción; se agregan a `i18n/trad-extra.txt` (`@español|portugués|inglés`) y se corre `node scripts/i18n-armar.mjs`.
 - Prueba: `node scripts/recorrido-idiomas.mjs`.
+
+## Instalar en la compu (15/10/2026)
+- El navegador avisa una sola vez, al cargar, que la página se puede instalar (`beforeinstallprompt`). Antes solo se escuchaba con Perfil abierto y casi nunca aparecía el botón. Ahora `src/data/instalar.ts` lo guarda desde el arranque (se importa en `main.tsx`) y la tarjeta de Perfil muestra "Instalar en la compu", que abre la ventanita del navegador.
+- Si el navegador no ofrece el botón (Edge, Safari en Mac, Firefox, o Chrome antes de habilitarlo), la tarjeta explica dónde está la opción en ese navegador. Firefox no instala páginas: se sugiere Chrome o Edge.
+- Al instalarse aparece "¡Listo, HaxMatch quedó instalada!"; abierta como app, la tarjeta no se muestra.
+- El manifiesto suma `id`, categorías y capturas (ancha para la compu, angostas para el celular), así la ventana de instalar muestra imágenes.

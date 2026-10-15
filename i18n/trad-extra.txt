@@ -20,3 +20,20 @@
 @solicitud|pedido|request
 @solicitudes|pedidos|requests
 @{1} días +{2}|{1} dias +{2}|{1} days +{2}
+@Abrí el menú de Edge (los tres puntitos de arriba a la derecha).|Abra o menu do Edge (os três pontinhos no canto superior direito).|Open the Edge menu (the three dots at the top right).
+@Abrí el menú del navegador (los tres puntitos).|Abra o menu do navegador (os três pontinhos).|Open the browser menu (the three dots).
+@Abrí el menú del navegador.|Abra o menu do navegador.|Open the browser menu.
+@Buscá la opción "Instalar HaxMatch" o "Instalar como app".|Procure a opção "Instalar HaxMatch" ou "Instalar como app".|Look for "Install HaxMatch" or "Install as app".
+@Elegí "Agregar al Dock".|Escolha "Adicionar ao Dock".|Choose "Add to Dock".
+@Elegí "Instalar app" o "Agregar a la pantalla principal".|Escolha "Instalar app" ou "Adicionar à tela inicial".|Choose "Install app" or "Add to Home screen".
+@Elegí "Instalar este sitio como una aplicación".|Escolha "Instalar este site como um aplicativo".|Choose "Install this site as an app".
+@En la barra de arriba, abrí el menú "Archivo".|Na barra de cima, abra o menu "Arquivo".|In the top bar, open the "File" menu.
+@Entrá en "Aplicaciones".|Entre em "Aplicativos".|Go to "Apps".
+@Firefox no deja instalar páginas como programa. Abrí HaxMatch en Chrome o Edge y vas a ver el botón para instalarla.|O Firefox não deixa instalar páginas como programa. Abra o HaxMatch no Chrome ou no Edge e você vai ver o botão para instalar.|Firefox can't install pages as apps. Open HaxMatch in Chrome or Edge and you'll see the install button.
+@Instalar en la compu|Instalar no computador|Install on this computer
+@La encontrás en el menú de inicio o en el escritorio, con su ícono.|Você encontra no menu iniciar ou na área de trabalho, com o ícone.|You'll find it in your Start menu or on your desktop, with its icon.
+@La encontrás en la pantalla de inicio, con su ícono.|Você encontra na tela inicial, com o ícone.|You'll find it on your home screen, with its icon.
+@Si no lo ves: menú de los tres puntitos › "Transmitir, guardar y compartir" › "Instalar página como app".|Se não aparecer: menu dos três pontinhos › "Transmitir, salvar e compartilhar" › "Instalar página como app".|If you don't see it: three-dot menu › "Cast, save, and share" › "Install page as app".
+@Tocá el ícono de instalar que aparece a la derecha de la barra de direcciones.|Clique no ícone de instalar que aparece à direita da barra de endereços.|Click the install icon on the right side of the address bar.
+@¡Listo, HaxMatch quedó instalada!|Pronto, o HaxMatch foi instalado!|Done, HaxMatch is installed!
+@(display-mode: {1})|(display-mode: {1})|(display-mode: {1})

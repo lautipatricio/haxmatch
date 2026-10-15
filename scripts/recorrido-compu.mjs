@@ -21,6 +21,21 @@ async function vuelta(w, h, pref) {
   await page.getByRole('link', { name: 'Jugar HaxBall' }).click(); await foto('2-haxball')
   if (w >= 1024 && !(await page.locator('.lateral').count())) errores.push('En HaxBall tiene que estar el menú del costado')
   await page.goto(U + '/perfil'); await foto('3-perfil')
+  if (w >= 1024) {
+    // Instalar en la compu: sin el aviso del navegador se ven los pasos; con el aviso, el botón.
+    if (!(await page.getByText('Instalá HaxMatch en tu computadora').count())) errores.push('Falta la tarjeta para instalar en la compu')
+    if (!(await page.getByText('Instalar página como app', { exact: false }).count())) errores.push('Faltan los pasos para instalar desde Chrome')
+    await page.evaluate(() => {
+      const e = new Event('beforeinstallprompt', { cancelable: true })
+      e.prompt = async () => { window.__pidioInstalar = true }
+      e.userChoice = Promise.resolve({ outcome: 'accepted' })
+      window.dispatchEvent(e)
+    })
+    await page.getByRole('button', { name: 'Instalar en la compu' }).click()
+    await page.getByText('¡Listo, HaxMatch quedó instalada!').waitFor({ timeout: 3000 }).catch(() => errores.push('No apareció el aviso de instalada'))
+    if (!(await page.evaluate(() => window.__pidioInstalar))) errores.push('El botón no abrió la ventana de instalar')
+    await foto('3b-instalada')
+  }
   await page.goto(U + '/chat'); await foto('4-chat')
   await page.goto(U + '/clips'); await foto('5-clips')
   await page.goto(U + '/haxball'); await page.waitForTimeout(600)

@@ -9,6 +9,8 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { App } from './App'
 import { vigilarLlamadas } from './ui/titilar'
+// Se carga primero para no perderse el aviso de "se puede instalar", que llega una sola vez.
+import './data/instalar'
 
 vigilarLlamadas()
 
