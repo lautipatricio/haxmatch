@@ -3,7 +3,7 @@
 // el ícono se alternan hasta que vuelve a mirarla. No pide ningún permiso.
 import { useStore } from '../data/store'
 
-const TITULO = 'haxmatch.com'
+const TITULO = 'HaxMatch'
 
 // El ícono de siempre, con los colores dados vuelta: se nota en la fila de pestañas.
 const ICONO_ALERTA = `data:image/svg+xml,${encodeURIComponent(

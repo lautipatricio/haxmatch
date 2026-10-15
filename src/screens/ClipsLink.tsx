@@ -1,5 +1,4 @@
-// Clips subidos pegando un link de TikTok o YouTube: subirlos, verlos en revisión
-// y, para quien administra, aprobarlos o rechazarlos.
+// Clips subidos pegando un link de TikTok o YouTube: se publican solos; quien administra puede quitarlos.
 import { useState, type FormEvent } from 'react'
 import { YO, nombreDe, useStore, usuarioDe } from '../data/store'
 import type { ClipLink } from '../domain/types'
@@ -18,7 +17,7 @@ export function ReproductorYouTube({ id, titulo }: { id: string; titulo: string 
   )
 }
 
-/** Vista previa chica, con los controles del propio video (para revisar antes de aprobar). */
+/** Vista previa chica, con los controles del propio video. */
 function VistaPrevia({ c }: { c: ClipLink }) {
   const src = c.plataforma === 'tiktok'
     ? `https://www.tiktok.com/player/v1/${c.videoId}?controls=1&progress_bar=1&play_button=1&volume_control=1&music_info=0&description=0&rel=0&autoplay=0`
@@ -32,7 +31,7 @@ function VistaPrevia({ c }: { c: ClipLink }) {
 
 const plataforma = (c: ClipLink) => (c.plataforma === 'tiktok' ? 'TikTok' : 'YouTube')
 
-/** Pegar el link de un clip y mandarlo a revisar. */
+/** Pegar el link de un clip y publicarlo. */
 export function SubirClip({ onCerrar }: { onCerrar: () => void }) {
   const subir = useStore((s) => s.subirClip)
   const [enlace, setEnlace] = useState('')
@@ -51,14 +50,14 @@ export function SubirClip({ onCerrar }: { onCerrar: () => void }) {
   return (
     <Sheet title="Subir un clip" onCerrar={onCerrar}>
       <form className="lista" onSubmit={(e) => void enviar(e)}>
-        <div className="m">Pegá el link de un video público tuyo de TikTok o de YouTube. Lo revisamos y, si es de HaxBall, aparece en Clips.</div>
+        <div className="m">Pegá el link de un video público tuyo de TikTok o de YouTube y aparece en Clips al instante.</div>
         <label className="h sub" htmlFor="clip-link">Link del video</label>
         <input id="clip-link" className="field" type="url" inputMode="url" autoComplete="off" autoCapitalize="none" spellCheck={false}
           value={enlace} maxLength={300} placeholder="https://www.tiktok.com/@vos/video/…" aria-invalid={!!error}
           onChange={(e) => { setEnlace(e.target.value); setError(null) }} />
         {error && <div className="err" role="alert">{error}</div>}
         <button className="btn btn--lg" type="submit" disabled={ocupado || !enlace.trim()}>
-          {ocupado ? 'Enviando…' : 'Mandar a revisar'}
+          {ocupado ? 'Publicando…' : 'Publicar'}
         </button>
         <button className="btn btn--sec" type="button" onClick={onCerrar}>Cancelar</button>
       </form>
@@ -66,7 +65,7 @@ export function SubirClip({ onCerrar }: { onCerrar: () => void }) {
   )
 }
 
-const ESTADO: Record<ClipLink['estado'], string> = { pendiente: 'En revisión', aprobado: 'En Clips', rechazado: 'No aprobado' }
+const ESTADO: Record<ClipLink['estado'], string> = { pendiente: 'En revisión', aprobado: 'En Clips', rechazado: 'Quitado' }
 
 /** Los clips que subí, con cómo va cada uno. */
 export function MisClipsSubidos({ onSubir }: { onSubir: () => void }) {
@@ -86,7 +85,7 @@ export function MisClipsSubidos({ onSubir }: { onSubir: () => void }) {
         <h2 id="t-subidos" className="h sub grow">Clips que subiste</h2>
         <button className="btn" onClick={onSubir}>Subir clip</button>
       </div>
-      {mios.length === 0 && <div className="m">Pegá el link de un video tuyo de TikTok o YouTube. Lo revisamos antes de que aparezca en Clips.</div>}
+      {mios.length === 0 && <div className="m">Pegá el link de un video tuyo de TikTok o YouTube y aparece en Clips al instante.</div>}
       {error && <div className="err" role="alert">{error}</div>}
       {mios.map((c) => (
         <div key={c.id} className="card card--row">
@@ -105,30 +104,30 @@ export function MisClipsSubidos({ onSubir }: { onSubir: () => void }) {
   )
 }
 
-/** Panel: los clips que esperan revisión. */
-export function RevisarClips() {
+/** Panel: los últimos clips publicados. Se publican solos; desde acá se puede quitar el que no corresponda. */
+export function UltimosClips() {
   const s = useStore()
   const ahora = useAhora()
   const [viendo, setViendo] = useState<string | null>(null)
-  const [rechazando, setRechazando] = useState<string | null>(null)
+  const [quitando, setQuitando] = useState<string | null>(null)
   const [motivo, setMotivo] = useState('')
   const [ocupado, setOcupado] = useState<string | null>(null)
   const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null)
-  const revisar = async (c: ClipLink, aprobar: boolean) => {
+  const quitar = async (c: ClipLink) => {
     setOcupado(c.id)
     setAviso(null)
-    const error = await s.revisarClip(c.id, aprobar, aprobar ? '' : motivo)
+    const error = await s.quitarClip(c.id, motivo)
     setOcupado(null)
-    setRechazando(null)
+    setQuitando(null)
     setMotivo('')
-    setAviso(error ? { ok: false, texto: error } : { ok: true, texto: aprobar ? 'El clip ya está en Clips.' : 'Rechazaste el clip.' })
+    setAviso(error ? { ok: false, texto: error } : { ok: true, texto: 'Quitaste el clip. A quien lo subió le llega el aviso.' })
   }
   return (
-    <section className="lista" id="clips" aria-labelledby="t-revisar">
-      <h2 id="t-revisar" className="h sub">Clips para revisar{s.pendientes.length > 0 && ` (${s.pendientes.length})`}</h2>
+    <section className="lista" id="clips" aria-labelledby="t-clips">
+      <h2 id="t-clips" className="h sub">Últimos clips publicados</h2>
       {aviso && <div className={aviso.ok ? 'ok' : 'err'} role="status">{aviso.texto}</div>}
-      {s.pendientes.length === 0 && <div className="m">No hay clips esperando revisión.</div>}
-      {s.pendientes.map((c) => {
+      {s.recientes.length === 0 && <div className="m">Todavía nadie subió clips por link.</div>}
+      {s.recientes.slice(0, 10).map((c) => {
         const u = usuarioDe(s, c.userId)
         return (
           <div key={c.id} className="card card--col">
@@ -140,26 +139,23 @@ export function RevisarClips() {
               </div>
             </div>
             {viendo === c.id && <VistaPrevia c={c} />}
-            <div className="row" style={{ flexWrap: 'wrap' }}>
-              <button className="btn btn--sec" aria-expanded={viendo === c.id} onClick={() => setViendo(viendo === c.id ? null : c.id)}>
-                {viendo === c.id ? 'Ocultar video' : 'Ver video'}
-              </button>
-              <a className="btn btn--ghost" href={c.enlace} target="_blank" rel="noopener noreferrer">Abrir en {plataforma(c)}</a>
-            </div>
-            {rechazando === c.id ? (
+            {quitando === c.id ? (
               <div className="lista">
                 <label className="h sub" htmlFor={`motivo-${c.id}`}>Motivo <span className="opcional">(opcional, lo ve quien lo subió)</span></label>
                 <input id={`motivo-${c.id}`} className="field" value={motivo} maxLength={200} autoComplete="off" placeholder="No es de HaxBall"
                   onChange={(e) => setMotivo(e.target.value)} />
                 <div className="row">
-                  <button className="btn btn--danger grow" disabled={ocupado === c.id} onClick={() => void revisar(c, false)}>Rechazar</button>
-                  <button className="btn btn--sec" onClick={() => { setRechazando(null); setMotivo('') }}>Cancelar</button>
+                  <button className="btn btn--danger grow" disabled={ocupado === c.id} onClick={() => void quitar(c)}>Quitar de Clips</button>
+                  <button className="btn btn--sec" onClick={() => { setQuitando(null); setMotivo('') }}>Cancelar</button>
                 </div>
               </div>
             ) : (
-              <div className="row">
-                <button className="btn grow" disabled={ocupado === c.id} onClick={() => void revisar(c, true)}>Aprobar</button>
-                <button className="btn btn--sec grow" disabled={ocupado === c.id} onClick={() => { setRechazando(c.id); setMotivo('') }}>Rechazar…</button>
+              <div className="row" style={{ flexWrap: 'wrap' }}>
+                <button className="btn btn--sec" aria-expanded={viendo === c.id} onClick={() => setViendo(viendo === c.id ? null : c.id)}>
+                  {viendo === c.id ? 'Ocultar video' : 'Ver video'}
+                </button>
+                <a className="btn btn--ghost" href={c.enlace} target="_blank" rel="noopener noreferrer">Abrir en {plataforma(c)}</a>
+                <button className="btn btn--ghost" onClick={() => { setQuitando(c.id); setMotivo('') }}>Quitar…</button>
               </div>
             )}
           </div>

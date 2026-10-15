@@ -2,8 +2,9 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ERROR_DE_INGRESO, REAL, REF_INICIAL } from '../config'
 import { useStore } from '../data/store'
-import { REGIONES, type Region } from '../domain/types'
-import { Avatar, ChipsMulti, Head, Icon } from '../ui'
+import { codigoPais, paisDelNavegador } from '../domain/paises'
+import { SelectorPais } from '../ui/pais'
+import { Avatar, Head, Icon } from '../ui'
 
 export function Ingresar() {
   const entrar = useStore((s) => s.entrarConDiscord)
@@ -145,7 +146,8 @@ export function Onboarding() {
   const completar = useStore((s) => s.completarOnboarding)
   const nav = useNavigate()
   const [nick, setNick] = useState('')
-  const [region, setRegion] = useState<Region[]>(perfil?.region.length ? perfil.region : ['ARG'])
+  // El país lo elige al registrarse. Si el navegador dice uno, viene marcado.
+  const [pais, setPais] = useState<string>(() => (perfil?.onboarding ? codigoPais(perfil.region[0]) : null) ?? paisDelNavegador() ?? '')
   const [error, setError] = useState<string | null>(null)
   const [ocupado, setOcupado] = useState(false)
   const invito = perfil?.invitoNick ?? (perfil?.referidoPor ? usuarios[perfil.referidoPor]?.username : null)
@@ -153,8 +155,12 @@ export function Onboarding() {
   const sugerido = REAL ? perfil?.nick : perfil?.username
 
   const empezar = async () => {
+    if (!pais) {
+      setError('Elegí tu país')
+      return
+    }
     setOcupado(true)
-    const e = await completar({ nick: nick.trim() || sugerido || '', region })
+    const e = await completar({ nick: nick.trim() || sugerido || '', region: [pais] })
     setError(e)
     setOcupado(false)
     if (!e) nav('/')
@@ -181,8 +187,9 @@ export function Onboarding() {
             <span style={{ color: 'var(--accent)' }}><Icon name="check" /></span>
           </div>
           <div>Tu nivel empieza en 0 y sube con tu actividad en la app.</div>
-          <ChipsMulti label="Región" options={REGIONES} value={region} onChange={setRegion} />
-          <div className="m">Podés marcar más de una región. La posición la elegís cada vez que buscás un amistoso o un jugador.</div>
+          <label className="h sub" htmlFor="pais">¿De qué país sos?</label>
+          <SelectorPais id="pais" valor={pais} onCambio={(v) => { setPais(v); setError(null) }} />
+          <div className="m">Lo ven los demás en tu perfil y va solo cuando buscás partido. La posición la elegís cada vez que buscás.</div>
         </div>
       </div>
       <div className="foot" style={{ paddingBottom: 24 }}>

@@ -146,15 +146,15 @@ interface FilaLink {
   estado: ClipLink['estado']; motivo: string | null; creado_at: string; revisado_at: string | null
   nick: string; username: string; foto: string | null; nivel: number | null; reacciones: number; reaccione: boolean
 }
-interface EstadoLinks { feed: FilaLink[]; mios: FilaLink[]; pendientes: FilaLink[] | null }
+interface EstadoLinks { feed: FilaLink[]; mios: FilaLink[]; recientes?: FilaLink[] | null }
 
 export interface LinksLocal {
   /** Los aprobados, listos para el feed. */
   reels: Reel[]
   misReacciones: string[]
   mios: ClipLink[]
-  /** Solo para quien administra: los que esperan revisión. null si no administro. */
-  pendientes: ClipLink[] | null
+  /** Solo para quien administra: los últimos publicados (para poder quitarlos). null si no administro. */
+  recientes: ClipLink[] | null
   usuarios: Record<string, Usuario>
 }
 
@@ -185,13 +185,13 @@ export async function leerLinks(miId: string): Promise<LinksLocal | null> {
     if (f.user_id !== miId) usuarios[f.user_id] = { id: f.user_id, username: f.nick, discord: f.username, nivel: typeof f.nivel === 'number' ? f.nivel : null, color: colorDe(f.user_id), foto }
   }
   const e = r.data
-  for (const f of [...(e.feed ?? []), ...(e.pendientes ?? [])]) anotar(f)
+  for (const f of [...(e.feed ?? []), ...(e.recientes ?? [])]) anotar(f)
   return {
     // Como en los de TikTok, la reacción propia se suma en pantalla.
     reels: (e.feed ?? []).map((f) => reelDeLink(aLink(f, id), f.reacciones - (f.reaccione ? 1 : 0))),
     misReacciones: (e.feed ?? []).filter((f) => f.reaccione).map((f) => f.id),
     mios: (e.mios ?? []).map((f) => aLink(f, id)),
-    pendientes: e.pendientes ? e.pendientes.map((f) => aLink(f, id)) : null,
+    recientes: e.recientes ? e.recientes.map((f) => aLink(f, id)) : null,
     usuarios,
   }
 }
@@ -202,7 +202,7 @@ export const linksApi = {
     return r.error ? { error: r.error === SIN_BASE ? 'Subir clips todavía no está disponible.' : r.error } : {}
   },
   borrar: (id: string) => hacer('borrar_clip', { p_id: id }),
-  revisar: (id: string, aprobar: boolean, motivo: string) => hacer('admin_revisar_clip', { p_id: id, p_aprobar: aprobar, p_motivo: motivo || null }),
+  quitar: (id: string, motivo: string) => hacer('admin_quitar_clip', { p_id: id, p_motivo: motivo || null }),
   reaccionar: (id: string, marcar: boolean) => hacer('reaccionar_clip', { p_id: id, p_marcar: marcar }),
 }
 

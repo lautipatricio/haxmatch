@@ -1,3 +1,4 @@
+import { nombrePais } from '../domain/paises'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { REAL } from '../config'
@@ -8,7 +9,8 @@ import { FALTAN, type Busqueda } from '../domain/types'
 import { TEXTO_AVISOS, activarAvisos, estadoAvisos, type EstadoAvisos } from '../data/push'
 import { Chips, Conectado, Empty, EtiquetaKick, Head, Persona, Sheet, TabBar, mmss, useAhora } from '../ui'
 
-const lista = (v: readonly string[] | null) => (v ?? []).join(', ')
+/** Países, por nombre (Argentina). */
+const lista = (v: readonly string[] | null) => (v ?? []).map((x) => nombrePais(x)).join(', ')
 /** Lo que alguien eligió de verdad: "Cualquiera" y "Polifuncional" no dicen nada. */
 const concretas = (v: readonly string[] | null | undefined) => (v ?? []).filter((x) => x !== 'Cualquiera' && x !== 'Polifuncional')
 const faltan = (n: number | undefined) => `falta${n === 1 ? '' : 'n'} ${n ?? 1}`
@@ -281,7 +283,7 @@ export function Buscando() {
   const canchas = concretas(mia.cancha)
   const datos = (sala
     ? [completa ? 'Completa' : faltan(mia.faltan).replace('f', 'F'), concretas(mia.posicion).join('/'), lista(mia.region), canchas.length ? `Cancha: ${canchas.join(', ')}` : '']
-    : [concretas(mia.formato).join(', '), `Región: ${lista(mia.region)}`]
+    : [concretas(mia.formato).join(', '), lista(mia.region)]
   ).filter(Boolean).join(' · ')
   const esqueleto = <><div className="skeleton" /><div className="skeleton" /></>
   const vencida = mia.expiraAt !== null && mia.expiraAt <= ahora

@@ -4,7 +4,7 @@ import { REAL } from '../config'
 import { YO, useStore, type Store } from '../data/store'
 import { leerPanel, levantarDesdePanel, suspenderDesdePanel, type Panel, type PersonaPanel } from '../data/servidor'
 import { Avatar, Head, TabBar, hace, useAhora } from '../ui'
-import { RevisarClips } from './ClipsLink'
+import { UltimosClips } from './ClipsLink'
 
 const DIAS = [1, 3, 7, 30, 0] as const
 const textoDias = (d: number) => (d === 0 ? 'Sin fin' : d === 1 ? '1 día' : `${d} días`)
@@ -154,7 +154,7 @@ export function Admin() {
         <div className="pad" style={{ '--gap': '20px' } as CSSProperties}>
           {aviso && <div className="ok" role="status">{aviso}</div>}
           {error && <div className="err" role="alert">{error}</div>}
-          <RevisarClips />
+          <UltimosClips />
           {!panel ? (
             !error && <div className="m center">Cargando…</div>
           ) : (

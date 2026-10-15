@@ -16,6 +16,7 @@ import { Perfil } from './screens/Perfil'
 import { Referir } from './screens/Referir'
 import { Reportar } from './screens/Reportar'
 import { Empty, FichaJugador, Lateral, Luces, Toasts, useEsCompu } from './ui'
+import { CartelPais } from './ui/pais'
 
 /** Solo deja pasar a quien ya entró con Discord y terminó el onboarding. */
 function ConSesion() {
@@ -58,6 +59,8 @@ export function App() {
   const limpiarIrA = useStore((s) => s.limpiarIrA)
   const conectarCola = useStore((s) => s.conectarCola)
   const perfil = useStore((s) => s.perfil)
+  // Los registrados antes de que hubiera países confirman el suyo una vez.
+  const pedirPais = useStore((s) => !!s.perfil?.onboarding && s.ajustesListos && s.perfil.paisConfirmado === false)
   const registrado = !!perfil?.onboarding
   const nav = useNavigate()
   const { pathname } = useLocation()
@@ -149,6 +152,7 @@ export function App() {
       </Routes>
       </div>
       <FichaJugador />
+      {pedirPais && <CartelPais titulo="¿De qué país sos?" texto="Ahora cada jugador tiene su país: lo ven los demás en tu perfil y va solo cuando buscás partido. Elegilo una sola vez." />}
       <Toasts />
       <SinConexion />
     </div>

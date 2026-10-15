@@ -13,6 +13,8 @@ import type {
   Busqueda, Cancha, ClipLink, Duracion, EventoPuntos, Formato, Match, Mensaje, MensajeChat, Modo, MotivoReporte,
   Notif, Participante, Posicion, PuntosServidor, Reel, Referido, Region, Reporte, TipoNotif, TipoPunto, Usuario,
 } from '../domain/types'
+import { codigoPais, nombrePais } from '../domain/paises'
+import { guardarEleccion, idiomaPara, leerEleccion, type EleccionIdioma, type Idioma } from '../i18n/idioma'
 import {
   borrarCuenta, codigoPendiente, completarRegistro, escucharSesion, guardarCodigoPendiente, ingresarConDiscord, miPerfil, quienInvita,
   quitarFoto, salir, subirFoto, type FilaPerfil,
@@ -22,7 +24,7 @@ import { desvincularKick, irAKick, leerKick, type CanalKick } from './kick'
 import { sincronizarAvisos, soltarAvisos } from './push'
 import {
   GRACIA_MS, aLocal, cambiarNick as cambiarNickServidor, chat as chatServidor, cola, guardarMostrarConectado, leerAjustes, leerChat, leerCola, leerSeguridad,
-  leerRegistrados, pedirAmistadPorUsuario, ponerLinkSala, type ColaLocal, type Resumen,
+  leerRegistrados, pedirAmistadPorUsuario, ponerLinkSala, type ColaLocal, type Resumen, cambiarPaisServidor,
 } from './servidor'
 import { REAL } from './supabase'
 import { alCambiar, alCambiarChat } from './transporte'
@@ -48,8 +50,10 @@ export interface Perfil {
   nickCambiadoAt?: number | null
   /** Foto de perfil elegida de la galería. Sin foto se muestra la inicial. */
   foto?: string | null
-  /** Regiones del perfil: puede elegir varias. La posición se elige en cada búsqueda. */
+  /** País del jugador, como lista de uno ("AR"). Va solo en cada búsqueda. */
   region: Region[]
+  /** Ya eligió o confirmó su país (los registrados antes del paso 14 lo confirman una vez). */
+  paisConfirmado?: boolean
   codigo: string
   referidoPor: string | null
   onboarding: boolean
@@ -98,8 +102,8 @@ interface Datos {
   tiktok: boolean
   /** Clips que subí pegando un link: en revisión, aprobados o rechazados. */
   misLinks: ClipLink[]
-  /** Si administro: los clips de todos que esperan revisión. */
-  pendientes: ClipLink[]
+  /** Si administro: los últimos clips publicados por link (para poder quitarlos). */
+  recientes: ClipLink[]
   notifs: Notif[]
   referidos: Referido[]
   reportes: Reporte[]
@@ -136,6 +140,10 @@ interface Acciones {
   cambiarFoto: (foto: string | null) => Promise<string | null>
   /** Cambiar el nick. Devuelve el problema, si no se pudo. */
   cambiarNick: (nick: string) => Promise<string | null>
+  /** Elegir o confirmar mi país. Devuelve el problema, si hubo. */
+  cambiarPais: (pais: string) => Promise<string | null>
+  /** Idioma de la app: uno fijo, o 'auto' (según el país y el navegador). */
+  elegirIdioma: (v: EleccionIdioma) => void
   cerrarSesion: () => void
   /** Borra la cuenta para siempre. Devuelve el problema, o null si salió bien. */
   borrarCuenta: () => Promise<string | null>
@@ -189,9 +197,9 @@ interface Acciones {
   /** Subir un clip pegando su link. Devuelve el problema, si hubo. */
   subirClip: (enlace: string, titulo: string) => Promise<string | null>
   borrarClip: (id: string) => Promise<string | null>
-  /** Quien administra: aprobar o rechazar un clip. Devuelve el problema, si hubo. */
-  revisarClip: (id: string, aprobar: boolean, motivo: string) => Promise<string | null>
-  /** Con servidor: los clips por link (aprobados, los míos y, si administro, los que esperan). */
+  /** Quien administra: quitar un clip publicado. Devuelve el problema, si hubo. */
+  quitarClip: (id: string, motivo: string) => Promise<string | null>
+  /** Con servidor: los clips por link (publicados, los míos y, si administro, los últimos). */
   cargarLinks: () => Promise<void>
 
   /** Agregar a un amigo por su usuario de Discord. */
@@ -271,6 +279,8 @@ interface Efimero {
   kick: Record<string, CanalKick>
   /** Cuántos jugadores tiene HaxMatch (paso 12). null mientras no se sabe. */
   registrados: number | null
+  /** Idioma elegido en el Perfil, o 'auto'. */
+  eleccionIdioma: EleccionIdioma
 }
 
 export type Store = Datos & Efimero & Acciones
@@ -303,7 +313,7 @@ function datosIniciales(ahora: number): Datos {
     misReacciones: [],
     tiktok: false,
     misLinks: [],
-    pendientes: [],
+    recientes: [],
     notifs: REAL ? [] : seedNotifs(ahora),
     referidos: REAL ? [] : SEED_REFERIDOS,
     reportes: [],
@@ -313,7 +323,7 @@ function datosIniciales(ahora: number): Datos {
 
 const CAMPOS: Array<keyof Datos> = [
   'perfil', 'cuentaId', 'resumen', 'offsetDias', 'usuarios', 'amigos', 'solicitudes', 'solicitudesEnviadas', 'bloqueados', 'bloqueosEnServidor',
-  'busquedas', 'matches', 'mensajes', 'eventos', 'puntosServidor', 'reels', 'misReacciones', 'tiktok', 'misLinks', 'pendientes', 'notifs',
+  'busquedas', 'matches', 'mensajes', 'eventos', 'puntosServidor', 'reels', 'misReacciones', 'tiktok', 'misLinks', 'recientes', 'notifs',
   'referidos', 'reportes', 'programados', 'chatVistoAt',
 ]
 
@@ -757,7 +767,7 @@ function aplicarCola(s: Store, n: ColaLocal, primera: boolean): Cambio {
       const titulo = b.modo === 'sala'
         ? `Tu amigo ${nombre(b.userId)} necesita ${b.faltan ?? 1} más`
         : `Tu amigo ${nombre(b.userId)} se puso disponible`
-      const detalle = b.modo === 'sala' ? `Sala "${b.nombreSala ?? ''}"` : `Está buscando partido · ${b.region.join(', ')}`
+      const detalle = b.modo === 'sala' ? `Sala "${b.nombreSala ?? ''}"` : `Está buscando partido · ${nombrePais(b.region[0])}`
       notif(b.modo === 'sala' ? 'amigo_sala' : 'amigo_disponible', titulo, detalle, b.id)
       // Si ya estoy en un partido o en un grupo, no interrumpe: queda en Notificaciones.
       if (!entreAUno && !mia?.liderId) toast({ texto: titulo, detalle, to: '/perfil/amigos' })
@@ -897,6 +907,7 @@ export const useStore = create<Store>()((set, get) => {
   mostrarConectado: true,
   kick: REAL ? {} : SEED_KICK,
   registrados: REAL ? null : Object.keys(USUARIOS).length + 44,
+  eleccionIdioma: leerEleccion(),
   irA: null,
   ficha: null,
   clipsListos: !REAL,
@@ -979,8 +990,6 @@ export const useStore = create<Store>()((set, get) => {
       void get().refrescar()
       if (document.visibilityState === 'visible') {
         void get().cargarSeguridad()
-        const st = get()
-        if (st.admin || st.misLinks.some((c) => c.estado === 'pendiente')) void st.cargarLinks()
       }
     }
     document.addEventListener('visibilitychange', alVolver)
@@ -996,15 +1005,10 @@ export const useStore = create<Store>()((set, get) => {
     const cadaKick = setInterval(() => void get().cargarKick(), 30 * SEG)
     void get().cargarRegistrados()
     const cadaRegistro = setInterval(() => void get().cargarRegistrados(), 5 * 60 * SEG)
-    // Clips por link: quien administra se entera de los nuevos para revisar, y quien subió uno, de cómo le fue.
-    const cadaLinks = setInterval(() => {
-      const st = get()
-      if (st.admin || st.misLinks.some((c) => c.estado === 'pendiente')) void st.cargarLinks()
-    }, 30 * SEG)
+
     return () => {
       clearInterval(cadaKick)
       clearInterval(cadaRegistro)
-      clearInterval(cadaLinks)
       dejarDeEscuchar()
       dejarChat()
       if (esperaChat) clearTimeout(esperaChat)
@@ -1225,6 +1229,26 @@ export const useStore = create<Store>()((set, get) => {
     return null
   },
 
+  cambiarPais: async (pais) => {
+    const c = codigoPais(pais)
+    const s = get()
+    if (!c || !s.perfil) return 'Elegí tu país'
+    if (REAL) {
+      const e = await cambiarPaisServidor(c)
+      if (e) return e
+      void get().refrescar()
+    }
+    const p = get().perfil
+    if (p) set({ perfil: { ...p, region: [c], paisConfirmado: true } })
+    guardar(get())
+    return null
+  },
+
+  elegirIdioma: (v) => {
+    guardarEleccion(v)
+    set({ eleccionIdioma: v })
+  },
+
   cambiarNick: async (nick) => {
     const s = get()
     if (!s.perfil?.onboarding) return 'Primero terminá tu registro.'
@@ -1275,7 +1299,7 @@ export const useStore = create<Store>()((set, get) => {
       const buscaba = !!miBusqueda(get())
       canceleAt = Date.now()
       set({
-        perfil: null, toasts: [], busquedas: [], mensajes: [], colaLista: false, ficha: null, reels: [], misReacciones: [], tiktok: false, misLinks: [], pendientes: [], tiktokInfo: null, clipsListos: false, suspension: null,
+        perfil: null, toasts: [], busquedas: [], mensajes: [], colaLista: false, ficha: null, reels: [], misReacciones: [], tiktok: false, misLinks: [], recientes: [], tiktokInfo: null, clipsListos: false, suspension: null,
         conectados: [], chat: [], chatListo: false, errorChat: null, admin: false, ajustesListos: false, mostrarConectado: true, kick: {}, registrados: null,
       })
       guardar(get())
@@ -1311,7 +1335,7 @@ export const useStore = create<Store>()((set, get) => {
       if (get().perfil?.id !== miId) return
       const perfil = get().perfil
       set(a
-        ? { admin: a.admin, mostrarConectado: a.mostrarConectado, ajustesListos: true, perfil: perfil ? { ...perfil, nickCambiadoAt: a.nickCambiadoAt } : perfil }
+        ? { admin: a.admin, mostrarConectado: a.mostrarConectado, ajustesListos: true, perfil: perfil ? { ...perfil, nickCambiadoAt: a.nickCambiadoAt, paisConfirmado: a.paisConfirmado } : perfil }
         : { ajustesListos: true })
     })
     let seg = await leerSeguridad()
@@ -1408,7 +1432,7 @@ export const useStore = create<Store>()((set, get) => {
     const region = get().perfil?.region ?? []
     return get().crearBusqueda({
       modo: 'jugador', formato: ['Cualquiera'], posicion: ['Polifuncional'], cancha: ['Cualquiera'],
-      region: region.length ? region : ['ARG'], duracion: '15min',
+      region: region.length ? region : ['AR'], duracion: '15min',
     })
   },
 
@@ -1771,19 +1795,13 @@ export const useStore = create<Store>()((set, get) => {
     let notifs = s.notifs
     let toasts = s.toasts
     const usuarios = { ...s.usuarios, ...r.usuarios }
-    // Quien administra: un aviso por cada clip nuevo que espera revisión.
-    for (const c of r.pendientes ?? []) {
-      if (notifs.some((n) => n.tipo === 'clip_revisar' && n.ref === c.id)) continue
-      const nombre = usuarios[c.userId]?.username ?? 'Un jugador'
-      notifs = [{ id: id('n'), tipo: 'clip_revisar', titulo: 'Clip para revisar', detalle: `${nombre} subió ${c.titulo ? `"${c.titulo}"` : `un clip de ${c.plataforma === 'tiktok' ? 'TikTok' : 'YouTube'}`}`, at: c.creadoAt, leida: false, ref: c.id }, ...notifs]
-    }
-    // Quien subió: cuando se revisa uno de sus clips.
+    // Quien subió: si quitaron uno de sus clips.
     for (const c of r.mios) {
       const antes = s.misLinks.find((x) => x.id === c.id)
-      if (antes?.estado !== 'pendiente' || c.estado === 'pendiente') continue
+      if (!antes || antes.estado === 'rechazado' || c.estado !== 'rechazado') continue
       if (notifs.some((n) => n.tipo === 'clip_revisado' && n.ref === c.id)) continue
-      const titulo = c.estado === 'aprobado' ? 'Tu clip ya está en Clips' : 'Tu clip no se aprobó'
-      const detalle = c.estado === 'aprobado' ? 'Ya lo puede ver toda la comunidad' : c.motivo ? `Motivo: ${c.motivo}` : 'Podés subir otro cuando quieras'
+      const titulo = 'Quitamos tu clip de Clips'
+      const detalle = c.motivo ? `Motivo: ${c.motivo}` : 'No cumplía las reglas de HaxMatch'
       notifs = [{ id: id('n'), tipo: 'clip_revisado', titulo, detalle, at: c.revisadoAt ?? ahora, leida: false, ref: c.id }, ...notifs]
       toasts = conToast({ ...s, toasts }, { texto: titulo, detalle })
     }
@@ -1791,7 +1809,7 @@ export const useStore = create<Store>()((set, get) => {
       usuarios, notifs: notifs.slice(0, 50), toasts,
       reels: [...get().reels.filter((x) => x.origen !== 'link'), ...r.reels],
       misReacciones: [...get().misReacciones.filter((x) => !get().reels.some((y) => y.id === x && y.origen === 'link')), ...r.misReacciones],
-      misLinks: r.mios, pendientes: r.pendientes ?? [],
+      misLinks: r.mios, recientes: r.recientes ?? [],
     })
     guardar(get())
   },
@@ -1808,7 +1826,7 @@ export const useStore = create<Store>()((set, get) => {
     if ('corto' in l) return 'No pudimos abrir ese link. Abrí el video y copiá su link completo.'
     // Va sin título: el clip directo (la base todavía acepta uno, por si algún día vuelve).
     const t = titulo.trim().replace(/\s+/g, ' ').slice(0, 80)
-    const listo = 'Clip enviado. Te avisamos cuando lo revisemos.'
+    const listo = 'Listo: tu clip ya está en Clips.'
     if (REAL) {
       const r = await linksApi.subir(l.enlace, t)
       if (r.error) return r.error
@@ -1816,17 +1834,16 @@ export const useStore = create<Store>()((set, get) => {
       set({ toasts: conToast(get(), { texto: listo }) })
       return null
     }
-    // Demostración: queda en revisión, y como en la demo se administra, llega el aviso para revisarlo.
+    // Demostración: se publica en el momento.
     const s = get()
     const ahora = s.ahora()
     const todos = [...s.misLinks, ...s.reels.filter((x) => x.origen === 'link')]
     if (todos.some((x) => ('videoId' in x ? x.videoId : x.tiktokId ?? x.youtubeId) === l.videoId)) return 'Ya subiste ese clip'
-    if (s.misLinks.filter((x) => x.estado === 'pendiente').length >= 3) return 'Ya tenés 3 clips en revisión. Esperá a que los revisemos para subir otro.'
-    const c: ClipLink = { id: id('c'), userId: YO, plataforma: l.plataforma, videoId: l.videoId, enlace: l.enlace, titulo: t, estado: 'pendiente', motivo: null, creadoAt: ahora, revisadoAt: null }
+    const c: ClipLink = { id: id('c'), userId: YO, plataforma: l.plataforma, videoId: l.videoId, enlace: l.enlace, titulo: t, estado: 'aprobado', motivo: null, creadoAt: ahora, revisadoAt: ahora }
     set({
       misLinks: [c, ...s.misLinks],
-      pendientes: [...s.pendientes, c],
-      notifs: [{ id: id('n'), tipo: 'clip_revisar', titulo: 'Clip para revisar', detalle: `${nombreDe(s, YO)} subió un clip de ${l.plataforma === 'tiktok' ? 'TikTok' : 'YouTube'}`, at: ahora, leida: false, ref: c.id }, ...s.notifs],
+      recientes: [c, ...s.recientes],
+      reels: [reelDeLink(c, 0), ...s.reels],
       toasts: conToast(s, { texto: listo }),
     })
     guardar(get())
@@ -1841,36 +1858,32 @@ export const useStore = create<Store>()((set, get) => {
     }
     set((s) => ({
       misLinks: s.misLinks.filter((x) => x.id !== cid),
-      pendientes: s.pendientes.filter((x) => x.id !== cid),
+      recientes: s.recientes.filter((x) => x.id !== cid),
       reels: s.reels.filter((x) => x.id !== cid),
     }))
     guardar(get())
     return null
   },
 
-  revisarClip: async (cid, aprobar, motivo) => {
+  quitarClip: async (cid, motivo) => {
     if (REAL) {
-      const error = await linksApi.revisar(cid, aprobar, motivo.trim())
+      const error = await linksApi.quitar(cid, motivo.trim())
       await get().cargarLinks()
       return error
     }
     const s = get()
-    const ahora = s.ahora()
-    const c = s.pendientes.find((x) => x.id === cid)
-    if (!c) return 'Ese clip ya fue revisado o lo borraron'
-    const listo: ClipLink = { ...c, estado: aprobar ? 'aprobado' : 'rechazado', motivo: aprobar ? null : motivo.trim() || null, revisadoAt: ahora }
-    const titulo = aprobar ? 'Tu clip ya está en Clips' : 'Tu clip no se aprobó'
+    const c = s.recientes.find((x) => x.id === cid)
+    if (!c) return 'Ese clip ya no está'
+    const quitado: ClipLink = { ...c, estado: 'rechazado', motivo: motivo.trim() || null, revisadoAt: s.ahora() }
     set({
-      pendientes: s.pendientes.filter((x) => x.id !== cid),
-      misLinks: s.misLinks.map((x) => (x.id === cid ? listo : x)),
-      reels: aprobar ? [reelDeLink(listo, 0), ...s.reels] : s.reels,
-      notifs: c.userId === YO
-        ? [{ id: id('n'), tipo: 'clip_revisado', titulo, detalle: aprobar ? 'Ya lo puede ver toda la comunidad' : listo.motivo ? `Motivo: ${listo.motivo}` : 'Podés subir otro cuando quieras', at: ahora, leida: false, ref: cid }, ...s.notifs]
-        : s.notifs,
+      recientes: s.recientes.filter((x) => x.id !== cid),
+      misLinks: s.misLinks.map((x) => (x.id === cid ? quitado : x)),
+      reels: s.reels.filter((x) => x.id !== cid),
     })
     guardar(get())
     return null
   },
+
 
   reaccionar: (reelId) => {
     const s = get()
@@ -2383,4 +2396,9 @@ export function fechaCorta(at: number): string {
   const d = new Date(at)
   const dos = (n: number) => String(n).padStart(2, '0')
   return `${dos(d.getDate())}/${dos(d.getMonth() + 1)} a las ${dos(d.getHours())}:${dos(d.getMinutes())}`
+}
+
+/** Idioma en que se muestra la app ahora. */
+export function idiomaDe(s: Pick<Store, 'eleccionIdioma' | 'perfil'>): Idioma {
+  return idiomaPara(s.eleccionIdioma, s.perfil?.onboarding ? s.perfil.region[0] : null)
 }

@@ -119,7 +119,8 @@ Cómo funciona: la app le pide a la web (`/api/kick/entrar`) empezar una vincula
 | `supabase/09_kick.sql` | Cuentas de Kick vinculadas y quién está en vivo (lo anota la web cada minuto) |
 | `supabase/08_chat_y_panel.sql` | Chat general (mensajes de 24 horas, con topes y respetando los bloqueos), la opción de ocultar el puntito de conectado y el panel de administración (solo para quienes estén en la tabla `admins`) |
 | `supabase/12_jugadores.sql` | Cuántos jugadores tiene HaxMatch (el número del Inicio) |
-| `supabase/13_clips_por_link.sql` | Subir clips pegando un link de TikTok o YouTube, con aprobación de quien administra |
+| `supabase/13_clips_por_link.sql` | Subir clips pegando un link de TikTok o YouTube |
+| `supabase/14_pais_y_clips_directos.sql` | El país de cada jugador (en vez de regiones) y clips que se publican solos |
 | `supabase/11_link_sala.sql` | Link de la sala de HaxBall (opcional): lo ven el dueño, los jugadores a los que la sala invitó y los del partido |
 | `supabase/10_nick_y_amigos.sql` | Cambiar el nick (cada 15 días, sin repetir el de otro jugador) y agregar amigos por nick o por usuario de Discord |
 

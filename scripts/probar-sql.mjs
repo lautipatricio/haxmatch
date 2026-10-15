@@ -33,10 +33,10 @@ await falla('un visitante no puede pedir un perfil', () => x.rpc(null, 'mi_perfi
 
 titulo('Registro')
 await falla('rechaza un nick de un carácter', () => x.rpc(A, 'completar_registro', { p_nick: 'X', p_region: ['ARG'] }))
-await falla('rechaza una región que no existe', () => x.rpc(A, 'completar_registro', { p_nick: 'Lauti10', p_region: ['MX'] }))
+await falla('rechaza un país que no existe', () => x.rpc(A, 'completar_registro', { p_nick: 'Lauti10', p_region: ['Argentina'] }))
 await falla('rechaza quedarse sin región', () => x.rpc(A, 'completar_registro', { p_nick: 'Lauti10', p_region: [] }))
 const a3 = await x.rpc(A, 'completar_registro', { p_nick: 'Lauti10', p_region: ['ARG', 'UY'], p_codigo: a1.codigo })
-ok(a3.nick === 'Lauti10' && a3.onboarding === true && a3.region.join() === 'ARG,UY', 'guarda nick y regiones y termina el registro')
+ok(a3.nick === 'Lauti10' && a3.onboarding === true && a3.region.join() === 'AR', 'guarda nick y país (la región vieja ARG pasa a AR) y termina el registro')
 ok(a3.referido_por === null, 'no deja usar el código propio')
 ok((await x.rpc(A, 'completar_registro', { p_nick: '', p_region: ['ARG'] })).nick === 'lauti_hax', 'sin nick usa el usuario de Discord')
 
@@ -1394,47 +1394,41 @@ await falla('un visitante no puede pedirlo', () => x.rpc(null, 'cuantos_jugadore
 }
 
 {
-titulo('Clips por link, con aprobación')
+titulo('Clips por link (se publican solos)')
 const TT = 'https://www.tiktok.com/@ana.hax/video/7412345678901234567?is_from_webapp=1'
 const YT = 'https://youtube.com/shorts/dQw4w9WgXcQ?si=abc'
-await fallaPor('rechaza un link que no es de TikTok ni de YouTube', /no es de un video/, () => x.rpc(caro, 'subir_clip', { p_enlace: 'https://ejemplo.com/video/1', p_titulo: 'Gol' }))
+await fallaPor('rechaza un link que no es de TikTok ni de YouTube', /no es de un video/, () => x.rpc(caro, 'subir_clip', { p_enlace: 'https://ejemplo.com/video/1' }))
 const c1 = await x.rpc(caro, 'subir_clip', { p_enlace: TT })
-ok(c1.estado === 'pendiente' && c1.plataforma === 'tiktok' && c1.video_id === '7412345678901234567', 'un link de TikTok queda en revisión')
+ok(c1.estado === 'aprobado' && c1.plataforma === 'tiktok' && c1.video_id === '7412345678901234567', 'un link de TikTok válido se publica en el momento')
 ok(c1.enlace === 'https://www.tiktok.com/@ana.hax/video/7412345678901234567' && c1.titulo === '', 'guarda el link limpio, sin título')
+const puntosReel = (await x.admin(`select puntos from public.puntos where user_id = $1 and tipo = 'reel' and referencia = $2`, [caro.id, `link:${c1.id}`]))[0]
+ok(puntosReel && puntosReel.puntos >= 0, `suma como un reel (${puntosReel?.puntos} puntos)`)
 const c2 = await x.rpc(caro, 'subir_clip', { p_enlace: YT })
 ok(c2.plataforma === 'youtube' && c2.video_id === 'dQw4w9WgXcQ' && c2.enlace === 'https://youtu.be/dQw4w9WgXcQ', 'un Short de YouTube también')
 ok((await x.rpc(caro, 'subir_clip', { p_enlace: 'https://www.youtube.com/watch?list=x&v=aBcDeFgHiJk' })).video_id === 'aBcDeFgHiJk', 'y un video común de YouTube')
-await fallaPor('el mismo video no se sube dos veces', /Ya subiste/, () => x.rpc(caro, 'subir_clip', { p_enlace: 'https://youtu.be/dQw4w9WgXcQ', p_titulo: 'Repetido' }))
-await fallaPor('ni lo puede subir otro', /lo subió otro/, () => x.rpc(dani, 'subir_clip', { p_enlace: TT, p_titulo: 'Mío' }))
-await fallaPor('hasta 3 en revisión a la vez', /3 clips en revisión/, () => x.rpc(caro, 'subir_clip', { p_enlace: 'https://youtu.be/zzzzzzzzzzz', p_titulo: 'Cuarto' }))
+await fallaPor('el mismo video no se sube dos veces', /Ya subiste/, () => x.rpc(caro, 'subir_clip', { p_enlace: 'https://youtu.be/dQw4w9WgXcQ' }))
+await fallaPor('ni lo puede subir otro', /lo subió otro/, () => x.rpc(dani, 'subir_clip', { p_enlace: TT }))
 const d0 = await x.rpc(dani, 'clips_link')
-ok(d0.feed.length === 0 && d0.mios.length === 0 && d0.pendientes === null, 'los demás no ven los clips en revisión (ni la lista de pendientes)')
-const cMios = await x.rpc(caro, 'clips_link')
-ok(cMios.mios.length === 3 && cMios.mios.every((c) => c.estado === 'pendiente'), 'el dueño ve los suyos en revisión')
+ok(d0.feed.length === 3 && d0.recientes === null, 'los demás los ven en Clips (y no ven la lista de quien administra)')
 await falla('no se pueden leer las tablas directo', () => x.sql(dani, 'select * from public.clips_link'))
-await fallaPor('quien no administra no puede aprobar', /administra|autoriz|permiso/i, () => x.rpc(dani, 'admin_revisar_clip', { p_id: c1.id, p_aprobar: true }))
+await fallaPor('quien no administra no puede quitar clips', /autoriz/i, () => x.rpc(dani, 'admin_quitar_clip', { p_id: c1.id }))
 
 await x.admin('insert into public.admins values ($1) on conflict do nothing', [ana.id])
 const p0 = await x.rpc(ana, 'clips_link')
-ok(p0.pendientes.length === 3 && p0.pendientes[0].nick, 'quien administra ve los pendientes, con quién los subió')
-const ap = await x.rpc(ana, 'admin_revisar_clip', { p_id: c1.id, p_aprobar: true })
-ok(ap.estado === 'aprobado', 'aprobar lo pasa a aprobado')
-const puntosReel = (await x.admin(`select puntos from public.puntos where user_id = $1 and tipo = 'reel' and referencia = $2`, [caro.id, `link:${c1.id}`]))[0]
-ok(puntosReel && puntosReel.puntos >= 0, `al aprobarse le suma como un reel (${puntosReel?.puntos} puntos)`)
-await fallaPor('no se revisa dos veces', /ya fue revisado/, () => x.rpc(ana, 'admin_revisar_clip', { p_id: c1.id, p_aprobar: false }))
-const re = await x.rpc(ana, 'admin_revisar_clip', { p_id: c2.id, p_aprobar: false, p_motivo: 'No es de HaxBall' })
-ok(re.estado === 'rechazado' && re.motivo === 'No es de HaxBall', 'rechazar guarda el motivo')
+ok(p0.recientes.length === 3 && p0.recientes[0].nick, 'quien administra ve los últimos publicados, con quién los subió')
+await x.rpc(ana, 'admin_quitar_clip', { p_id: c2.id, p_motivo: 'No es de HaxBall' })
 const d1 = await x.rpc(dani, 'clips_link')
-ok(d1.feed.length === 1 && d1.feed[0].id === c1.id, 'en Clips aparece solo el aprobado')
-ok((await x.rpc(caro, 'clips_link')).mios.find((c) => c.id === c2.id).motivo === 'No es de HaxBall', 'el dueño ve el motivo del rechazo')
+ok(d1.feed.length === 2 && !d1.feed.some((c) => c.id === c2.id), 'quitar un clip lo saca de Clips')
+ok((await x.rpc(caro, 'clips_link')).mios.find((c) => c.id === c2.id).motivo === 'No es de HaxBall', 'el dueño ve el motivo')
+await fallaPor('no se quita dos veces', /ya no está/, () => x.rpc(ana, 'admin_quitar_clip', { p_id: c2.id }))
 
-ok(await x.rpc(dani, 'reaccionar_clip', { p_id: c1.id, p_marcar: true }) === true, 'se puede reaccionar a un clip aprobado')
+ok(await x.rpc(dani, 'reaccionar_clip', { p_id: c1.id, p_marcar: true }) === true, 'se puede reaccionar a un clip')
 const d2 = await x.rpc(dani, 'clips_link')
-ok(d2.feed[0].reacciones === 1 && d2.feed[0].reaccione === true, 'y la reacción se cuenta')
-await fallaPor('no a uno rechazado', /ya no está/, () => x.rpc(dani, 'reaccionar_clip', { p_id: c2.id, p_marcar: true }))
-ok(await x.rpc(dani, 'reaccionar_clip', { p_id: c1.id, p_marcar: false }) === false, 'y se puede quitar')
+ok(d2.feed.find((c) => c.id === c1.id).reacciones === 1, 'y la reacción se cuenta')
+await fallaPor('no a uno quitado', /ya no está/, () => x.rpc(dani, 'reaccionar_clip', { p_id: c2.id, p_marcar: true }))
+ok(await x.rpc(dani, 'reaccionar_clip', { p_id: c1.id, p_marcar: false }) === false, 'y se puede quitar la reacción')
 
-await x.sql(dani, `insert into public.bloqueos (de, a) values ('${dani.id}', '${caro.id}')`).catch(() => x.admin('insert into public.bloqueos (de, a) values ($1, $2)', [dani.id, caro.id]))
+await x.admin('insert into public.bloqueos (de, a) values ($1, $2)', [dani.id, caro.id])
 ok((await x.rpc(dani, 'clips_link')).feed.length === 0, 'no se ven los clips de alguien bloqueado')
 await x.admin('delete from public.bloqueos where de = $1 and a = $2', [dani.id, caro.id])
 
@@ -1443,10 +1437,24 @@ await x.rpc(caro, 'borrar_clip', { p_id: c2.id })
 ok((await x.rpc(caro, 'clips_link')).mios.length === 2, 'el dueño puede borrar los suyos')
 
 await x.admin(`update public.profiles set suspendido_hasta = now() + interval '1 day' where id = $1`, [dani.id])
-await fallaPor('una cuenta suspendida no puede subir', /suspendida/, () => x.rpc(dani, 'subir_clip', { p_enlace: 'https://youtu.be/yyyyyyyyyyy', p_titulo: 'X' }))
+await fallaPor('una cuenta suspendida no puede subir', /suspendida/, () => x.rpc(dani, 'subir_clip', { p_enlace: 'https://youtu.be/yyyyyyyyyyy' }))
 await x.admin(`update public.profiles set suspendido_hasta = null where id = $1`, [dani.id])
 await falla('un visitante no puede ver los clips', () => x.rpc(null, 'clips_link'))
 await x.admin('delete from public.admins where user_id = $1', [ana.id])
+}
+
+{
+titulo('País')
+ok((await x.admin(`select count(*)::int as n from public.profiles where cardinality(region) <> 1 or region[1] !~ '^[A-Z]{2}$'`))[0].n === 0, 'todos los perfiles quedaron con un país de dos letras')
+ok((await x.rpc(fran, 'mis_ajustes')).pais_confirmado === true, 'quien se registra elige su país y ya queda confirmado')
+await x.admin('update public.profiles set pais_confirmado = false where id = $1', [fran.id])
+ok((await x.rpc(fran, 'mis_ajustes')).pais_confirmado === false, 'a los que ya estaban, la app les pide confirmar el país')
+await x.rpc(fran, 'cambiar_pais', { p_pais: 'mx' })
+ok((await x.rpc(fran, 'mi_perfil')).region.join() === 'MX' && (await x.rpc(fran, 'mis_ajustes')).pais_confirmado === true, 'elegir el país lo guarda y queda confirmado')
+await fallaPor('no acepta cualquier cosa', /Elegí tu país/, () => x.rpc(fran, 'cambiar_pais', { p_pais: 'México' }))
+await x.rpc(fran, 'crear_busqueda', { p_modo: 'jugador', p_formato: ['3v3'], p_posicion: ['Polifuncional'], p_cancha: ['Cualquiera'], p_region: ['ARG'], p_duracion: '15min' })
+ok((await x.admin(`select region from public.busquedas where user_id = $1 and estado = 'activa'`, [fran.id]))[0].region.join() === 'MX', 'la búsqueda lleva el país del perfil, mande lo que mande la app')
+await x.rpc(fran, 'cancelar_busqueda')
 }
 
 console.log(fallas ? `\n${fallas} comprobaciones fallaron.` : '\nTodo bien.')

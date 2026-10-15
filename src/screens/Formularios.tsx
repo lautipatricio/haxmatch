@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { buscarMia, useStore } from '../data/store'
 import { CANCHAS_SALA, REGLAS_CANCHA, ajustarSala, type CanchaSala } from '../domain/rules'
-import { REGIONES, type Posicion, type Region } from '../domain/types'
+import type { Posicion } from '../domain/types'
 import { Chips, ChipsMulti, Head, TabBar } from '../ui'
 
 /**
@@ -20,7 +20,6 @@ export function FormSala() {
   const [linkSala, setLinkSala] = useState('')
   const [faltan, setFaltan] = useState<number>(1)
   const [posicion, setPosicion] = useState<Posicion[]>(['Polifuncional'])
-  const [region, setRegion] = useState<Region[]>(perfil?.region ?? ['ARG'])
   const [error, setError] = useState<string | null>(null)
   const [ocupado, setOcupado] = useState(false)
 
@@ -40,7 +39,7 @@ export function FormSala() {
   const buscar = async () => {
     if (!cancha) return setError('Elegí la cancha.')
     setOcupado(true)
-    const e = await crear({ modo: 'sala', formato: null, posicion, cancha: [cancha], region, duracion: 'match', nombreSala, linkSala, faltan })
+    const e = await crear({ modo: 'sala', formato: null, posicion, cancha: [cancha], region: perfil?.region ?? ['AR'], duracion: 'match', nombreSala, linkSala, faltan })
     setOcupado(false)
     setError(e)
     if (!e) nav('/buscando')
@@ -75,7 +74,6 @@ export function FormSala() {
                 <ChipsMulti label="Posición que buscás" options={reglas.posiciones} value={posicion} onChange={setPosicion} todas="Polifuncional" />
               )}
               {cancha === 'Classic' && <div className="m">Classic es de a uno: buscás un jugador, sin posición.</div>}
-              <ChipsMulti label="Región" options={REGIONES} value={region} onChange={setRegion} />
             </>
           )}
           {error && <div id="error-sala" className="err" role="alert">{error}</div>}

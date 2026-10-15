@@ -1,4 +1,5 @@
 -- HaxMatch · Paso 1: perfiles y fotos de perfil
+-- Ojo: si ya corriste el paso 14, después de volver a correr este, corré también el 14.
 -- Se pega completo en Supabase > SQL Editor y se ejecuta con "Run".
 -- Se puede ejecutar más de una vez sin romper nada.
 

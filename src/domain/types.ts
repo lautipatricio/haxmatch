@@ -2,14 +2,14 @@ export type Formato = '1v1' | '2v2' | '3v3' | '4v4' | 'Cualquiera'
 /** "Polifuncional" juega de cualquier cosa: es la opción que abarca a todas. */
 export type Posicion = 'Polifuncional' | 'GK' | 'LD' | 'DFC' | 'LI' | 'MC' | 'ED' | 'EI' | 'DC'
 export type Cancha = 'Classic' | 'Big' | 'Big Easy' | 'Futsal' | 'Real Futsal' | 'Real Soccer' | 'Cualquiera'
-export type Region = 'ARG' | 'CHI' | 'BR' | 'UY'
+/** País del jugador: código de dos letras (AR, CL, BR...). Los datos viejos pueden traer ARG, CHI, BR o UY. */
+export type Region = string
 export type Duracion = '15min' | 'match'
 export type Modo = 'jugador' | 'sala'
 
 export const FORMATOS: Formato[] = ['1v1', '2v2', '3v3', '4v4', 'Cualquiera']
 export const POSICIONES: Posicion[] = ['Polifuncional', 'GK', 'LD', 'DFC', 'LI', 'MC', 'ED', 'EI', 'DC']
 export const CANCHAS: Cancha[] = ['Classic', 'Big', 'Big Easy', 'Futsal', 'Real Futsal', 'Real Soccer', 'Cualquiera']
-export const REGIONES: Region[] = ['ARG', 'CHI', 'BR', 'UY']
 /** "Cuántos faltan" en modo sala. */
 export const FALTAN = [1, 2, 3, 4, 5, 6, 7] as const
 

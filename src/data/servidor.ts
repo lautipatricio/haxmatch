@@ -328,12 +328,14 @@ export const chat = {
 // ---- Ajustes propios y panel de administración (paso 8) ----
 
 /** Si administro y si muestro que estoy conectado. null si la base todavía no tiene el paso 8. */
-export async function leerAjustes(): Promise<{ admin: boolean; mostrarConectado: boolean; nickCambiadoAt: number | null } | null> {
-  const r = await rpc<{ admin: boolean; mostrar_conectado: boolean; nick_cambiado_at?: string | null }>('mis_ajustes')
+export async function leerAjustes(): Promise<{ admin: boolean; mostrarConectado: boolean; nickCambiadoAt: number | null; paisConfirmado: boolean } | null> {
+  const r = await rpc<{ admin: boolean; mostrar_conectado: boolean; nick_cambiado_at?: string | null; pais_confirmado?: boolean }>('mis_ajustes')
   return r.data
     ? {
         admin: r.data.admin === true, mostrarConectado: r.data.mostrar_conectado !== false,
         nickCambiadoAt: r.data.nick_cambiado_at ? Date.parse(r.data.nick_cambiado_at) : null,
+        // Sin el paso 14 no se pregunta.
+        paisConfirmado: r.data.pais_confirmado !== false,
       }
     : null
 }
@@ -426,4 +428,11 @@ export async function pedirAmistadPorUsuario(usuario: string): Promise<{ nick?: 
   let r = await rpc<{ nick: string; estado: 'enviada' | 'amigos' }>('pedir_amistad_por_nombre', { p_texto: usuario })
   if (r.error === SIN_BASE) r = await rpc<{ nick: string; estado: 'enviada' | 'amigos' }>('pedir_amistad_por_usuario', { p_username: usuario })
   return r.data ? r.data : { error: r.error ?? 'No pudimos mandar la solicitud. Probá de nuevo.' }
+}
+
+/** Elegir o confirmar mi país (paso 14). */
+export async function cambiarPaisServidor(pais: string): Promise<string | null> {
+  const r = await rpc('cambiar_pais', { p_pais: pais })
+  if (r.error === SIN_BASE) return 'Todavía no se puede cambiar el país. Probá más tarde.'
+  return r.error ?? null
 }

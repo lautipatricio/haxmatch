@@ -4,7 +4,10 @@ import { APOYO_URL, PREVIEW, REAL, TIKTOK_PRONTO } from '../config'
 import { cargarFoto, soltarFoto, type FotoElegida } from '../data/foto'
 import { RESULTADO_KICK } from '../data/kick'
 import { ACA, ES_COMPU, TEXTO_AVISOS, activarAvisos, desactivarAvisos, estadoAvisos, probarAviso, type EstadoAvisos } from '../data/push'
-import { DIAS_ENTRE_NICKS, YO, buscarMia, fechaCorta, proximoCambioDeNick, rivalesDe, useStore } from '../data/store'
+import { DIAS_ENTRE_NICKS, YO, buscarMia, fechaCorta, idiomaDe, proximoCambioDeNick, rivalesDe, useStore } from '../data/store'
+import { nombrePais } from '../domain/paises'
+import { IDIOMAS, type EleccionIdioma } from '../i18n/idioma'
+import { CartelPais } from '../ui/pais'
 import { DIAS_PENDIENTE, PUNTOS, diasParaVencer, esPendiente } from '../domain/rules'
 import { Avatar, BorrarCuenta, Campana, CerrarSesion, EtiquetaKick, Head, Icon, Portada, Sheet, TabBar, TarjetaNivel, hace, useAhora } from '../ui'
 import { Recortador } from '../ui/Recortador'
@@ -326,6 +329,37 @@ function CambiarNick() {
   )
 }
 
+/** País (se ve en el perfil y va solo en cada búsqueda) e idioma de la app. */
+function PaisEIdioma() {
+  const s = useStore()
+  const [cambiando, setCambiando] = useState(false)
+  const idioma = idiomaDe(s)
+  const nombreIdioma = IDIOMAS.find((x) => x.codigo === idioma)?.nombre ?? idioma
+  return (
+    <div className="lista">
+      <h2 className="h sub">País e idioma</h2>
+      <div className="card card--row">
+        <div className="grow">
+          <div className="strong">País</div>
+          <div className="m cut">{nombrePais(s.perfil?.region[0], idioma)}</div>
+        </div>
+        <button className="btn btn--sec" onClick={() => setCambiando(true)}>Cambiar</button>
+      </div>
+      <div className="card card--row">
+        <label className="grow" htmlFor="idioma">
+          <span className="strong">Idioma</span>
+          <span className="m cut" style={{ display: 'block' }}>{s.eleccionIdioma === 'auto' ? `Automático (${nombreIdioma})` : nombreIdioma}</span>
+        </label>
+        <select id="idioma" className="field field--chico" value={s.eleccionIdioma} onChange={(e) => s.elegirIdioma(e.target.value as EleccionIdioma)}>
+          <option value="auto">Automático</option>
+          {IDIOMAS.map((x) => <option key={x.codigo} value={x.codigo}>{x.nombre}</option>)}
+        </select>
+      </div>
+      {cambiando && <CartelPais titulo="Tu país" texto="Lo ven los demás en tu perfil y va solo cuando buscás partido." onCerrar={() => setCambiando(false)} />}
+    </div>
+  )
+}
+
 export function Perfil() {
   const s = useStore()
   const ahora = useAhora()
@@ -375,7 +409,7 @@ export function Perfil() {
               <FotoDePerfil onElegida={setPorAjustar} onError={setErrorFoto} />
               <div className="grow">
                 <div className="strong cut" style={{ fontSize: 22, lineHeight: 1.15 }}>{s.perfil?.nick}</div>
-                <div className="m cut">Perfil público · {s.perfil?.region.join(', ')}</div>
+                <div className="m cut">Perfil público · {nombrePais(s.perfil?.region[0], idiomaDe(s))}</div>
               </div>
               <CambiarNick />
             </div>
@@ -431,6 +465,7 @@ export function Perfil() {
 
           <MostrarConectado />
           <Avisos />
+          <PaisEIdioma />
 
           <div className="lista">
             <h2 className="h sub">Tus cuentas</h2>

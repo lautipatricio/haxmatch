@@ -498,3 +498,11 @@ Mientras TikTok no apruebe la vinculación (y también después), los clips se p
 - **Aviso con la app abierta:** el celular no muestra el aviso si la app está a la vista (para no repetir), pero ahora el service worker le avisa a la app y esta trae lo nuevo en el momento. Antes, un clip para revisar tardaba hasta un minuto en aparecer. Además, quien administra revisa cada 30 segundos y al volver a la app.
 - **Notificaciones:** dos pestañas, "No leídos" y "Leídos". Entrar a "No leídos" las marca como leídas (se apaga el puntito), pero siguen ahí hasta salir; la próxima vez están en "Leídos".
 - **Clips:** tocar el nombre de quien subió un clip abre su perfil (agregar a amigos, reportar, bloquear).
+
+## País en vez de regiones, y clips directos (15/10/2026)
+
+- **País:** al registrarse se elige el país en un desplegable con todos los países del mundo (con el nombre en el idioma de la app). Viene marcado el que dice el navegador, si dice alguno. Se guarda en la columna `region` como lista de uno, con el código de dos letras (AR, CL, BR, UY…).
+- **Los que ya estaban:** pasan al país de la primera región que habían elegido (ARG → AR, CHI → CL, BR → BR, UY → UY). Discord no da el país ni el idioma, así que la app les pide confirmarlo una vez ("¿De qué país sos?"). Se puede cambiar en Perfil › País e idioma.
+- **Buscar partido o abrir sala:** ya no se elige región; va el país del perfil (la base lo pone sola, mande lo que mande la app). La región ya no separa a nadie: alcanza con compartir cancha.
+- **Clips:** con un link válido se publican en el momento, sin aprobación. En el panel, "Últimos clips publicados" permite quitarlos (con motivo opcional); a quien lo subió le llega el aviso.
+- **Pestaña del navegador:** dice "HaxMatch".

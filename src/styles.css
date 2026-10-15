@@ -889,3 +889,7 @@ a.nivel:active { transform: scale(.98); }
 /* Clips: el nombre de quien subió el clip se toca para ver su perfil. */
 .reel__autor--boton { background: none; border: 0; padding: 4px 8px 4px 0; margin: -4px 0; color: inherit; font: inherit; text-align: left; cursor: pointer; min-height: 44px; border-radius: 12px; max-width: 100%; }
 .reel__autor--boton:active { transform: scale(.98); }
+
+/* Selector chico al costado (idioma, en el Perfil). */
+.field--chico { width: auto; flex: none; min-height: 44px; padding: 8px 12px; }
+select.field { appearance: auto; color-scheme: dark; }

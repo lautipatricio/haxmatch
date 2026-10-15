@@ -9,7 +9,7 @@ const U = process.env.APP_URL ?? 'http://localhost:4173'
 const b = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {})
 const errores = []
 async function vuelta(w, h, pref) {
-  const page = await (await b.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1 })).newPage()
+  const page = await (await b.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1, locale: 'es-AR' })).newPage()
   page.on('pageerror', (e) => errores.push(String(e)))
   const foto = async (n) => { await page.waitForTimeout(1300); await page.screenshot({ path: `${dir}/${pref}-${n}.png` }) }
   await page.goto(U)

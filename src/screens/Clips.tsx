@@ -311,7 +311,7 @@ export function Clips() {
       <div className="screen">
         <Head title="Clips">{verMisClips && <Link className="btn btn--sec" to="/clips/mis-videos">Mis clips</Link>}</Head>
         <BannerBusqueda detalle="Te avisamos cuando encontremos una coincidencia" />
-        <Empty title="Sin clips todavía" text="Pegá el link de un clip tuyo de TikTok o YouTube. Lo revisamos y aparece acá para toda la comunidad.">
+        <Empty title="Sin clips todavía" text="Pegá el link de un clip tuyo de TikTok o YouTube y aparece acá para toda la comunidad.">
           <button className="btn" onClick={() => setSubir(true)}>Subir clip</button>
         </Empty>
         {hojaSubir}
