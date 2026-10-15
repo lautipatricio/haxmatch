@@ -4,7 +4,7 @@ App para armar amistosos de HaxBall desde el celular. PWA en React.
 
 **Estado: todo lo principal funciona con usuarios de verdad.** El ingreso con Discord, el perfil, la cola, los mensajes, los grupos, las salas, los partidos, los amigos, las notificaciones, los clips de TikTok, y los puntos, niveles y referidos: todo lo lleva el servidor (Supabase), que aplica las reglas. Cada paso se activa al ejecutar su archivo de `supabase/`; si falta uno, la app sigue andando con lo anterior.
 
-Publicada en https://haxmatch.lauti.workers.dev
+Publicada en https://haxmatch.com (la dirección vieja, https://haxmatch.lauti.workers.dev, manda para ahí)
 
 ## Cómo correrla
 
@@ -60,7 +60,7 @@ La web se publica en Cloudflare, conectado a este repositorio: cada cambio en la
 Se configuran una sola vez:
 
 1. Ejecutar `supabase/03_amigos_avisos.sql` en Supabase.
-2. Abrir `https://haxmatch.lauti.workers.dev/api/push/configurar`. Genera tres claves y dice dónde pegarlas: las tres en Cloudflare (como *Secret*) y una línea en el SQL Editor de Supabase.
+2. Abrir `https://haxmatch.com/api/push/configurar`. Genera tres claves y dice dónde pegarlas: las tres en Cloudflare (como *Secret*) y una línea en el SQL Editor de Supabase.
 3. En cada celular: Perfil > "Activar avisos" y después "Mandar un aviso de prueba".
 
 Las claves no están en el repositorio ni las ve nadie más que quien las carga. `VAPID_PUBLICA` y `VAPID_PRIVADA` identifican a HaxMatch ante los servicios de avisos de los navegadores; `PUSH_SECRETO` la comparten la base y la web para que nadie más pueda pedir que se mande un aviso.
@@ -95,7 +95,7 @@ Cómo funciona: la app le pide a la web (`/api/tiktok/entrar`) empezar una vincu
 ### Kick
 
 1. Ejecutar `supabase/09_kick.sql` en el SQL Editor.
-2. En Kick (con la verificación en dos pasos activada): Configuración > Developer > crear una app con la URL de redirección `https://haxmatch.lauti.workers.dev/api/kick/volver` y solo el permiso `user:read`. Los webhooks quedan apagados: no hacen falta.
+2. En Kick (con la verificación en dos pasos activada): Configuración > Developer > crear una app con la URL de redirección `https://haxmatch.com/api/kick/volver` y solo el permiso `user:read`. Los webhooks quedan apagados: no hacen falta.
 3. Cargar en Cloudflare, como *Secret*, `KICK_CLIENT_ID` y `KICK_CLIENT_SECRET` (los da Kick al crear la app) y publicar.
 4. `https://haxmatch.lauti.workers.dev/api/kick/estado` tiene que decir `{"configurado":true}`. Ahí funciona "Vincular" en Perfil > Tus cuentas > Kick.
 

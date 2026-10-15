@@ -525,3 +525,5 @@ Mientras TikTok no apruebe la vinculación (y también después), los clips se p
 - Comprada en Cloudflare. `wrangler.jsonc` la conecta como dominio propio del worker (haxmatch.com y www.haxmatch.com); la de workers.dev sigue andando.
 - El worker atiende todas las páginas (menos `/assets/`) para mandar www a haxmatch.com.
 - La mudanza de la dirección vieja queda apagada (`MUDAR_DIRECCION: "no"`) hasta que Supabase, Kick y TikTok acepten la nueva. Con "si", workers.dev manda todo a haxmatch.com, menos `/api/`.
+- 15/10: Supabase (Site URL y Redirect URLs) y Kick ya aceptan haxmatch.com, así que la mudanza quedó prendida (`MUDAR_DIRECCION: "si"`). TikTok sigue con la dirección vieja hasta que aprueben la revisión; sus `/api/` no se mudan.
+- La pantalla de entrar y la de registro, en la compu, ya no son una columna de celular: logo y botones a la izquierda, captura de la app a la derecha, y "Qué es HaxMatch" en dos columnas. Se actualizó ese texto (fila, clips por link).

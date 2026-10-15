@@ -112,7 +112,7 @@ export function App() {
 
   if (cargandoSesion) {
     return (
-      <div className="app">
+      <div className="app app--ancha">
         <Luces />
         <div className="hero" style={{ gap: 14 }} role="status">
           <h1 className="h logo" translate="no">Hax<br /><span>Match</span></h1>
@@ -126,7 +126,8 @@ export function App() {
   // En la compu, con la cuenta abierta, el menú va a la izquierda y la app usa todo el ancho.
   const conLateral = esCompu && registrado && !['/ingresar', '/bienvenida', '/terminos', '/privacidad'].includes(pathname)
   return (
-    <div className={`app${conLateral ? ' app--compu' : ''}`}>
+    // Entrar y registrarse: en la compu usan todo el ancho, como una página.
+    <div className={`app${conLateral ? ' app--compu' : ''}${['/ingresar', '/bienvenida'].includes(pathname) ? ' app--ancha' : ''}`}>
       <Luces />
       {/* En el Inicio (¿Qué querés jugar hoy?) va sin menú: aparece al entrar a HaxBall. */}
       {conLateral && pathname !== '/' && <Lateral />}

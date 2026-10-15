@@ -803,8 +803,37 @@ a.nivel:active { transform: scale(.98); }
 /* ---------- Menú de la izquierda (solo compu) ---------- */
 .lateral { display: none; }
 
+.portada__captura { display: none; }
+
 /* ---------- Compu: la app usa todo el ancho, con el menú a la izquierda ---------- */
 @media (min-width: 1024px) {
+  /* Entrar y registrarse: como una página, no como una columna de celular. */
+  .app.app--ancha { max-width: none; border: 0; }
+  .app--ancha .portada {
+    display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+    grid-template-areas: "hero foto" "foot foto" "mas mas";
+    grid-template-rows: auto auto auto; align-content: center; column-gap: 72px;
+    width: 100%; max-width: 1280px; margin: 0 auto; padding: 48px 56px 0;
+  }
+  .app--ancha .portada .hero { grid-area: hero; align-self: end; align-items: flex-start; text-align: left; padding: 0 0 36px; flex: none; }
+  .app--ancha .portada .h.logo { font-size: 64px; text-align: left; }
+  .app--ancha .portada .hero .m { font-size: 18px; }
+  .app--ancha .portada .foot { grid-area: foot; align-self: start; padding: 0; }
+  .app--ancha .portada .foot .center { text-align: left; }
+  .app--ancha .portada__captura {
+    display: block; grid-area: foto; align-self: center; width: 100%; height: auto;
+    border-radius: 20px; border: 1px solid var(--line); box-shadow: 0 30px 80px rgba(0, 0, 0, .55);
+  }
+  .app--ancha .portada__mas { grid-area: mas; margin-top: 40px; }
+  .app--ancha .sobre {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 72px; row-gap: 40px;
+    width: 100%; max-width: 1280px; margin: 0 auto; padding: 56px 56px 40px;
+  }
+  .app--ancha .sobre footer { grid-column: 1 / -1; }
+  /* Registro: un formulario cómodo en el medio. */
+  .app--ancha .bienvenida .head, .app--ancha .bienvenida .pad, .app--ancha .bienvenida .foot { width: 100%; max-width: 560px; margin-inline: auto; }
+  .app--ancha .bienvenida .head { padding-top: 48px; }
+
   .app.app--compu { max-width: none; flex-direction: row; border: 0; }
   .app--compu .tabbar { display: none; }
   .app--compu .vista { min-width: 0; }

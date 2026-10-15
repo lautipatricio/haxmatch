@@ -37,3 +37,9 @@
 @Tocá el ícono de instalar que aparece a la derecha de la barra de direcciones.|Clique no ícone de instalar que aparece à direita da barra de endereços.|Click the install icon on the right side of the address bar.
 @¡Listo, HaxMatch quedó instalada!|Pronto, o HaxMatch foi instalado!|Done, HaxMatch is installed!
 @(display-mode: {1})|(display-mode: {1})|(display-mode: {1})
+@HaxMatch en la compu: la fila de jugadores, las salas que buscan gente y el chat.|HaxMatch no computador: a fila de jogadores, as salas que procuram gente e o chat.|HaxMatch on a computer: the player queue, rooms looking for players and the chat.
+@Los videos se reproducen desde TikTok o YouTube: no los copiamos ni publicamos nada en tu cuenta.|Os vídeos são reproduzidos pelo TikTok ou YouTube: não copiamos nem publicamos nada na sua conta.|Videos play from TikTok or YouTube: we don't copy them or post anything to your account.
+@Pegás el link de tu jugada de TikTok o YouTube y aparece al instante en la sección Clips, para que la vea y reaccione el resto de la comunidad.|Cole o link do seu lance do TikTok ou YouTube e ele aparece na hora na seção Clipes, para o resto da comunidade ver e reagir.|Paste the link to your TikTok or YouTube highlight and it shows up right away in Clips, for the rest of the community to watch and react.
+@Podés borrar tus clips cuando quieras.|Você pode apagar seus clipes quando quiser.|You can delete your clips anytime.
+@Quedás en la fila, a la vista de las salas a las que les falta gente.|Você entra na fila, à vista das salas que precisam de gente.|You join the queue, where rooms that need players can see you.
+@Tocando el nombre de quien subió un clip, ves su perfil y lo podés agregar a amigos.|Tocando no nome de quem enviou um clipe, você vê o perfil e pode adicionar como amigo.|Tap the name of whoever posted a clip to see their profile and add them as a friend.

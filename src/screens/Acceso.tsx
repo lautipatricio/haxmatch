@@ -68,6 +68,9 @@ export function Ingresar() {
               </p>
             </div>
           )}
+          {/* Solo en la compu, al lado de los botones: cómo se ve la app. */}
+          <img className="portada__captura" src="/web/compu.webp" loading="lazy" width={2000} height={1250}
+            alt="HaxMatch en la compu: la fila de jugadores, las salas que buscan gente y el chat." />
           <button type="button" className="btn btn--ghost portada__mas"
             onClick={() => document.getElementById('que-es')?.scrollIntoView({ block: 'start', behavior: 'smooth' })}>
             Qué es HaxMatch <Icon name="abajo" size={18} />
@@ -93,7 +96,7 @@ export function Ingresar() {
               </li>
               <li>
                 <span className="strong">Tocás “Quiero jugar un amistoso”.</span>
-                <span className="m">Quedás en la cola, a la vista de las salas a las que les falta gente.</span>
+                <span className="m">Quedás en la fila, a la vista de las salas a las que les falta gente.</span>
               </li>
               <li>
                 <span className="strong">O abrís tu sala y elegís a quién invitar.</span>
@@ -109,13 +112,13 @@ export function Ingresar() {
           <section>
             <h2 className="h">Clips de la comunidad</h2>
             <p>
-              Si vinculás tu cuenta de TikTok, tus videos públicos con <strong>#haxball</strong> o <strong>#haxmatch</strong> aparecen
-              en la sección Clips, con tu nombre de TikTok, para que los vea y reaccione el resto de la comunidad.
+              Pegás el link de tu jugada de TikTok o YouTube y aparece al instante en la sección Clips, para que la vea
+              y reaccione el resto de la comunidad.
             </p>
             <ul className="steps m">
-              <li>Solo leemos tu nombre de TikTok y la lista de tus videos públicos.</li>
-              <li>Los videos se reproducen desde TikTok: no los copiamos ni publicamos nada en tu cuenta.</li>
-              <li>Podés ocultar cualquier video, o desvincular tu cuenta cuando quieras: se borra todo lo que trajimos.</li>
+              <li>Los videos se reproducen desde TikTok o YouTube: no los copiamos ni publicamos nada en tu cuenta.</li>
+              <li>Tocando el nombre de quien subió un clip, ves su perfil y lo podés agregar a amigos.</li>
+              <li>Podés borrar tus clips cuando quieras.</li>
             </ul>
           </section>
 
@@ -167,7 +170,7 @@ export function Onboarding() {
   }
 
   return (
-    <div className="screen">
+    <div className="screen bienvenida">
       <Head title="Bienvenido" />
       <div className="scroll">
         <div className="pad">
