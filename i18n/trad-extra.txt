@@ -1,0 +1,22 @@
+# Textos que no salen solos de la búsqueda: "@texto en español|portugués|inglés".
+@Nivel {1}|Nível {1}|Level {1}
+@Falta {1}|Falta {1}|{1} needed
+@Faltan {1}|Faltam {1}|{1} needed
+@falta {1}|falta {1}|{1} needed
+@faltan {1}|faltam {1}|{1} needed
+@Elegís tu nick y tu país. No pedimos contraseña ni mail.|Você escolhe seu nick e seu país. Não pedimos senha nem e-mail.|You pick your nickname and your country. We don't ask for a password or email.
+@Cancha: {1}|Campo: {1}|Field: {1}
+@hace {1} s|há {1} s|{1} s ago
+@{1} min|{1} min|{1} min
+@Grupo de {1}|Grupo de {1}|Group of {1}
+@Vos|Você|You
+@Ya lo puede ver toda la comunidad|Toda a comunidade já pode ver|The whole community can see it now
+@Podés subir otro cuando quieras|Você pode enviar outro quando quiser|You can upload another one anytime
+@No cumplía las reglas de HaxMatch|Não cumpria as regras do HaxMatch|It broke HaxMatch's rules
+@Quitado|Removido|Removed
+@Automático|Automático|Automatic
+@{1} solicitud|{1} pedido|{1} request
+@{1} solicitudes|{1} pedidos|{1} requests
+@solicitud|pedido|request
+@solicitudes|pedidos|requests
+@{1} días +{2}|{1} dias +{2}|{1} days +{2}

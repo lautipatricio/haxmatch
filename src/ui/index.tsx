@@ -661,7 +661,7 @@ export function Lateral() {
   const inicial = (perfil?.nick ?? '?').replace(/[^a-zA-Z0-9]/g, '').slice(0, 1).toUpperCase() || '?'
   return (
     <nav className="lateral" aria-label="Secciones">
-      <Link to="/" className="lateral__marca">HAXMATCH</Link>
+      <Link to="/" className="lateral__marca" translate="no">HAXMATCH</Link>
       {item('/haxball', 'Jugar', 'joystick', jugando)}
       {item('/chat', 'Chat', 'chat', pathname === '/chat', chatNuevo && pathname !== '/chat' ? <span className="lateral__punto" aria-label="hay mensajes sin leer" /> : null)}
       {item('/clips', 'Clips', 'clips', pathname.startsWith('/clips'))}

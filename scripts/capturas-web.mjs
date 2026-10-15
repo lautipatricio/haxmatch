@@ -7,7 +7,7 @@ const dir = process.argv[2] ?? 'public/web'
 const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {})
 
 async function abrir(width, height) {
-  const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 2, reducedMotion: 'reduce' })
+  const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 2, reducedMotion: 'reduce', locale: 'es-AR' })
   const page = await ctx.newPage()
   const boton = (t) => page.getByRole('button', { name: t, exact: true })
   const ver = (t) => page.getByText(t, { exact: false }).first().waitFor({ timeout: 15000 })

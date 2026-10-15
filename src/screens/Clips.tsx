@@ -352,7 +352,7 @@ export function Clips() {
                     {nivel !== null && <span className="pill">Nivel {nivel}</span>}
                   </button>
                 )}
-                {r.titulo && <div className="titulo">{r.titulo}</div>}
+                {r.titulo && <div className="titulo" translate="no">{r.titulo}</div>}
                 <div className="reel__pie">
                   <button className="like num" aria-pressed={reaccione} aria-label={reaccione ? 'Quitar reacción' : 'Reaccionar'} onClick={reaccionar}>
                     <Icon name="corazon" size={20} fill={reaccione} />{r.reacciones + (reaccione ? 1 : 0)}

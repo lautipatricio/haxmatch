@@ -1,3 +1,4 @@
+import { localeActual } from '../i18n/actual'
 import { useCallback, useEffect, useState, type CSSProperties } from 'react'
 import { Navigate } from 'react-router-dom'
 import { REAL } from '../config'
@@ -8,7 +9,7 @@ import { UltimosClips } from './ClipsLink'
 
 const DIAS = [1, 3, 7, 30, 0] as const
 const textoDias = (d: number) => (d === 0 ? 'Sin fin' : d === 1 ? '1 día' : `${d} días`)
-const fecha = (t: number) => (t === Infinity ? 'sin fecha de fin' : new Date(t).toLocaleDateString('es-AR', { day: 'numeric', month: 'numeric', year: 'numeric' }))
+const fecha = (t: number) => (t === Infinity ? 'sin fecha de fin' : new Date(t).toLocaleDateString(localeActual(), { day: 'numeric', month: 'numeric', year: 'numeric' }))
 
 /** En la demostración el panel muestra los jugadores de muestra. */
 function panelDemo(s: Store): Panel {

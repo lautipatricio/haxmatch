@@ -506,3 +506,11 @@ Mientras TikTok no apruebe la vinculación (y también después), los clips se p
 - **Buscar partido o abrir sala:** ya no se elige región; va el país del perfil (la base lo pone sola, mande lo que mande la app). La región ya no separa a nadie: alcanza con compartir cancha.
 - **Clips:** con un link válido se publican en el momento, sin aprobación. En el panel, "Últimos clips publicados" permite quitarlos (con motivo opcional); a quien lo subió le llega el aviso.
 - **Pestaña del navegador:** dice "HaxMatch".
+
+## Idiomas: español, portugués e inglés (15/10/2026)
+
+- **Cuál se usa:** el que el jugador eligió en Perfil › País e idioma; si dejó "Automático", según su país (Brasil, Portugal y demás países de habla portuguesa → portugués; países de habla hispana → español). Si su país no habla ninguno de los dos, el idioma del navegador (español, portugués o inglés); si no es ninguno, inglés. Antes de registrarse, el del navegador.
+- **Cómo se traduce:** la app sigue escrita en español. Si el idioma es otro, un traductor (`src/i18n/traducir.ts`) cambia los textos de la pantalla con un diccionario hecho a mano (`src/i18n/pt.json`, `en.json`), incluidos los mensajes de error de la base. Cada diccionario se baja solo si hace falta.
+- **Lo que no se traduce:** lo que escribe la gente (chat, nombres de salas, títulos de clips, nicks) va con `translate="no"`; el logo tampoco. Las notificaciones que manda el servidor al celular siguen en español, igual que Términos y Privacidad.
+- **Para sumar textos nuevos:** `node scripts/i18n-faltan.mjs` lista los que no tienen traducción; se agregan a `i18n/trad-extra.txt` (`@español|portugués|inglés`) y se corre `node scripts/i18n-armar.mjs`.
+- Prueba: `node scripts/recorrido-idiomas.mjs`.

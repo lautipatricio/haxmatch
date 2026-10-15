@@ -36,7 +36,7 @@ export function Ingresar() {
         {/* La primera pantalla es la de siempre: el nombre y los dos botones para entrar. */}
         <div className="portada">
           <div className="hero" style={{ gap: 14 }}>
-            <h1 className="h logo">Hax<br /><span>Match</span></h1>
+            <h1 className="h logo" translate="no">Hax<br /><span>Match</span></h1>
             <div className="m">Amistosos de HaxBall, sin vueltas</div>
           </div>
           {conCodigo ? (
@@ -89,7 +89,7 @@ export function Ingresar() {
             <ol className="pasos">
               <li>
                 <span className="strong">Entrás con tu cuenta de Discord.</span>
-                <span className="m">Elegís tu nick y tu región. No pedimos contraseña ni mail.</span>
+                <span className="m">Elegís tu nick y tu país. No pedimos contraseña ni mail.</span>
               </li>
               <li>
                 <span className="strong">Tocás “Quiero jugar un amistoso”.</span>

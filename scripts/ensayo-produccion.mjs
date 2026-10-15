@@ -36,7 +36,7 @@ async function abrir(nombre) {
     refresh_token: 'ensayo', token_type: 'bearer', expires_in: 3600, expires_at: vence,
     user: { id, aud: 'authenticated', role: 'authenticated', email: `${nombre}@ensayo.local`, app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() },
   }
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' })
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block', locale: 'es-AR' })
   await ctx.addInitScript(([clave, valor]) => localStorage.setItem(clave, valor), [`sb-${proyecto}-auth-token`, JSON.stringify(sesion)])
   const page = await ctx.newPage()
   await page.routeWebSocket(/supabase\.co/, (ws) => ws.close())

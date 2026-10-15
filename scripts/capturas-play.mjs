@@ -12,7 +12,7 @@ const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath
 /** Abre la app como un jugador recién registrado. */
 async function abrir(nick) {
   // Google Play pide que el lado largo no pase del doble del corto: 412 x 732 es 9:16.
-  const ctx = await browser.newContext({ viewport: { width: 412, height: 732 }, deviceScaleFactor: 3 })
+  const ctx = await browser.newContext({ viewport: { width: 412, height: 732 }, deviceScaleFactor: 3, locale: 'es-AR' })
   const page = await ctx.newPage()
   const boton = (texto) => page.getByRole('button', { name: texto, exact: true })
   const ver = (texto) => page.getByText(texto, { exact: false }).first().waitFor({ timeout: 15000 })

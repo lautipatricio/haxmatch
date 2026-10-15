@@ -1,5 +1,6 @@
 // Países: el de cada jugador se guarda con su código de dos letras (AR, CL, BR, UY, MX, ES...).
 // El nombre se arma en el idioma de la app con lo que ya trae el navegador (Intl.DisplayNames).
+import { idiomaActual } from '../i18n/actual'
 
 /** Todos los países y territorios con código propio (ISO 3166-1). */
 export const PAISES = [
@@ -34,14 +35,14 @@ function nombrador(idioma: string): Intl.DisplayNames | null {
 }
 
 /** Nombre del país en el idioma pedido ("AR" → "Argentina"). Si no se puede, el código. */
-export function nombrePais(r: string | undefined | null, idioma = 'es'): string {
+export function nombrePais(r: string | undefined | null, idioma: string = idiomaActual()): string {
   const c = codigoPais(r)
   if (!c) return r ?? ''
   try { return nombrador(idioma)?.of(c) ?? c } catch { return c }
 }
 
 /** Todos los países, ordenados por nombre en ese idioma. */
-export function listaPaises(idioma = 'es'): Array<{ codigo: string; nombre: string }> {
+export function listaPaises(idioma: string = idiomaActual()): Array<{ codigo: string; nombre: string }> {
   const orden = new Intl.Collator(idioma)
   return PAISES.map((codigo) => ({ codigo, nombre: nombrePais(codigo, idioma) })).sort((a, b) => orden.compare(a.nombre, b.nombre))
 }

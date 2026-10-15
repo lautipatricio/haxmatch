@@ -1,0 +1,280 @@
+260|Esse usuário não está mais no HaxMatch|That user is no longer on HaxMatch
+261|Esse vídeo não é seu|That video isn't yours
+262|Esse já é o seu nick|That's already your nickname
+263|Esse já é o seu nick.|That's already your nickname.
+264|=
+265|Espere alguns segundos para pedir outro aviso de teste.|Wait a few seconds to request another test notification.
+266|Estamos terminando de habilitar a conexão com o TikTok. Vai estar disponível em uma próxima atualização.|We're finishing the TikTok connection. It will be available in an upcoming update.
+267|Este mês você já chegou ao limite de indicações|You already hit this month's referral cap
+268|Este navegador não permite ativar os avisos|This browser doesn't allow notifications
+269|Este navegador não permite ativar os avisos.|This browser doesn't allow notifications.
+270|Este navegador não permite receber avisos.|This browser can't receive notifications.
+271|Este navegador não permite receber avisos. Em uma janela privada ou anônima eles não funcionam: tente em uma janela normal do Chrome, Edge ou Firefox.|This browser can't receive notifications. They don't work in a private or incognito window: try a normal Chrome, Edge or Firefox window.
+272|Está ao vivo na Kick|Is live on Kick
+273|Você está escrevendo muito rápido. Espere alguns segundos.|You're typing too fast. Wait a few seconds.
+274|Falta configurar o banco de dados do HaxMatch.|The HaxMatch database still needs setting up.
+275|Falta o passo 8 do banco de dados.|Database step 8 is missing.
+276|Falta confirmar algum dos que entraram.|One of the players who joined still needs to confirm.
+277|Faltam carregar as chaves dos avisos no Cloudflare.|The notification keys still need to be loaded in Cloudflare.
+278|=
+279|=
+280|=
+281|Gol de calcanhar no último minuto|Backheel goal in the last minute
+282|Gol olímpico no Futsal|Olympic goal in Futsal
+283|Golaço do meio de campo|Stunner from the halfway line
+284|Salvando a foto…|Saving photo…
+285|Salvando…|Saving…
+286|Salvar foto|Save photo
+287|Salvar nick|Save nickname
+288|=
+289|Até|Until
+290|=
+291|=
+292|=
+293|O HaxMatch é grátis. Se te ajuda, você pode colaborar com o que quiser para mantê-lo funcionando.|HaxMatch is free. If it helps you, you can chip in whatever you like to keep it running.
+294|O HaxMatch é um projeto independente da comunidade. Não é afiliado ao HaxBall, ao Discord nem ao TikTok.|HaxMatch is an independent community project. It isn't affiliated with HaxBall, Discord or TikTok.
+295|O HaxMatch é um app gratuito para a comunidade de HaxBall. Ele te junta com outros jogadores para montar amistosos na hora, sem ficar perguntando em dez servidores do Discord, e reúne os clipes que a comunidade envia.|HaxMatch is a free app for the HaxBall community. It matches you with other players to set up friendlies on the spot, without asking around ten Discord servers, and gathers the clips the community uploads.
+296|-
+297|Há mais de um jogador com esse nick. Adicione pelo usuário do Discord.|More than one player has that nickname. Add them by Discord username.
+298|É preciso entrar com o Discord|You need to sign in with Discord
+299|Ferramenta de teste|Test tool
+300|Ferramentas de teste|Test tools
+301|Histórico (público)|History (public)
+302|Olá,|Hi,
+303|Hoje na demo:|Today in the demo:
+304|Hoje você já chegou ao limite de pontos por amistosos.|You already hit today's points cap for friendlies.
+305|Hoje você já ganhou pontos por um clipe. Amanhã volta a somar.|You already earned points for a clip today. It counts again tomorrow.
+306|Idioma|Language
+307|Importamos seus vídeos. Os que têm #haxball ou #haxmatch já estão no Clipes.|We imported your videos. The ones with #haxball or #haxmatch are already in Clips.
+308|Instalar|Install
+309|Instale o HaxMatch no seu|Install HaxMatch on your
+310|Insultos no chat|Insults in the chat
+311|Convite copiado. Cole no Discord.|Invite copied. Paste it on Discord.
+312|Convidado|Invited
+313|Convidar|Invite
+314|JUSTO|FITS
+315|Vocês jogam no HaxBall e confirmam a partida.|You play on HaxBall and confirm the match.
+316|Jogador|Player
+317|Jogador do HaxMatch|HaxMatch player
+318|Jogador inválido|Invalid player
+319|=
+320|Jogadores procurando partidas|Players looking for matches
+321|Jogar|Play
+322|Jogar HaxBall|Play HaxBall
+323|Jogar entre nós|Play among ourselves
+324|Jogar um 1v1 entre nós|Play a 1v1 among ourselves
+325|Jogar um 1v1v1 entre nós|Play a 1v1v1 among ourselves
+326|=
+327|Kick vinculada. Os outros veem o logo da Kick ao lado do seu nome e quando você está ao vivo.|Kick linked. Others see the Kick logo next to your name and when you're live.
+328|O app ficou muito tempo fechado ou sem conexão.|The app was closed or offline for a long time.
+329|O banco de dados não conseguiu se comunicar com o site do HaxMatch. Tente de novo daqui a pouco.|The database couldn't reach the HaxMatch website. Try again in a bit.
+330|A chave dos avisos não coincide entre o Supabase e o Cloudflare. É preciso repetir a configuração.|The notification key doesn't match between Supabase and Cloudflare. The setup must be repeated.
+331|A chave é curta demais|The key is too short
+332|O endereço tem que começar com https://|The address must start with https://
+333|A sala foi aberta sem o link|The room was opened without the link
+334|A vinculação demorou demais ou foi aberta em outro navegador. Tente de novo.|Linking took too long or was opened in another browser. Try again.
+335|Levantar a suspensão|Lift the suspension
+336|Lidas|Read
+337|Liberaram sua vaga ou a sala foi fechada.|Your spot was freed or the room was closed.
+338|Liberaram sua vaga. A partida fica registrada para você.|Your spot was freed. The match stays on your record.
+339|Link copiado.|Link copied.
+340|Link do host|Host link
+341|Link do vídeo|Video link
+342|=
+343|Lista inválida|Invalid list
+344|Pronto|Done
+345|Pronto.|Done.
+346|Pronto: a conta não está mais suspensa.|Done: the account is no longer suspended.
+347|Pronto: seu clipe já está no Clipes.|Done: your clip is now in Clips.
+348|Você chegou ao limite de 10 clipes por dia. Tente amanhã.|You hit the limit of 10 clips per day. Try tomorrow.
+349|Você chegou ao máximo de amigos.|You reached the maximum number of friends.
+350|Você chegou ao máximo de jogadores bloqueados.|You reached the maximum number of blocked players.
+351|Você tem|You have
+352|A equipe revisa.|The team reviews it.
+353|Os outros veem no seu perfil e ele vai junto quando você procura partida.|Others see it on your profile and it's sent when you look for a match.
+354|Os outros veem no seu perfil e ele vai junto quando você procura partida. A posição você escolhe a cada busca.|Others see it on your profile and it's sent when you look for a match. You pick your position each time you search.
+355|Os avisos do HaxMatch estão bloqueados neste navegador. Toque no ícone à esquerda do endereço da página, procure "Notificações", escolha "Permitir" e recarregue a página.|HaxMatch notifications are blocked in this browser. Tap the icon to the left of the page address, find "Notifications", choose "Allow" and reload the page.
+356|Os avisos estão bloqueados neste celular. Ative nas configurações do navegador ou do sistema.|Notifications are blocked on this phone. Turn them on in the browser or system settings.
+357|Os avisos ainda não estão configurados no servidor.|Notifications aren't set up on the server yet.
+358|Os avisos ainda não estão habilitados no HaxMatch.|Notifications aren't enabled on HaxMatch yet.
+359|Os do grupo entram na sua sala e depois você convida o resto pela lista.|Your group joins your room and then you invite the rest from the list.
+360|Os do grupo entram na sua sala e ninguém mais é procurado.|Your group joins your room and nobody else is searched for.
+361|Os outros veem um pontinho verde ao lado do seu nome enquanto você está com o app aberto.|Others see a green dot next to your name while you have the app open.
+362|As denúncias são revisadas pela equipe do HaxMatch. Uma conta denunciada pode ser suspensa.|Reports are reviewed by the HaxMatch team. A reported account may be suspended.
+363|Os vídeos novos com #haxball ou #haxmatch entram sozinhos. O primeiro de cada dia dá 8 pontos.|New videos with #haxball or #haxmatch are added automatically. The first one each day gives 8 points.
+364|Os vídeos são reproduzidos pelo TikTok. Não são copiados para o HaxMatch.|Videos play from TikTok. They're not copied to HaxMatch.
+365|Os vídeos são reproduzidos pelo TikTok: não copiamos nem publicamos nada na sua conta.|Videos play from TikTok: we don't copy them or post anything to your account.
+366|=
+367|-
+368|-
+369|-
+370|-
+371|-
+372|-
+373|-
+374|-
+375|-
+376|-
+377|-
+378|-
+379|-
+380|-
+381|-
+382|-
+383|-
+384|-
+385|=
+386|Mandar para o computador|Send to computer
+387|Mandar um aviso de teste|Send a test notification
+388|Você mandou muitos pedidos seguidos. Tente mais tarde.|You sent too many requests in a row. Try later.
+389|=
+390|Marque quem já entrou para fechar a partida|Mark who's already in to set up the match
+391|=
+392|Partida pronta|Match ready
+393|Partida pronta: sua sala está completa|Match ready: your room is full
+394|Partida não encontrada|Match not found
+395|=
+396|Mensagem|Message
+397|Mensagem inválida|Invalid message
+398|Mensagens do chat|Chat messages
+399|Meu melhor gol do mês|My best goal of the month
+400|Enquanto isso você não pode procurar partida, escrever para outros jogadores nem adicionar amigos.|Meanwhile you can't look for matches, message other players or add friends.
+401|Enquanto isso você não pode escrever no chat.|Meanwhile you can't write in the chat.
+402|Meus clipes|My clips
+403|Meus vídeos|My videos
+404|Moderar|Moderate
+405|Modo inválido|Invalid mode
+406|Mostrar quando estou conectado|Show when I'm online
+407|Mostre seu canal e avise quando estiver ao vivo|Show your channel and let people know when you're live
+408|Motivo|Reason
+409|Motivo (a pessoa vai ver)|Reason (the person will see it)
+410|Motivo:|Reason:
+411|Muito em breve você vai poder vincular|You'll be able to link it very soon
+412|Mais jogos, em breve|More games, coming soon
+413|Nada não lido|Nothing unread
+414|Ninguém na fila neste momento.|Nobody in the queue right now.
+415|Ninguém foi denunciado.|Nobody has been reported.
+416|Ninguém mais procurando agora|Nobody else looking right now
+417|Ninguém vê se você está conectado.|Nobody sees whether you're online.
+418|Preciso de um jogador|I need a player
+419|Nick ou usuário do Discord|Nickname or Discord username
+420|=
+421|Nenhum dos seus amigos está procurando partida neste momento.|None of your friends is looking for a match right now.
+422|Nenhum time está procurando jogadores agora.|No team is looking for players right now.
+423|Nível|Level
+424|Não|No
+425|Não apareceu|Didn't show up
+426|Não autorizado|Not authorized
+427|Não cumpria as regras do HaxMatch|It broke HaxMatch's rules
+428|Você não deu permissão para os avisos. Pode ativá-los depois no seu Perfil.|You didn't allow notifications. You can turn them on later from your Profile.
+429|Não encontramos ninguém com esse nick ou usuário do Discord|We couldn't find anyone with that nickname or Discord username
+430|Não encontramos ninguém com esse nick ou usuário do Discord.|We couldn't find anyone with that nickname or Discord username.
+431|Não encontramos esse código. Confira e tente de novo.|We couldn't find that code. Check it and try again.
+432|Não cabem na sua sala|They don't fit in your room
+433|Não cabem todos nessa sala|Not everyone fits in that room
+434|Não é de HaxBall|It's not HaxBall
+435|Não está procurando|Not looking
+436|Você não está procurando|You're not looking
+437|Você não está procurando partida|You're not looking for a match
+438|Você não está procurando partida.|You're not looking for a match.
+439|Não há clipes novos|No new clips
+440|Não há times procurando agora|No teams looking right now
+441|Não há mais ninguém na sua busca|There's nobody else in your search
+442|Não há nenhum celular com os avisos ativados na sua conta.|There's no phone with notifications on in your account.
+443|Não há salas com vaga por enquanto|No rooms with open spots for now
+444|Não lidas|Unread
+445|Não chegou a entrar|Never joined
+446|Não joguei|I didn't play it
+447|Você não vai vê-lo na fila, no chat nem no Clipes, e ele não pode te escrever, te convidar para a sala nem te adicionar. Desbloqueie em Amigos.|You won't see them in the queue, the chat or Clips, and they can't message you, invite you to their room or add you. Unblock them from Friends.
+448|Você não vai vê-lo na fila, no chat nem no Clipes. Desbloqueie em Amigos.|You won't see them in the queue, the chat or Clips. Unblock them from Friends.
+449|Você não participa dessa partida|You're not in that match
+450|Não conseguimos abrir esse link.|We couldn't open that link.
+451|Não conseguimos abrir esse link. Abra o vídeo e copie o link completo.|We couldn't open that link. Open the video and copy its full link.
+452|Não conseguimos ativar os avisos neste celular. Tente de novo.|We couldn't turn on notifications on this phone. Try again.
+453|Não conseguimos mudar seu nick. Tente de novo.|We couldn't change your nickname. Try again.
+454|Não conseguimos carregar o chat.|We couldn't load the chat.
+455|Não conseguimos carregar o painel.|We couldn't load the panel.
+456|Não conseguimos carregar seu perfil|We couldn't load your profile
+457|Não conseguimos conectar com o servidor.|We couldn't connect to the server.
+458|Não conseguimos conectar com o servidor. Confira sua internet e tente de novo.|We couldn't connect to the server. Check your internet and try again.
+459|Não conseguimos desativar os avisos. Tente de novo.|We couldn't turn off notifications. Try again.
+460|Não conseguimos começar a vinculação. Tente de novo.|We couldn't start linking. Try again.
+461|Não conseguimos salvar seu cadastro. Tente de novo.|We couldn't save your sign-up. Try again.
+462|Não conseguimos ler essa imagem. Tente outra.|We couldn't read that image. Try another one.
+463|Não conseguimos mandar o pedido. Tente de novo.|We couldn't send the request. Try again.
+464|Não conseguimos pedir seus vídeos ao TikTok. Tente de novo mais tarde.|We couldn't fetch your videos from TikTok. Try again later.
+465|Não conseguimos preparar a foto. Tente de novo.|We couldn't prepare the photo. Try again.
+466|Não conseguimos enviar a foto. Tente de novo.|We couldn't upload the photo. Try again.
+467|Não conseguimos vincular sua conta da Kick. Tente de novo.|We couldn't link your Kick account. Try again.
+468|Não conseguimos vincular sua conta do TikTok. Tente de novo.|We couldn't link your TikTok account. Try again.
+469|Não pode|Can't
+470|O login com o Discord não foi concluído. Tente de novo.|Discord sign-in wasn't completed. Try again.
+471|Não deu para copiar. Mantenha pressionado o link para copiá-lo.|Couldn't copy. Press and hold the link to copy it.
+472|Não deu para copiar. Mantenha pressionado o nome para copiá-lo.|Couldn't copy. Press and hold the name to copy it.
+473|Não deu para copiar. Mantenha pressionado o texto para copiá-lo.|Couldn't copy. Press and hold the text to copy it.
+474|Não é possível adicionar esse jogador.|You can't add that player.
+475|Não dá para montar esse grupo: há um bloqueio entre dois dos jogadores.|That group can't be formed: two of the players have blocked each other.
+476|Não é possível contatar esse jogador.|You can't contact that player.
+477|Não é possível suspender outro administrador|You can't suspend another admin
+478|Não dá: há um bloqueio entre o dono da sala e um dos jogadores.|Not possible: the room owner and one of the players have blocked each other.
+479|A sala não é reaberta porque você já tem outra busca.|The room isn't reopened because you already have another search.
+480|Não foi vinculada: você não deu a permissão na Kick.|Not linked: you didn't grant permission on Kick.
+481|Não foi vinculado: você não deu a permissão no TikTok.|Not linked: you didn't grant permission on TikTok.
+482|Não se esqueça|Don't forget
+483|Você não pode se suspender|You can't suspend yourself
+484|Você não tem TikTok vinculado|You don't have TikTok linked
+485|Você não tem uma busca para renovar|You don't have a search to renew
+486|Você não tem uma sala aberta|You don't have an open room
+487|Não vai poder procurar partida, escrever no chat, convidar nem adicionar amigos. Se estava procurando, para de procurar.|They won't be able to look for matches, write in the chat, invite or add friends. If they were looking, they stop.
+488|Não vai vir: liberar a vaga|Not coming: free the spot
+489|Não veio|Didn't come
+490|Nome da sala|Room name
+491|Nome da sala no HaxBall|Room name on HaxBall
+492|Notificações|Notifications
+493|Notificações, há não lidas|Notifications, some unread
+494|-
+495|Nova|New
+496|Números|Numbers
+497|Ou você abre sua sala e escolhe quem convidar.|Or you open your room and choose who to invite.
+498|Esconder vídeo|Hide video
+499|Atenção: depois de mudar, você vai ter que esperar|Heads up: after changing it, you'll have to wait
+500|=
+501|Painel|Panel
+502|Painel de administração|Admin panel
+503|Para confirmar, escreva BORRAR|To confirm, type BORRAR
+504|Para escrever para eles, primeiro comece a procurar partida no Início.|To message them, first start looking for a match from Home.
+505|Para escrever para eles, entre na fila ou abra sua sala.|To message them, join the queue or open your room.
+506|Para jogar mais amistosos|To play more friendlies
+507|Para mostrar seus clipes é preciso a permissão de ver seus vídeos. Tente de novo e deixe marcada.|To show your clips we need permission to see your videos. Try again and leave it checked.
+508|Para recebê-los com o app fechado ou em outra janela, ative os avisos no seu Perfil.|To get them with the app closed or in another window, turn on notifications from your Profile.
+509|Tabela e finalização no primeiro poste|One-two and near-post finish
+510|Participam automaticamente os jogadores de Nível|Automatically entered: players at Level
+511|Partida válida|Match counted
+512|Partidas para confirmar|Matches to confirm
+513|Passaram 15 minutos|15 minutes went by
+514|Passaram os 15 minutos e você não renovou.|The 15 minutes passed and you didn't renew.
+515|Passaram os 15 minutos.|The 15 minutes are up.
+516|Pausar|Pause
+517|País|Country
+518|País e idioma|Country and language
+519|Pedido enviado. Se em um minuto nada aparecer, tente de novo.|Request sent. If nothing shows up in a minute, try again.
+520|Pedido inválido|Invalid request
+521|Cole o link de um clipe seu do TikTok ou do YouTube e ele aparece aqui para toda a comunidade.|Paste the link of your TikTok or YouTube clip and it shows up here for the whole community.
+522|Cole o link de um vídeo público seu do TikTok ou do YouTube e ele aparece no Clipes na hora.|Paste the link of one of your public TikTok or YouTube videos and it shows up in Clips instantly.
+523|Cole o link de um vídeo seu do TikTok ou do YouTube e ele aparece no Clipes na hora.|Paste the link of one of your TikTok or YouTube videos and it shows up in Clips instantly.
+524|Cole o link do clipe|Paste the clip link
+525|Perfil|Profile
+526|Perfil público ·|Public profile ·
+527|Perfil, há notificações não lidas|Profile, unread notifications
+528|=
+529|Você pode desvincular quando quiser: apagamos tudo o que trouxemos.|You can unlink anytime: everything we fetched is deleted.
+530|Você pode esconder qualquer vídeo, ou desvincular sua conta quando quiser: apagamos tudo o que trouxemos.|You can hide any video, or unlink your account anytime: everything we fetched is deleted.
+531|-
+532|Polivalente|Any position
+533|Política de privacidade|Privacy policy
+534|Para confirmar (|To confirm (
+535|Por quanto tempo|For how long
+536|=
+537|Posição que você procura|Position needed
+538|Prêmio, data e regulamento a confirmar.|Prize, date and rules to be confirmed.
+539|Primeiro entre com o Discord.|Sign in with Discord first.

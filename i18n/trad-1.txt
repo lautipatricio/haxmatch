@@ -1,0 +1,261 @@
+# Traducciones: número del texto (en i18n/textos.json) | portugués | inglés.  "=" deja el texto como está; "-" se saltea.
+0|=
+1|=
+2|-
+3|(opcional)|(optional)
+4|(opcional, quem enviou vê)|(optional, the uploader sees it)
+5|-
+6|(sua foto sim)|(your photo does)
+7|. Aos|. At
+8|. Avance um dia para testar a sequência e os limites diários.|. Skip a day to test the streak and daily caps.
+9|. A sequência é quebrada se faltar um dia.|. The streak breaks if you miss a day.
+10|. As mensagens para outros jogadores e os convites das salas são tratados por|. Messages to other players and room invites are handled by
+11|1 clipe novo|1 new clip
+12|1 dia|1 day
+13|mais 15 minutos.|15 more minutes.
+14|-
+15|=
+16|Falta a extensão pg_net no banco para enviar avisos.|The database is missing the pg_net extension to send notifications.
+17|AMIGO|FRIEND
+18|Abandonou a partida|Left the match
+19|Abrindo o Discord…|Opening Discord…
+20|Abrindo o TikTok…|Opening TikTok…
+21|Abrir|Open
+22|Abrir no|Open on
+23|Abra esta página no Safari.|Open this page in Safari.
+24|Aceito · ainda não entrou|Accepted · not in yet
+25|Aceitar|Accept
+26|Aceitar pedido|Accept request
+27|Você aceitou|You accepted
+28|Ativar avisos|Turn on notifications
+29|Ativar o som|Turn on sound
+30|Ativar som|Turn on sound
+31|Atualizando…|Updating…
+32|Atualizar|Update
+33|Atualizar meus vídeos|Update my videos
+34|Aqui ficam as que você já viu.|The ones you've already seen stay here.
+35|Dentro|In
+36|Dentro · confirmou|In · confirmed
+37|Administrar|Manage
+38|Adicionar|Add
+39|Adicionar aos amigos|Add friend
+40|Adicione amigos para saber quando eles procuram partida, ganhe pontos jogando e entrando com frequência, e receba um aviso no celular ou no computador quando uma sala te convidar.|Add friends to know when they look for a match, earn points by playing and coming back often, and get a notification on your phone or computer when a room invites you.
+41|Adicione amigos pelo nick ou pelo usuário do Discord. Avisamos quando eles procuram partida.|Add friends by nickname or Discord username. We'll let you know when they look for a match.
+42|Agora cada jogador tem seu país: os outros veem no seu perfil e ele vai junto quando você procura partida. Escolha uma vez só.|Every player now has a country: others see it on your profile and it's sent when you look for a match. Pick it once.
+43|Agora não|Not now
+44|Ajustar foto|Adjust photo
+45|Ajustar foto de perfil|Adjust profile photo
+46|Ao entrar você aceita os|By signing in you accept the
+47|Algo deu errado. Tente de novo.|Something went wrong. Try again.
+48|Amigos|Friends
+49|Amigos indicados|Referred friends
+50|Amigos, níveis e avisos|Friends, levels and notifications
+51|Amistoso|Friendly
+52|Amistoso confirmado|Friendly confirmed
+53|Amistosos 3v3 com a comunidade|3v3 friendlies with the community
+54|Amistosos confirmados|Confirmed friendlies
+55|Amistosos de HaxBall, sem enrolação|HaxBall friendlies, no fuss
+56|=
+57|Apoie o HaxMatch|Support HaxMatch
+58|Montar uma sala|Set up a room
+59|Montar uma sala com o grupo|Set up a room with the group
+60|Arraste para mover e aproxime até ficar como você quer.|Drag to move it and zoom until it looks right.
+61|Defesa no último segundo|Last-second save
+62|Defesa impossível|Impossible save
+63|Defesas da semana|Saves of the week
+64|Automático|Automatic
+65|Progresso até o próximo nível|Progress to the next level
+66|Avançar um dia|Skip a day
+67|Avisos no|Notifications on
+68|Bem-vindo|Welcome
+69|=
+70|=
+71|Bloqueados|Blocked
+72|Bloquear|Block
+73|Apagando…|Deleting…
+74|Apagar|Delete
+75|Apagar mensagem|Delete message
+76|Apagar minha conta|Delete my account
+77|Apagar minha conta para sempre|Delete my account forever
+78|=
+79|O Brave vem com os avisos desligados. Abra brave://settings/privacy, ative "Usar os serviços do Google para mensagens push", reinicie o Brave e tente de novo.|Brave ships with notifications off. Open brave://settings/privacy, turn on "Use Google services for push messaging", restart Brave and try again.
+80|Procure por esse nome no HaxBall, do seu computador.|Search for this name on HaxBall, from your computer.
+81|Procuram com você|Looking with you
+82|Procurando clipes novos…|Looking for new clips…
+83|Procurando jogador|Looking for a player
+84|Procurando jogadores…|Looking for players…
+85|Procurando partida|Looking for a match
+86|Procurar jogador|Find a player
+87|Busca renovada|Search renewed
+88|Cada amistoso confirmado soma pontos e te faz subir de nível.|Every confirmed friendly earns points and levels you up.
+89|Cada vídeo tem um botão para mostrar ou esconder.|Each video has a switch to show or hide it.
+90|Mudar|Change
+91|Mudar foto de perfil|Change profile photo
+92|Mudar nick|Change nickname
+93|=
+94|Cancelar|Cancel
+95|Cancelar busca|Cancel search
+96|Cancele sua busca atual para usar esta opção|Cancel your current search to use this option
+97|Campo|Field
+98|Carregando|Loading
+99|Carregando o vídeo do TikTok…|Loading the TikTok video…
+100|Carregando mensagens…|Loading messages…
+101|Carregando sua conta…|Loading your account…
+102|Carregando…|Loading…
+103|Fechar|Close
+104|Fechar aviso|Close notice
+105|Fechar sala|Close room
+106|Sair|Sign out
+107|Feche o navegador por completo, abra de novo|Close the browser completely, open it again
+108|Feche o app por completo, abra de novo|Close the app completely, open it again
+109|Chat|Chat
+110|Chat de toda a comunidade. As mensagens duram 24 horas. Toque em um nome para ver o perfil, denunciar ou bloquear.|Chat for the whole community. Messages last 24 hours. Tap a name to see their profile, report or block them.
+111|Chat geral|General chat
+112|Chat, há mensagens não lidas|Chat, there are unread messages
+113|=
+114|=
+115|O Classic é um contra um: você procura um jogador, sem posição.|Classic is one-on-one: you look for a player, no position.
+116|Clipe|Clip
+117|Clipe de exemplo. Quando alguém vincular o TikTok, os clipes de verdade vão aparecer aqui.|Sample clip. When someone links their TikTok, real clips will show up here.
+118|Clipes|Clips
+119|Clipes da comunidade|Community clips
+120|Clipes que você enviou|Clips you uploaded
+121|Clipes. Deslize para passar ao próximo. No primeiro, deslize para baixo para buscar clipes novos|Clips. Swipe to go to the next one. On the first one, swipe down to look for new clips
+122|Colaborar|Contribute
+123|Como aparece no HaxBall|As it appears on HaxBall
+124|Compartilhar pelo Discord|Share on Discord
+125|Compartilhar pelo WhatsApp|Share on WhatsApp
+126|Completa|Full
+127|Comportamento tóxico|Toxic behavior
+128|Com quem você mais jogou|Who you played with most
+129|Conectado|Connected
+130|Conectado como|Connected as
+131|Você confirmou. Falta confirmar|You confirmed. Waiting for confirmation from
+132|Contato|Contact
+133|Conte o que aconteceu|Tell us what happened
+134|Continuar|Continue
+135|Contra-ataque letal no Big|Deadly counter on Big
+136|Copiado|Copied
+137|Copiar|Copy
+138|Copiar o link da sala|Copy the room link
+139|Criar sala|Create room
+140|Criar uma sala|Create a room
+141|Criar uma sala entre nós e continuar procurando|Create a room among us and keep looking
+142|Criar uma sala e procurar jogadores|Create a room and find players
+143|Crie a sala no HaxBall e escreva o nome.|Create the room on HaxBall and type its name.
+144|Qualquer|Any
+145|Quando aceitar, você vai vê-lo primeiro na fila.|Once they accept, you'll see them first in the queue.
+146|Quando aceitar, avisamos toda vez que ele procurar partida.|Once they accept, we'll let you know every time they look for a match.
+147|Quando alguém começar a procurar, aparece aqui para você convidar.|When someone starts looking, they show up here so you can invite them.
+148|Quando alguém começar a procurar, aparece aqui.|When someone starts looking, they show up here.
+149|Quando um time precisar de jogadores, aparece aqui.|When a team needs players, it shows up here.
+150|Conta no seu histórico. Hoje você já chegou ao limite de pontos por amistosos.|It counts in your history. You already hit today's points cap for friendlies.
+151|Aniversário da minha irmã|My sister's birthday
+152|Quantos faltam|Players needed
+153|Código copiado.|Code copied.
+154|Código de um amigo|A friend's code
+155|Como funciona|How it works
+156|Você diz qual posição falta e em qual campo. O jogador recebe o convite e, se aceitar, entra.|You say which position you need and on which field. The player gets the invite and, if they accept, joins.
+157|Parar de procurar|Stop looking
+158|Desativar avisos|Turn off notifications
+159|Desative os avisos, ative de novo e tente outra vez.|Turn notifications off, turn them back on and try again.
+160|Desbloquear|Unblock
+161|Deslize para cima para ver o próximo|Swipe up to see the next one
+162|Deslize para atualizar|Swipe to refresh
+163|Desvincular|Unlink
+164|Desvincular TikTok|Unlink TikTok
+165|Detalhe (opcional)|Details (optional)
+166|=
+167|Discord conectado|Discord connected
+168|Disponíveis agora|Available now
+169|Finta dupla e gol|Double feint and goal
+170|Dias conectado|Days connected
+171|AO VIVO|LIVE
+172|=
+173|Ex.: HXA2B3|E.g.: HXA2B3
+174|Ex.: NICO23|E.g.: NICO23
+175|O chat ainda não está habilitado.|The chat isn't enabled yet.
+176|O jogador|The player
+177|A mensagem pode ter até 300 caracteres|The message can be up to 300 characters
+178|O motivo pode ter até 200 caracteres|The reason can be up to 200 characters
+179|O nick tem que ter entre 2 e 20 caracteres|Your nickname must be 2 to 20 characters
+180|O nick tem que ter entre 2 e 20 caracteres.|Your nickname must be 2 to 20 characters.
+181|A partida conta quando o outro lado confirma. Fica pendente no Perfil dele por|The match counts when the other side confirms. It stays pending on their Profile for
+182|A partida conta quando um deles toca em “Já entrei na sala”. Fica pendente no Perfil deles por|The match counts when one of them taps “I'm in the room”. It stays pending on their Profile for
+183|O título pode ter até 80 caracteres|The title can be up to 80 characters
+184|Escolher foto de perfil da galeria|Choose a profile photo from the gallery
+185|Escolha "Adicionar à tela inicial".|Choose "Add to Home Screen".
+186|Escolha quem convidar. Ele recebe o aviso com os dados da sua sala e, se aceitar, ocupa uma vaga.|Choose who to invite. They get a notification with your room's details and, if they accept, take a spot.
+187|Escolha pelo menos um campo|Choose at least one field
+188|Escolha pelo menos uma modalidade|Choose at least one mode
+189|Escolha pelo menos uma posição|Choose at least one position
+190|Escolha pelo menos uma região|Choose at least one region
+191|Escolha quantos jogadores faltam|Choose how many players you need
+192|Escolha o campo para continuar.|Choose the field to continue.
+193|Escolha o campo.|Choose the field.
+194|Escolha seu país|Choose your country
+195|Escolha um motivo|Choose a reason
+196|Escolha uma imagem.|Choose an image.
+197|Você escolhe seu nick e seu país. Não pedimos senha nem e-mail.|You pick your nickname and your country. We don't ask for a password or email.
+198|Começar|Start
+199|No Clipes|In Clips
+200|No Clipes aparecem só os que têm #haxball ou #haxmatch.|Only videos with #haxball or #haxmatch show up in Clips.
+201|Nesta versão de teste não há conta para apagar.|There's no account to delete in this test version.
+202|Na versão de teste, cole o link completo do vídeo.|In the test version, paste the full video link.
+203|Em revisão|Under review
+204|Na sua sala|In your room
+205|Ao vivo na Kick|Live on Kick
+206|Encontre jogadores de HaxBall, monte amistosos e veja os clipes da comunidade.|Find HaxBall players, set up friendlies and watch community clips.
+207|Enquadramento da foto. Use as setas para mover e mais ou menos para o zoom|Photo framing. Use the arrows to move it and plus or minus to zoom
+208|=
+209|Entendi|Got it
+210|Fique sabendo mesmo com o app fechado|Get notified even with the app closed
+211|Entra com você|Joins with you
+212|Entram com você|Join with you
+213|Entrando na fila…|Joining the queue…
+214|Entrar na sala|Join the room
+215|Entrar com Discord|Sign in with Discord
+216|Entre na sala e avise quando estiver dentro|Join the room and let us know when you're in
+217|Entre na sala e confirme|Join the room and confirm
+218|Você entra com sua conta do Discord.|You sign in with your Discord account.
+219|Você entra direto na fila e as salas te convidam|Go straight into the queue and rooms invite you
+220|Enviado|Sent
+221|Enviando…|Sending…
+222|Enviar|Send
+223|Enviar denúncia|Send report
+224|Time que você mais enfrentou|Team you faced most
+225|Times procurando jogadores|Teams looking for players
+226|É o nome que aparece no seu perfil. Se deixar vazio, usamos|It's the name shown on your profile. If you leave it empty, we use
+227|Essa conta da Kick já está vinculada a outro usuário do HaxMatch.|That Kick account is already linked to another HaxMatch user.
+228|Essa conta do TikTok já está vinculada a outro usuário do HaxMatch.|That TikTok account is already linked to another HaxMatch user.
+229|Essa imagem é muito pesada. Escolha uma com menos de 20 MB.|That image is too large. Choose one under 20 MB.
+230|Essa sala não está mais procurando|That room is no longer looking
+231|Essa sala já lotou|That room is already full
+232|Esse pedido não existe mais|That request is no longer there
+233|-
+234|Você escreveu muitas vezes seguidas. Espere um pouco.|You wrote too many times in a row. Wait a bit.
+235|Escreva o código do seu amigo.|Type your friend's code.
+236|Escreva o nome da sala|Type the room name
+237|Escreva o nome da sala.|Type the room name.
+238|Escreva o nick ou o usuário do Discord|Type their nickname or Discord username
+239|Escreva o nick ou o usuário do Discord.|Type their nickname or Discord username.
+240|Escreva uma mensagem|Write a message
+241|Escreva um usuário do Discord|Type a Discord username
+242|Esse clipe não é seu|That clip isn't yours
+243|Esse clipe já foi revisado ou foi apagado|That clip was already reviewed or deleted
+244|Esse clipe não está mais aqui|That clip is no longer here
+245|Esse jogador não está na sua sala|That player isn't in your room
+246|Esse jogador já está na sala|That player is already in the room
+247|Esse jogador já está na sua sala|That player is already in your room
+248|Esse jogador não está mais procurando|That player is no longer looking
+249|Esse link não é de um vídeo do TikTok ou do YouTube. Abra o vídeo e copie o link dele.|That link isn't a TikTok or YouTube video. Open the video and copy its link.
+250|Essa mensagem não existe mais|That message is no longer there
+251|Essa mensagem não está mais disponível|That message is no longer available
+252|Esse nick já é usado por outro jogador|That nickname is already taken
+253|Esse nick já é usado por outro jogador.|That nickname is already taken.
+254|Essa partida não é da sua sala|That match isn't from your room
+255|Essa partida já expirou|That match has expired
+256|Esse é você|That's you
+257|Esse é você.|That's you.
+258|Esse usuário não tem TikTok vinculado|That user doesn't have TikTok linked
+259|Esse usuário ainda não está no HaxMatch|That user isn't on HaxMatch yet

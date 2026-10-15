@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { useStore } from './data/store'
+import { idiomaDe, useStore } from './data/store'
 import { Ingresar, Onboarding } from './screens/Acceso'
 import { Admin } from './screens/Admin'
 import { Amigos } from './screens/Amigos'
@@ -17,6 +17,8 @@ import { Referir } from './screens/Referir'
 import { Reportar } from './screens/Reportar'
 import { Empty, FichaJugador, Lateral, Luces, Toasts, useEsCompu } from './ui'
 import { CartelPais } from './ui/pais'
+import { ponerIdioma } from './i18n/traducir'
+import { ponerIdiomaActual } from './i18n/actual'
 
 /** Solo deja pasar a quien ya entró con Discord y terminó el onboarding. */
 function ConSesion() {
@@ -61,6 +63,11 @@ export function App() {
   const perfil = useStore((s) => s.perfil)
   // Los registrados antes de que hubiera países confirman el suyo una vez.
   const pedirPais = useStore((s) => !!s.perfil?.onboarding && s.ajustesListos && s.perfil.paisConfirmado === false)
+  // Idioma: español, portugués o inglés, según lo elegido, el país y el navegador.
+  const idioma = useStore(idiomaDe)
+  // Antes de dibujar, así las fechas y los países ya salen en ese idioma.
+  ponerIdiomaActual(idioma)
+  useEffect(() => { void ponerIdioma(idioma) }, [idioma])
   const registrado = !!perfil?.onboarding
   const nav = useNavigate()
   const { pathname } = useLocation()
@@ -108,7 +115,7 @@ export function App() {
       <div className="app">
         <Luces />
         <div className="hero" style={{ gap: 14 }} role="status">
-          <h1 className="h logo">Hax<br /><span>Match</span></h1>
+          <h1 className="h logo" translate="no">Hax<br /><span>Match</span></h1>
           <div className="m">Cargando tu cuenta…</div>
         </div>
         <Toasts />

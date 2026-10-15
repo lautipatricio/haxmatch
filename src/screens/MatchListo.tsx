@@ -147,7 +147,7 @@ export function MatchListo() {
           <div className="card card--col sala-match">
             <div className="m">Nombre de la sala en HaxBall</div>
             {/* Grande, para leerlo desde la compu con el celular al lado. */}
-            <div className="sala-match__nombre">{m.nombreSala}</div>
+            <div className="sala-match__nombre" translate="no">{m.nombreSala}</div>
             <div className="row sala-match__acciones">
               {/* Con link no hace falta copiar el nombre: se entra con el link. */}
               {!hayLink && (

@@ -36,7 +36,7 @@ function Mensaje({ m, conAutor, u, puedeBorrar, porBorrar, onBorrar }: {
     <div className={`chat__msg${conAutor ? ' chat__msg--primero' : ''}`}>
       {conAutor && <Autor u={u} at={m.at} mio={m.userId === YO} />}
       <div className="chat__linea">
-        <p className="chat__texto">{m.texto}</p>
+        <p className="chat__texto" translate="no">{m.texto}</p>
         {puedeBorrar && (
           porBorrar ? (
             <button className="btn btn--ghost chat__borrar-si" onClick={onBorrar}>Borrar</button>

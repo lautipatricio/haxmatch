@@ -1,0 +1,342 @@
+540|Primeiro comece a procurar partida|Start looking for a match first
+541|Primeiro termine seu cadastro|Finish signing up first
+542|Primeiro termine seu cadastro.|Finish signing up first.
+543|Privacidade|Privacy
+544|Testando o campo novo|Trying out the new field
+545|Testando…|Testing…
+546|Tente com outro jogador da lista.|Try another player from the list.
+547|Em breve|Soon
+548|Publicando…|Posting…
+549|Publicar|Post
+550|Talvez tenha sido cancelada.|It may have been cancelled.
+551|-
+552|Fica como um programa a mais, com seu ícone e sua própria janela.|It sits like any other program, with its own icon and window.
+553|Você fica na fila, à vista das salas que precisam de gente.|You're in the queue, visible to rooms that need players.
+554|Quem entrar com seu código fica registrado como indicado seu. A lista e os pontos vão aparecer aqui em uma próxima atualização.|Anyone who joins with your code is recorded as your referral. The list and points will show up here in an upcoming update.
+555|Querem jogar um amistoso|Want to play a friendly
+556|Quero jogar um amistoso|I want to play a friendly
+557|Removido|Removed
+558|Removemos seu clipe do Clipes|We removed your clip from Clips
+559|Remover|Remove
+560|Remover do Clipes|Remove from Clips
+561|Remover dos amigos|Remove friend
+562|Remover foto|Remove photo
+563|Remover reação|Remove reaction
+564|Remover…|Remove…
+565|Você removeu o clipe. Quem enviou recebe o aviso.|You removed the clip. The uploader gets notified.
+566|Quem cria a sala|Who creates the room
+567|O que é o HaxMatch|What is HaxMatch
+568|O que soma|What earns points
+569|Sequência de dias seguidos|Streak of days in a row
+570|Reagir|React
+571|Reações a clipes|Reactions to clips
+572|=
+573|=
+574|Recusar|Decline
+575|Você recusou|You declined
+576|Recusou sua mensagem|Declined your message
+577|Clipe novo no Clipes|New clip in Clips
+578|Clipes novos no Clipes|New clips in Clips
+579|Indicar amigos|Refer friends
+580|Indique amigos|Refer friends
+581|Me cadastrar com o código de um amigo|Sign up with a friend's code
+582|Reiniciar dados de teste|Reset test data
+583|Tentar de novo|Retry
+584|Virada de 3-0 no Classic|3-0 comeback in Classic
+585|Denunciar|Report
+586|Denunciar ou bloquear|Report or block
+587|Denúncia enviada|Report sent
+588|Denúncias|Reports
+589|Denúncias dos últimos 30 dias|Reports from the last 30 days
+590|Reproduzir|Play
+591|Responda em Amigos|Reply from Friends
+592|Responda rápido: senão, outro pode ocupar a vaga.|Answer fast, or someone else may take the spot.
+593|Resultado falso|Fake result
+594|Retirar o pedido|Withdraw request
+595|Confira sua internet para ver jogadores e salas.|Check your internet to see players and rooms.
+596|=
+597|=
+598|Sala "|Room "
+599|-
+600|Sala fechada|Room closed
+601|Sala completa|Room full
+602|Sala de|Room of
+603|Sala de HaxBall|HaxBall room
+604|Sair do grupo|Leave the group
+605|Cumprimente a comunidade ou avise que está procurando partida.|Say hi to the community or let them know you're looking for a match.
+606|Abre como um app e permite receber avisos dos seus amigos.|It opens like an app and lets you get notifications from your friends.
+607|Atualiza sozinho a cada 30 segundos. Para apagar uma mensagem do chat, toque na lixeira ao lado.|It refreshes on its own every 30 seconds. To delete a chat message, tap the bin next to it.
+608|Seu perfil é apagado para sempre com tudo o que é seu: foto, pontos e nível, amigos, partidas, clipes e a vinculação com o TikTok. Não dá para desfazer.|Your profile is deleted forever with everything that's yours: photo, points and level, friends, matches, clips and your TikTok link. This can't be undone.
+609|Todos os seus vídeos e suas reações são apagados do HaxMatch, e a permissão que você nos deu no TikTok é anulada. No TikTok seus vídeos ficam como estão.|All your videos and their reactions are deleted from HaxMatch, and the permission you gave us on TikTok is revoked. Your videos stay as they are on TikTok.
+610|Mandamos para os jogadores que você convidar.|We send it to the players you invite.
+611|Saiu|Left
+612|Seções|Sections
+613|Continue ativo para chegar ao próximo|Stay active to reach the next one
+614|Você continua procurando sozinho, com o relógio zerado.|You keep looking on your own, with the timer reset.
+615|Você continua procurando.|You keep looking.
+616|Sim|Yes
+617|Se aceitar, você entra direto.|If you accept, you go straight in.
+618|Se aceitar, você entra na busca dele e vocês continuam procurando juntos.|If you accept, you join their search and keep looking together.
+619|Se alguém sair, toque em “Saiu”: a vaga é liberada e a sala volta a procurar.|If someone leaves, tap “Left”: their spot is freed and the room looks again.
+620|Se depois ele sair, toque em “Saiu” e a vaga é liberada.|If they leave later, tap “Left” and their spot is freed.
+621|Se você vincular sua conta do TikTok, seus vídeos públicos com|If you link your TikTok account, your public videos with
+622|Continuam procurando juntos|Still looking together
+623|Continuam procurando juntos, com o mesmo relógio.|Still looking together, with the same timer.
+624|Silenciar|Mute
+625|Simular que|Simulate that
+626|Simular que passaram 15 minutos|Simulate that 15 minutes passed
+627|Simular que uma sala te convida|Simulate a room inviting you
+628|Simular um vídeo novo com #haxmatch|Simulate a new video with #haxmatch
+629|Sem #haxball nem #haxmatch: não aparece no Clipes|No #haxball or #haxmatch: not shown in Clips
+630|Nenhum clipe ainda|No clips yet
+631|Sem conexão|Offline
+632|Sem conexão com o servidor|No connection to the server
+633|Sem fim|No end
+634|Nenhuma notificação lida|No read notifications
+635|Não vinculado|Not linked
+636|Site do HaxMatch|HaxMatch website
+637|Pedido enviado|Request sent
+638|Pedidos (|Requests (
+639|Só lemos seu nome do TikTok e a lista dos seus vídeos públicos.|We only read your TikTok name and your list of public videos.
+640|Só quem montou o grupo pode escrever para outros|Only the group leader can message others
+641|Solte para atualizar|Release to refresh
+642|Sorteio|Giveaway
+643|Enviar clipe|Upload clip
+644|Enviar clipes ainda não está disponível.|Uploading clips isn't available yet.
+645|Enviar um clipe|Upload a clip
+646|Envie seus Shorts colando o link|Upload your Shorts by pasting the link
+647|Entre e avisamos assim que uma sala precisar de gente.|Join and we'll let you know as soon as a room needs players.
+648|Você ganha|You earn
+649|Suspender|Suspend
+650|Suspender|Suspend
+651|Suspenso até|Suspended until
+652|Suspensos|Suspended
+653|Suspendendo…|Suspending…
+654|Sim, sair|Yes, sign out
+655|Sim, desvincular|Yes, unlink
+656|Sim, joguei|Yes, I played
+657|Sim, quero jogar|Yes, I want to play
+658|Sim, remover dos amigos|Yes, remove friend
+659|Sim, continuar procurando|Yes, keep looking
+660|-
+661|Você também pode tocar em qualquer jogador na fila ou em uma sala para adicioná-lo.|You can also tap any player in the queue or in a room to add them.
+662|Avisamos mesmo com o app fechado: quando te convidam ou te escrevem, quando você entra em uma sala e quando um amigo começa a procurar.|We notify you even with the app closed: when you're invited or messaged, when you join a room and when a friend starts looking.
+663|Avisamos como mais uma mensagem do computador, mesmo se você estiver em outra janela: quando te convidam ou te escrevem, quando você entra em uma sala e quando um amigo começa a procurar.|We notify you like any other computer message, even in another window: when you're invited or messaged, when you join a room and when a friend starts looking.
+664|Avisamos quando encontrarmos uma combinação|We'll let you know when we find a match
+665|Avisamos quando te escrevem, quando você entra em uma sala e quando um amigo começa a procurar.|We let you know when you're messaged, when you join a room and when a friend starts looking.
+666|Avisamos quando te responderem ou alguém quiser entrar na sua sala.|We'll let you know when they reply or someone wants to join your room.
+667|Avisamos quando uma sala te convidar para jogar.|We'll let you know when a room invites you to play.
+668|Te escreveram|You got a message
+669|Te convidam para jogar|You're invited to play
+670|Levamos você ao TikTok para dar a permissão. Só pedimos seu nome e a lista dos seus vídeos públicos.|We take you to TikTok to grant permission. We only ask for your name and your list of public videos.
+671|Restam|You have left
+672|Você entrou na busca de|You joined the search of
+673|Você tem muitos pedidos sem resposta. Espere que te respondam.|You have many unanswered requests. Wait for replies.
+674|Você tem muitas mensagens sem resposta. Espere que te respondam.|You have many unanswered messages. Wait for replies.
+675|Você tem sala e escolhe quem convidar|You have a room and choose who to invite
+676|Você tem uma partida com|You have a match with
+677|=
+678|TikTok vinculado|TikTok linked
+679|TikTok vinculado. Importamos seus vídeos: os que têm #haxball ou #haxmatch já estão no Clipes.|TikTok linked. We imported your videos: the ones with #haxball or #haxmatch are already in Clips.
+680|=
+681|Tobi_GK quer ser seu amigo|Tobi_GK wants to be your friend
+682|Toque quando já estiver dentro da sala no HaxBall: assim o amistoso conta e soma pontos.|Tap it once you're inside the room on HaxBall: that's how the friendly counts and earns points.
+683|Tocar para ativar o som|Tap to turn on sound
+684|Toque em Compartilhar.|Tap Share.
+685|Toque no quadro para escolher uma foto da sua galeria.|Tap the box to choose a photo from your gallery.
+686|Toque para o som|Tap for sound
+687|Toque para ver a live · kick.com/|Tap to watch the stream · kick.com/
+688|Toque na sua foto para mudá-la.|Tap your photo to change it.
+689|Toque em “Já entrei na sala” quando estiver dentro. Sem isso, a partida não conta como válida.|Tap “I'm in the room” once you're inside. Without it, the match doesn't count.
+690|Toque em “Já entrou|Tap “Already in:
+691|Você toca em “Quero jogar um amistoso”.|You tap “I want to play a friendly”.
+692|Toda a comunidade · as mensagens duram 24 horas|The whole community · messages last 24 hours
+693|Ninguém enviou clipes por link ainda.|Nobody has uploaded clips by link yet.
+694|Ainda não|Not yet
+695|Ainda não apareceu uma partida.|No match has come up yet.
+696|Ainda não há mensagens|No messages yet
+697|Você ainda não jogou amistosos|You haven't played any friendlies yet
+698|Você ainda não indicou ninguém. Quem entrar com seu código ou seu link aparece aqui.|You haven't referred anyone yet. Anyone who joins with your code or link shows up here.
+699|Ainda não dá para adicionar o link da sala. Tente mais tarde.|You can't add the room link yet. Try later.
+700|Ainda não dá para mudar o nick. Tente mais tarde.|You can't change your nickname yet. Try later.
+701|Ainda não dá para mudar o país. Tente mais tarde.|You can't change your country yet. Try later.
+702|Você ainda não tem clipes. Envie um vídeo ao TikTok com #haxball ou #haxmatch e ele aparece aqui.|You don't have clips yet. Post a TikTok with #haxball or #haxmatch and it shows up here.
+703|Ainda não trouxemos nenhum vídeo da sua conta.|We haven't fetched any videos from your account yet.
+704|Ainda sem dados|No data yet
+705|Todos começam no 0. Seu nível sobe com sua atividade no app, não com sua habilidade.|Everyone starts at 0. Your level goes up with your activity in the app, not your skill.
+706|Trazemos a lista dos seus vídeos públicos para a sua biblioteca.|We bring the list of your public videos into your library.
+707|Trazendo seus vídeos…|Fetching your videos…
+708|Tabela tripla e pra dentro|Triple one-two and in
+709|Seu amigo Mati_ ficou disponível|Your friend Mati_ is available
+710|Seu amigo Nico precisa de mais 2|Your friend Nico needs 2 more
+711|Sua busca terminou ou expirou. Você pode começar outra quando quiser.|Your search ended or expired. You can start another one anytime.
+712|Sua busca expirou|Your search expired
+713|Sua conta está suspensa|Your account is suspended
+714|Seu código|Your code
+715|Seu link|Your link
+716|Seu link de indicação é montado com o endereço do app quando ele estiver publicado.|Your referral link is built from the app's address once it's published.
+717|Sua mensagem ficou sem resposta|Your message got no reply
+718|Seu nick (opcional)|Your nickname (optional)
+719|Seu nível|Your level
+720|Seu nível começa em 0 e sobe com sua atividade no app.|Your level starts at 0 and goes up with your activity in the app.
+721|Seu novo nick|Your new nickname
+722|Seu país|Your country
+723|Sua sala parou de procurar|Your room stopped looking
+724|Sua sala está procurando. Toque para convidar jogadores.|Your room is looking. Tap to invite players.
+725|Sua sala está completa|Your room is full
+726|Sua sala está completa. Toque para ver quem entrou.|Your room is full. Tap to see who joined.
+727|Sua sala não procura mais|Your room isn't looking anymore
+728|Seus amigos|Your friends
+729|Seus clipes ·|Your clips ·
+730|Suas contas|Your accounts
+731|Seus indicados|Your referrals
+732|Termos|Terms
+733|Termos e condições|Terms and conditions
+734|Um momento…|One moment…
+735|Uma sala|A room
+736|Você vai ter que entrar de novo com o Discord. Se estiver procurando, a busca é cancelada.|You'll have to sign in with Discord again. If you're looking, the search is cancelled.
+737|Ver|View
+738|Ver no TikTok|View on TikTok
+739|Ver no YouTube|View on YouTube
+740|Ver o canal dele na Kick (|See their Kick channel (
+741|Ver vídeo|Watch video
+742|Versão de teste: o login é simulado e os outros jogadores são inventados.|Test version: sign-in is simulated and the other players are made up.
+743|Versão de teste: a vinculação é simulada.|Test version: linking is simulated.
+744|Vídeo do TikTok|TikTok video
+745|Vídeo do TikTok. Nesta versão de teste não é reproduzido.|TikTok video. It doesn't play in this test version.
+746|Vídeo do YouTube|YouTube video
+747|Vídeo sem descrição|Video without description
+748|Vincular|Link
+749|Vincular TikTok|Link TikTok
+750|Vincule sua conta do TikTok|Link your TikTok account
+751|Voltar|Back
+752|Vincular de novo|Link again
+753|Voltar ao início|Back to home
+754|Você|You
+755|=
+756|Você mudou seu nick há pouco. Pode mudar de novo a partir de|You changed your nickname recently. You can change it again from
+757|Todos já entraram|Everyone's in
+758|Já entrei na sala|I'm in the room
+759|Já entrou|Already in
+760|Você já está procurando jogador|You're already looking for a player
+761|Você já está procurando partida|You're already looking for a match
+762|Você já está procurando. Toque para ver como vai.|You're already looking. Tap to see how it's going.
+763|Você já está nessa sala|You're already in that room
+764|Você já está participando.|You're already taking part.
+765|Você escreveu para ele agora há pouco. Espere um pouco para tentar de novo.|You messaged them a moment ago. Wait a bit before trying again.
+766|Você já escreveu para ele várias vezes. Espere um pouco para tentar de novo.|You've messaged them several times. Wait a bit before trying again.
+767|Você já mandou um pedido para ele.|You already sent them a request.
+768|Você já mandou essa mensagem.|You already sent that message.
+769|Você já mandou muitas denúncias hoje. Tente amanhã.|You've sent many reports today. Try tomorrow.
+770|Não cabem mais na sua sala|They no longer fit in your room
+771|Você não está mais procurando|You're no longer looking
+772|Ninguém mais é procurado. Quando todos entrarem, a partida fica montada.|Nobody else is searched for. Once everyone's in, the match is set.
+773|Já são amigos|You're already friends
+774|Já são amigos.|You're already friends.
+775|Você já enviou esse clipe|You already uploaded that clip
+776|Você já tem 3 clipes em revisão. Espere a revisão para enviar outro.|You already have 3 clips under review. Wait for them to be reviewed to upload another.
+777|Você já tem sua própria sala|You already have your own room
+778|Você já tem uma busca ativa. Cancele para começar outra.|You already have an active search. Cancel it to start another.
+779|=
+780|=
+781|na sala|in the room
+782|na sala” quando o jogador estiver dentro. Sem isso, a partida não conta como válida.|” once the player is inside. Without it, the match doesn't count.
+783|à sua busca|to your search
+784|aceitar,|accept,
+785|ao grupo|to the group
+786|amigos indicados|referred friends
+787|amistoso jogado|friendly played
+788|amistosos confirmados.|confirmed friendlies.
+789|amistosos jogados|friendlies played
+790|aparecem na seção Clipes, com seu nome do TikTok, para o resto da comunidade ver e reagir.|show up in the Clips section, under your TikTok name, for the rest of the community to watch and react to.
+791|-
+792|montou o grupo e controla a busca|set up the group and runs the search
+793|presença em partidas marcadas|attendance at scheduled matches
+794|-
+795|procurando partida agora|looking for a match now
+796|-
+797|com|with
+798|conectados agora|online now
+799|de|of
+800|decide como continuam.|decides how you go on.
+801|dia|day
+802|dia seguido|day in a row
+803|dias|days
+804|dias para mudar de novo.|days to change it again.
+805|dias seguidos|days in a row
+806|dias.|days.
+807|o celular|the phone
+808|o jogador|the player
+809|o navegador|the browser
+810|o sistema|the system
+811|online|online
+812|escreveu|wrote
+813|este computador|this computer
+814|esta semana|this week
+815|este celular|this phone
+816|-
+817|há mensagens não lidas|there are unread messages
+818|joga um amistoso|plays a friendly
+819|jogador procurando agora|player looking now
+820|jogadores procurando agora|players looking now
+821|jogadores cadastrados|registered players
+822|jogar hoje?|play today?
+823|o Mac|the Mac
+824|a busca terminou.|the search ended.
+825|a sala|the room
+826|caracteres|characters
+827|conectou ele com sua sala|connected them with your room
+828|-
+829|-
+830|-
+831|-
+832|-
+833|-
+834|mensagens no chat (24 h)|chat messages (24 h)
+835|mesmo relógio e mesma busca|same timer and same search
+836|-
+837|nível|level
+838|ou|or
+839|ou mais.|or more.
+840|ocupa uma vaga|takes a spot
+841|pessoas diferentes|different people
+842|pontos|points
+843|pontos quando seu amigo entra com o Discord e joga|points when your friend signs in with Discord and plays
+844|pontos ganhos|points earned
+845|quem montou o grupo|the group leader
+846|quer ser seu amigo|wants to be your friend
+847|quer ser seu amigo.|wants to be your friend.
+848|-
+849|agora mesmo|just now
+850|saiu|left
+851|entraram|joined
+852|entrou|joined
+853|sem dados|no data
+854|sem data de fim|no end date
+855|sem título|untitled
+856|você ganha +|you earn +
+857|seu nome do Discord|your Discord name
+858|seu usuário do Discord|your Discord username
+859|um jogador|a player
+860|e a|and the
+861|e a sala continua procurando o resto.|and the room keeps looking for the rest.
+862|já confirmou.|already confirmed.
+863|todos já entraram. A busca terminou.|everyone's in. The search is over.
+864|-
+865|· Sala "|· Room "
+866|· online|· online
+867|· é seu amigo|· is your friend
+868|· toque para adicioná-lo como amigo|· tap to add as a friend
+869|· expira em|· expires in
+870|· último|· last
+871|Apagar sua conta?|Delete your account?
+872|Sair da conta?|Sign out?
+873|De que país você é?|Which country are you from?
+874|Deixar de ser amigos? Não vamos mais te avisar quando ele procurar partida.|Stop being friends? We won't notify you anymore when they look for a match.
+875|Desvincular o TikTok?|Unlink TikTok?
+876|Vamos jogar?|Shall we play?
+877|Você jogou estas partidas? Se confirmar, elas contam. Expiram em|Did you play these matches? If you confirm, they count. They expire in
+878|Posso entrar na sua sala?|Can I join your room?
+879|O que você quer|What do you want to
+880|Últimos clipes publicados|Latest clips posted
+881|Últimos cadastrados|Latest sign-ups

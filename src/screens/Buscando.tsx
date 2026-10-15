@@ -340,7 +340,7 @@ export function Buscando() {
           <div className="invita">
             <span className="latido" aria-hidden="true" />
             <div className="grow">
-              <div className="invita__sala">{suSala.nombreSala}</div>
+              <div className="invita__sala" translate="no">{suSala.nombreSala}</div>
               <div className="m">{[concretas(suSala.cancha).join(', '), faltan(suSala.faltan)].filter(Boolean).join(' · ')}</div>
             </div>
           </div>

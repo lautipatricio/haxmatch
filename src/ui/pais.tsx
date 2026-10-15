@@ -8,7 +8,7 @@ export function SelectorPais({ id, valor, onCambio }: { id: string; valor: strin
   const idioma = useStore(idiomaDe)
   const paises = useMemo(() => listaPaises(idioma), [idioma])
   return (
-    <select id={id} className="field" value={valor} onChange={(e) => onCambio(e.target.value)} autoComplete="country">
+    <select id={id} className="field" translate="no" value={valor} onChange={(e) => onCambio(e.target.value)} autoComplete="country">
       <option value="" disabled>Elegí tu país</option>
       {paises.map((p) => <option key={p.codigo} value={p.codigo}>{p.nombre}</option>)}
     </select>

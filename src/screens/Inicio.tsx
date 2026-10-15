@@ -131,7 +131,7 @@ export function Inicio() {
   return (
     <div className="screen juegos">
       <header className="head aparece">
-        <div className="marca" aria-hidden="true">HAXMATCH</div>
+        <div className="marca" aria-hidden="true" translate="no">HAXMATCH</div>
       </header>
       <div className="scroll">
         <div className="pad juegos__pad">

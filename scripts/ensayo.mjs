@@ -632,7 +632,7 @@ try {
   await pato.page.goto(`${URL}/clips`)
   await pato.ver('Clip de muestra')
   // Términos y privacidad se leen sin entrar.
-  const visita = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage()
+  const visita = await (await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'es-AR' })).newPage()
   await visita.goto(`${URL}/privacidad`)
   await visita.getByText('Política de privacidad de HaxMatch').waitFor()
   await visita.getByRole('link', { name: 'lpatriciogauna@outlook.com' }).first().waitFor()

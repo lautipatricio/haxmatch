@@ -1,0 +1,156 @@
+882|"{1}" está precisando de {2}{3}. Quer jogar?|"{1}" needs {2}{3}. Want to play?
+883|-
+884|+{1} pontos|+{1} points
+885|+{1} pontos de nível|+{1} level points
+886|-
+887|Aceitar {1}|Accept {1}
+888|Ativados no {1}.|Turned on on {1}.
+889|Amistoso confirmado · +{1} pontos|Friendly confirmed · +{1} points
+890|Automático ({1})|Automatic ({1})
+891|-
+892|Bloquear {1}|Block {1}
+893|Apagar {1}|Delete {1}
+894|Procurando há {1}|Looking for {1}
+895|Campo: {1}|Field: {1}
+896|Clipe do {1}|{1} clip
+897|Completou {1} amistosos · +{2} pontos|Completed {1} friendlies · +{2} points
+898|Completou {1} amistosos · nesse mês você já tinha chegado ao limite|Completed {1} friendlies · you'd already hit that month's cap
+899|Conectado como {1}|Connected as {1}
+900|-
+901|-
+902|O aviso chegou {1} e o navegador mostrou. Não viu o aviso? Então {2} está escondendo. {3}|The notification reached {1} and the browser showed it. Didn't see it? Then {2} is hiding it. {3}
+903|O aviso chegou {1}, mas o navegador não deixou mostrar. {2}|The notification reached {1}, but the browser didn't let it show. {2}
+904|O aviso saiu, mas não chegou {1}.|The notification went out, but didn't reach {1}.
+905|O serviço de avisos do {1} recusou. Desative os avisos, ative de novo e tente outra vez.|{1}'s notification service rejected it. Turn notifications off, back on and try again.
+906|Ao vivo na Kick: {1}|Live on Kick: {1}
+907|Está procurando partida · {1}|Looking for a match · {1}
+908|Grupo de {1}|Group of {1}
+909|-
+910|O app {1} conectou com sua sala|The app {1} connected with your room
+911|O app {1}.|The app {1}.
+912|O site do HaxMatch não aceitou o pedido (código {1}). Confira o endereço configurado no Supabase.|The HaxMatch website rejected the request (code {1}). Check the address set in Supabase.
+913|Faltam {1} e vocês são {2}.|They need {1} and you're {2}.
+914|-
+915|Pronto: o aviso saiu para {1}. Deve aparecer em alguns segundos. Se não aparecer: {2}|Done: the notification went out to {1}. It should show up in a few seconds. If it doesn't: {2}
+916|Os avisos não estão ativados no {1}. Ative e tente de novo.|Notifications aren't on on {1}. Turn them on and try again.
+917|Partida pronta com {1}|Match ready with {1}
+918|Mostrar "{1}" no Clipes|Show "{1}" in Clips
+919|Motivo: {1}|Reason: {1}
+920|Nível {1} ·|Level {1} ·
+921|Nível {1}. Ver detalhe|Level {1}. See details
+922|Não conseguimos registrar {1} para receber avisos. {2}|We couldn't register {1} for notifications. {2}
+923|Não conseguimos apagar sua conta. {1}|We couldn't delete your account. {1}
+924|Não conseguimos apagar sua foto, então a conta não foi apagada. {1}|We couldn't delete your photo, so the account wasn't deleted. {1}
+925|Não conseguimos enviar a foto. {1}|We couldn't upload the photo. {1}
+926|Perfil de {1}|{1}'s profile
+927|Você pode mudar seu nick de novo a partir de {1}.|You can change your nickname again from {1}.
+928|Sequência de {1} dias · +{2} pontos|{1}-day streak · +{2} points
+929|Recusar {1}|Decline {1}
+930|Clipe novo no Clipes · +{1} pontos|New clip in Clips · +{1} points
+931|Denunciar {1}|Report {1}
+932|Confira nas configurações do sistema se as notificações do {1} estão permitidas e se o "Não perturbe" está desligado.|Check in the system settings that {1} notifications are allowed and that "Do not disturb" is off.
+933|Sala "{1}"|Room "{1}"
+934|Sala "{1}"{2}|Room "{1}"{2}
+935|Sala de {1}|{1}'s room
+936|A vaga de {1} foi liberada|{1}'s spot was freed
+937|Se aceitar, entram os {1} do grupo.|If you accept, all {1} in the group join.
+938|Continuam sendo {1} e ainda não apareceu um time.|You're still {1} and no team has shown up yet.
+939|Pedido enviado para {1}.|Request sent to {1}.
+940|Só {1} pode escrever para outros|Only {1} can message others
+941|Vocês são {1} e faltam {2}.|You're {1} and need {2}.
+942|-
+943|Vocês são {1}. Um cria a sala no HaxBall e os outros entram.|You're {1}. One creates the room on HaxBall and the rest join.
+944|Você subiu para o Nível {1}|You reached Level {1}
+945|Entre no HaxMatch para montar amistosos de HaxBall. Use meu código {1} ao entrar.|Join HaxMatch to set up HaxBall friendlies. Use my code {1} when you sign up.
+946|Entre no HaxMatch para montar amistosos de HaxBall: {1}|Join HaxMatch to set up HaxBall friendlies: {1}
+947|Suspender · {1}|Suspend · {1}
+948|Faltam {1}|You need {1}
+949|Faltam {1} pontos para entrar.|You need {1} more points to enter.
+950|Você entrou na busca de {1}|You joined {1}'s search
+951|-
+952|-
+953|-
+954|Seu amigo {1} precisa de mais {2}|Your friend {1} needs {2} more
+955|Seu amigo {1} ficou disponível|Your friend {1} is available
+956|Vai {1} de {2} amistosos · ainda não soma|{1} of {2} friendlies · doesn't count yet
+957|Ver {1}|See {1}
+958|Ver o clipe: {1}|Watch the clip: {1}
+959|Ver a live de {1} na Kick|Watch {1}'s stream on Kick
+960|Ver os {1} vídeos|See all {1} videos
+961|Vídeos atualizados {1}|Videos updated {1}
+962|Prévia: {1}|Preview: {1}
+963|{1} já entrou na sala|{1} is already in the room
+964|Você não está mais na sala de {1}|You're no longer in {1}'s room
+965|amistosos hoje · {1} no total|friendlies today · {1} total
+966|como {1}|as {1}
+967|no campo {1}|on the {1} field
+968|no {1}|on {1}
+969|entraram hoje · {1} em 7 dias|signed in today · {1} in 7 days
+970|-
+971|há {1} dias|{1} days ago
+972|há {1} h|{1} h ago
+973|há {1} min|{1} min ago
+974|conectou vocês com sua sala: são um grupo de {1}|connected you with your room: a group of {1}
+975|novos hoje · {1} em 7 dias|new today · {1} in 7 days
+976|ocupam {1} vagas|take {1} spots
+977|sala "{1}"|room "{1}"
+978|-
+979|um {1}|a {1}
+980|{1} Tentamos renovar a conexão dos avisos e não deu. {2}|{1} We tried to renew the notification connection and couldn't. {2}
+981|{1} Renovamos a conexão dos avisos: espere alguns segundos e toque de novo em "Mandar um aviso de teste".|{1} We renewed the notification connection: wait a few seconds and tap "Send a test notification" again.
+982|{1} Sua conta não foi apagada{2}: tente de novo.|{1} Your account wasn't deleted{2}: try again.
+983|{1} aceitou seu pedido|{1} accepted your request
+984|{1} clipes novos|{1} new clips
+985|{1} completou {2} amistosos|{1} completed {2} friendlies
+986|-
+987|{1} de {2} pontos · faltam {3} para o Nível {4}|{1} of {2} points · {3} to go for Level {4}
+988|{1} parou de procurar|{1} stopped looking
+989|{1} dias|{1} days
+990|{1} dias +{2}|{1} days +{2}
+991|{1} está ao vivo na Kick. Ver a live|{1} is live on Kick. Watch the stream
+992|{1} jogadores|{1} players
+993|{1} não pode agora|{1} can't right now
+994|{1} não veio|{1} didn't come
+995|{1} ou {2}|{1} or {2}
+996|{1} ponto · até {2} clipes diferentes por dia|{1} point · up to {2} different clips per day
+997|{1} pontos quando ele joga {2} amistosos · até {3} por mês|{1} points when they play {2} friendlies · up to {3} per month
+998|{1} pontos por dia|{1} points per day
+999|{1} pontos · até {2} por dia, {3} com o mesmo rival|{1} points · up to {2} per day, {3} with the same rival
+1000|{1} pontos · você chegou ao nível máximo|{1} points · you reached the top level
+1001|{1} pontos · {2} por dia|{1} points · {2} per day
+1002|{1} foi suspenso ({2}).|{1} was suspended ({2}).
+1003|{1} quer ser seu amigo|{1} wants to be your friend
+1004|{1} saiu|{1} left
+1005|{1} não lidas|{1} unread
+1006|{1} te escreveu|{1} messaged you
+1007|{1} te convida para a sala dele|{1} invites you to their room
+1008|{1} vai entrar|{1} is joining
+1009|{1} e você já são amigos.|{1} and you are already friends.
+1010|{1} e {2}|{1} and {2}
+1011|{1} já é seu amigo.|{1} is already your friend.
+1012|{1} não está mais procurando|{1} is no longer looking
+1013|{1} já tinha te adicionado. Agora são amigos.|{1} had already added you. Now you're friends.
+1014|-
+1015|-
+1016|-
+1017|-
+1018|-
+1019|{1} {2} e tente outra vez. Uma VPN, um antivírus com firewall ou a rede de um trabalho ou de uma escola podem cortar os avisos. Se continuar igual, copie este dado para pedir ajuda: {3}{4} · {5} · respostas {6}.|{1} {2} and try again. A VPN, an antivirus with a firewall or a work or school network can block notifications. If it keeps happening, copy this to ask for help: {3}{4} · {5} · responses {6}.
+1020|-
+1021|-
+1022|-
+1023|-
+1024|{1} Quer continuar procurando?|{1} Want to keep looking?
+1025|{1}, de {2}|{1}, by {2}
+1026|{1}. Você pode escolher vários|{1}. You can choose several
+1027|-
+1028|-
+1029|-
+1030|· +{1} pontos|· +{1} points
+1031|· Nível {1}|· Level {1}
+1032|· Sala "{1}"|· Room "{1}"
+1033|· te convidou {1}|· invited by {1}
+1034|-
+1035|Aceita {1}?|Accept {1}?
+1036|Podemos entrar {1} na sua sala?|Can we {1} join your room?
+1037|Vamos jogar um {1}?|Shall we play a {1}?

@@ -1,3 +1,4 @@
+import { localeActual } from '../i18n/actual'
 import { useEffect, useId, useRef, useState, type CSSProperties, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { APOYO_URL, PREVIEW, REAL, TIKTOK_PRONTO } from '../config'
@@ -397,7 +398,7 @@ export function Perfil() {
   for (const m of jugados) for (const p of m.participantes) if (p.userId !== YO) veces.set(p.userId, (veces.get(p.userId) ?? 0) + 1)
   const masJugado = [...veces.entries()].sort((a, b) => b[1] - a[1])[0]
 
-  const fecha = new Date(ahora).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })
+  const fecha = new Date(ahora).toLocaleDateString(localeActual(), { weekday: 'long', day: 'numeric', month: 'long' })
 
   return (
     <div className="screen">

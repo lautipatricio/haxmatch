@@ -225,3 +225,7 @@ Códigos de amigo de la demostración: `NICO23`, `MATI10`.
 
 1. Revisión de la app de TikTok, para que pueda vincular cualquiera.
 2. App de tienda (App Store / Play).
+
+## Idiomas
+
+La app se muestra en español, portugués o inglés (ver `docs/DECISIONES.md`). Para traducir textos nuevos: `node scripts/i18n-faltan.mjs`, sumarlos a `i18n/trad-extra.txt` y correr `node scripts/i18n-armar.mjs`. Prueba: `node scripts/recorrido-idiomas.mjs`.
