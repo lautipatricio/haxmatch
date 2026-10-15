@@ -12,17 +12,28 @@
   "compatibility_date": "2026-10-01",
   // Lo que se cargue a mano en el panel no se borra al publicar.
   "keep_vars": true,
+  // La dirección propia (comprada en Cloudflare). La de workers.dev sigue andando.
+  "routes": [
+    { "pattern": "haxmatch.com", "custom_domain": true },
+    { "pattern": "www.haxmatch.com", "custom_domain": true }
+  ],
+  "workers_dev": true,
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
+    // El worker mira cada página (no los archivos de /assets/) para mandar
+    // www.haxmatch.com a haxmatch.com y, cuando se active la mudanza, la dirección vieja también.
+    "run_worker_first": ["/*", "!/assets/*"]
   },
   // Cada minuto se le pregunta a Kick qué jugadores están en vivo (worker/kick.js).
   "triggers": { "crons": ["* * * * *"] },
   // Datos públicos del proyecto de Supabase (los mismos de .env.production).
   "vars": {
     "SUPABASE_URL": "https://kinckqzqgbnplchyrvhj.supabase.co",
-    "SUPABASE_KEY": "sb_publishable_RDSaEKcPGpviQsKr0ks2-w_j5HCHyTW"
+    "SUPABASE_KEY": "sb_publishable_RDSaEKcPGpviQsKr0ks2-w_j5HCHyTW",
+    // Dirección principal. Con MUDAR_DIRECCION en "si", la de workers.dev manda todo para acá.
+    "DIRECCION": "https://haxmatch.com",
+    "MUDAR_DIRECCION": "no"
   }
 }

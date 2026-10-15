@@ -215,8 +215,26 @@ async function paginaConfigurar(request, env) {
 
 // ---------- Entrada ----------
 
+/**
+ * www.haxmatch.com va siempre a haxmatch.com. La dirección vieja (workers.dev) va a la nueva
+ * solo con MUDAR_DIRECCION = "si", y nunca lo de /api/ (así terminan los ingresos con TikTok
+ * o Kick que empezaron en la dirección vieja).
+ */
+export function aDondeMudar(request, env) {
+  if (!env.DIRECCION || !['GET', 'HEAD'].includes(request.method)) return null
+  const url = new URL(request.url)
+  const principal = new URL(env.DIRECCION)
+  if (url.host === principal.host) return null
+  const esWww = url.host === 'www.' + principal.host
+  const esVieja = url.host.endsWith('.workers.dev') && env.MUDAR_DIRECCION === 'si' && !url.pathname.startsWith('/api/')
+  if (!esWww && !esVieja) return null
+  return principal.origin + url.pathname + url.search
+}
+
 export default {
   async fetch(request, env, ctx) {
+    const mudanza = aDondeMudar(request, env)
+    if (mudanza) return Response.redirect(mudanza, 301)
     const { pathname } = new URL(request.url)
     if (pathname === '/api/push/clave' && request.method === 'GET') {
       // La clave pública no es secreta: la app la necesita para activar los avisos en cada celular.

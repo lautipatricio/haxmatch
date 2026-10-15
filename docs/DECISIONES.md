@@ -520,3 +520,8 @@ Mientras TikTok no apruebe la vinculación (y también después), los clips se p
 - Si el navegador no ofrece el botón (Edge, Safari en Mac, Firefox, o Chrome antes de habilitarlo), la tarjeta explica dónde está la opción en ese navegador. Firefox no instala páginas: se sugiere Chrome o Edge.
 - Al instalarse aparece "¡Listo, HaxMatch quedó instalada!"; abierta como app, la tarjeta no se muestra.
 - El manifiesto suma `id`, categorías y capturas (ancha para la compu, angostas para el celular), así la ventana de instalar muestra imágenes.
+
+## Dirección propia: haxmatch.com (15/10/2026)
+- Comprada en Cloudflare. `wrangler.jsonc` la conecta como dominio propio del worker (haxmatch.com y www.haxmatch.com); la de workers.dev sigue andando.
+- El worker atiende todas las páginas (menos `/assets/`) para mandar www a haxmatch.com.
+- La mudanza de la dirección vieja queda apagada (`MUDAR_DIRECCION: "no"`) hasta que Supabase, Kick y TikTok acepten la nueva. Con "si", workers.dev manda todo a haxmatch.com, menos `/api/`.
