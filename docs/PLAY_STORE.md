@@ -8,13 +8,13 @@ Los nombres de los botones de Play Console pueden variar un poco.
 
 ## Lo que ya está hecho
 
-- Página pública para pedir el borrado de la cuenta: `https://haxmatch.lauti.workers.dev/borrar-cuenta`.
-- Política de privacidad actualizada: `https://haxmatch.lauti.workers.dev/privacidad`.
+- Página pública para pedir el borrado de la cuenta: `https://haxmatch.com/borrar-cuenta`.
+- Política de privacidad actualizada: `https://haxmatch.com/privacidad`.
 - Imágenes de la ficha, en `docs/play/`: `icono-512.png`, `portada-1024x500.png` y seis capturas de celular. Se rehacen con `node scripts/capturas-play.mjs docs/play`.
 
 ## 1. Generar el paquete de Android
 
-1. Entrar a [pwabuilder.com](https://www.pwabuilder.com), pegar `https://haxmatch.lauti.workers.dev` y tocar **Start**.
+1. Entrar a [pwabuilder.com](https://www.pwabuilder.com), pegar `https://haxmatch.com` y tocar **Start**.
 2. Tocar **Package for stores** > **Android** > **Google Play**.
 3. Completar:
 
@@ -64,49 +64,54 @@ Las dos son públicas: se pueden pegar en el chat. Con eso se arma `public/.well
 | Campo | Qué poner |
 |---|---|
 | Nombre de la app | `HaxMatch` |
-| Descripción breve (78 de 80) | `Amistosos de HaxBall al toque: entrá a la cola y las salas te invitan a jugar.` |
+| Descripción breve (78 de 80) | `Amistosos de HaxBall al toque: entrá a la fila y las salas te invitan a jugar.` |
 | Ícono | `docs/play/icono-512.png` |
 | Gráfico de funciones | `docs/play/portada-1024x500.png` |
 | Capturas de teléfono | Las seis de `docs/play/`, en orden (1 a 6) |
 | Categoría | Entretenimiento |
 | Email de contacto | `lpatriciogauna@outlook.com` |
-| Sitio web | `https://haxmatch.lauti.workers.dev` |
+| Sitio web | `https://haxmatch.com` |
 
-Descripción completa (1368 de 4000):
+Descripción completa (1605 de 4000):
 
 ```
 HaxMatch es la forma más rápida de armar un amistoso de HaxBall.
 
-¿Querés jugar? Un toque y entrás a la cola. Las salas que necesitan jugadores te ven en la lista y te invitan. Aceptás, entrás a la sala y listo.
+¿Querés jugar? Un toque y entrás a la fila. Las salas que necesitan jugadores te ven en la lista y te invitan. Aceptás, entrás a la sala y listo.
 
 ¿Tenés una sala y te falta gente? Decí cuántos te faltan, qué posición y en qué cancha. Vas a ver quiénes están buscando partido y elegís a quién invitar.
 
 QUÉ PODÉS HACER
-• Entrar a la cola de un toque, sin formularios.
+• Entrar a la fila de un toque, sin formularios.
 • Abrir tu sala e invitar jugadores de la lista.
 • Buscar con amigos: se suman a tu búsqueda y entran juntos.
 • Recibir avisos cuando te invitan o cuando un amigo se pone a buscar.
 • Agregar amigos y ver quiénes están buscando ahora.
 • Sumar puntos y subir de nivel por cada amistoso jugado.
-• Mirar clips de la comunidad y compartir los tuyos vinculando tu cuenta de TikTok.
+• Chatear con la comunidad, con reportes y bloqueos.
+• Compartir tus jugadas pegando el link de TikTok o YouTube, y mirar los clips de los demás.
+• Ver quién está transmitiendo HaxBall en vivo por Kick.
+
+EN TU IDIOMA
+La app está en español, português e English, y elige sola según tu país.
 
 CÓMO FUNCIONA
-1. Entrás con tu cuenta de Discord.
-2. Elegís "Quiero jugar un amistoso" o "Necesito un jugador".
+1. Entrás con tu cuenta de Discord y elegís tu país.
+2. Tocás "Quiero jugar un amistoso" o "Necesito un jugador".
 3. Cuando hay partido, la app te muestra el nombre de la sala para buscarla en HaxBall.
 4. Jugás, confirmás el amistoso y sumás puntos.
 
 JUGÁ TRANQUILO
 Podés reportar o bloquear a cualquier jugador desde su perfil, y borrar tu cuenta cuando quieras.
 
-HaxMatch es un proyecto independiente de la comunidad. No está afiliado a HaxBall, Discord ni TikTok. El juego se juega en HaxBall, desde la computadora; HaxMatch sirve para encontrar con quién.
+HaxMatch es un proyecto independiente de la comunidad. No está afiliado a HaxBall, Discord, TikTok, YouTube ni Kick. El juego se juega en HaxBall, desde la computadora; HaxMatch sirve para encontrar con quién.
 ```
 
 ## 5. Formularios ("Contenido de la app")
 
 | Formulario | Respuesta |
 |---|---|
-| Política de privacidad | `https://haxmatch.lauti.workers.dev/privacidad` |
+| Política de privacidad | `https://haxmatch.com/privacidad` |
 | Anuncios | No contiene anuncios |
 | Acceso a la app | Todas las funciones requieren iniciar sesión. Ver abajo |
 | Público objetivo | 13 a 15, 16 a 17 y mayores de 18. Ninguna franja de menos de 13 |
@@ -133,7 +138,7 @@ Tap "Entrar con Discord" and sign in with the Discord account provided. On first
 
 - ¿La app recopila o comparte datos? Sí, recopila. No comparte con terceros (Supabase y Cloudflare son proveedores que trabajan para la app).
 - ¿Los datos viajan cifrados? Sí.
-- ¿Se puede pedir que se borren? Sí: `https://haxmatch.lauti.workers.dev/borrar-cuenta`
+- ¿Se puede pedir que se borren? Sí: `https://haxmatch.com/borrar-cuenta`
 
 | Tipo de dato | ¿Obligatorio? | Para qué |
 |---|---|---|
@@ -143,7 +148,7 @@ Tap "Entrar con Discord" and sign in with the Discord account provided. On first
 | Fotos (foto de perfil) | Opcional | Funciones de la app |
 | Otros mensajes dentro de la app | Sí | Funciones de la app |
 | Interacciones con la app (búsquedas, partidos, reacciones) | Sí | Funciones de la app |
-| Otro contenido generado por el usuario (nombre de la sala, reportes) | Opcional | Funciones de la app |
+| Otro contenido generado por el usuario (nombre de la sala, país, links de clips, reportes) | Opcional | Funciones de la app |
 | ID del dispositivo u otros (la suscripción de los avisos) | Opcional | Funciones de la app |
 
 Para todos: se recopilan, no se comparten y no se usan para publicidad.
@@ -173,5 +178,4 @@ Después: **Producción** > **Crear versión** > usar el mismo paquete > enviar.
 ## Más adelante
 
 - **Cambios en la app:** se publican en la web y aparecen solos. Solo hace falta subir un paquete nuevo si cambia el nombre, el ícono o la dirección.
-- **Dominio propio:** no hace falta dar de baja la app. Se publica el archivo de vinculación en el dominio nuevo y se sube un paquete que apunte ahí. El costo es para los usuarios: tienen que volver a entrar y a activar los avisos. Además hay que actualizar la dirección en Discord, Supabase y TikTok.
 - **Pasar la app a otra cuenta de Google Play:** se puede pedir la transferencia desde la consola.
