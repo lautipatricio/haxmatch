@@ -233,7 +233,7 @@ export function aDondeMudar(request, env) {
 
 // La app de Google Play (com.haxmatch.app) prueba con este archivo que la web es suya: así abre
 // a pantalla completa, sin la barra de la dirección. Las huellas son públicas. La segunda huella
-// (la de la firma de Google Play) se agrega cuando Play Console la muestre.
+// es la de la firma de Google Play.
 const ASSETLINKS = [{
   relation: ['delegate_permission/common.handle_all_urls'],
   target: {
@@ -241,6 +241,8 @@ const ASSETLINKS = [{
     package_name: 'com.haxmatch.app',
     sha256_cert_fingerprints: [
       'F0:3C:F2:29:AB:54:EA:83:FD:96:95:66:79:8E:44:8A:E1:51:47:C2:2A:EF:C9:69:D3:74:30:89:D2:79:E9:5B',
+      // La firma de Google Play (Play Console > Firma de apps).
+      'C2:90:DE:55:73:20:63:31:D4:EF:2C:1C:46:0E:1D:FD:3D:11:74:B4:65:EA:AF:33:C5:35:E1:69:EB:04:24:21',
     ],
   },
 }]
