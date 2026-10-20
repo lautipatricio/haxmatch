@@ -231,11 +231,28 @@ export function aDondeMudar(request, env) {
   return principal.origin + url.pathname + url.search
 }
 
+// La app de Google Play (com.haxmatch.app) prueba con este archivo que la web es suya: así abre
+// a pantalla completa, sin la barra de la dirección. Las huellas son públicas. La segunda huella
+// (la de la firma de Google Play) se agrega cuando Play Console la muestre.
+const ASSETLINKS = [{
+  relation: ['delegate_permission/common.handle_all_urls'],
+  target: {
+    namespace: 'android_app',
+    package_name: 'com.haxmatch.app',
+    sha256_cert_fingerprints: [
+      'F0:3C:F2:29:AB:54:EA:83:FD:96:95:66:79:8E:44:8A:E1:51:47:C2:2A:EF:C9:69:D3:74:30:89:D2:79:E9:5B',
+    ],
+  },
+}]
+
 export default {
   async fetch(request, env, ctx) {
     const mudanza = aDondeMudar(request, env)
     if (mudanza) return Response.redirect(mudanza, 301)
     const { pathname } = new URL(request.url)
+    if (pathname === '/.well-known/assetlinks.json') {
+      return new Response(JSON.stringify(ASSETLINKS), { headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=3600', 'access-control-allow-origin': '*' } })
+    }
     if (pathname === '/api/push/clave' && request.method === 'GET') {
       // La clave pública no es secreta: la app la necesita para activar los avisos en cada celular.
       return json({ clave: configurado(env) ? env.VAPID_PUBLICA : null })

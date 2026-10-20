@@ -8,6 +8,8 @@ Los nombres de los botones de Play Console pueden variar un poco.
 
 ## Lo que ya está hecho
 
+- Vinculación web ↔ app: `https://haxmatch.com/.well-known/assetlinks.json` (lo sirve `worker/index.js`) con la huella del paquete de PWABuilder. Falta sumar la de la firma de Google Play cuando la consola la muestre.
+
 - Página pública para pedir el borrado de la cuenta: `https://haxmatch.com/borrar-cuenta`.
 - Política de privacidad actualizada: `https://haxmatch.com/privacidad`.
 - Imágenes de la ficha, en `docs/play/`: `icono-512.png`, `portada-1024x500.png` y seis capturas de celular. Se rehacen con `node scripts/capturas-play.mjs docs/play`.
