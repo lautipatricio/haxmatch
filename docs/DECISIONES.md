@@ -527,3 +527,8 @@ Mientras TikTok no apruebe la vinculación (y también después), los clips se p
 - La mudanza de la dirección vieja queda apagada (`MUDAR_DIRECCION: "no"`) hasta que Supabase, Kick y TikTok acepten la nueva. Con "si", workers.dev manda todo a haxmatch.com, menos `/api/`.
 - 15/10: Supabase (Site URL y Redirect URLs) y Kick ya aceptan haxmatch.com, así que la mudanza quedó prendida (`MUDAR_DIRECCION: "si"`). TikTok sigue con la dirección vieja hasta que aprueben la revisión; sus `/api/` no se mudan.
 - La pantalla de entrar y la de registro, en la compu, ya no son una columna de celular: logo y botones a la izquierda, captura de la app a la derecha, y "Qué es HaxMatch" en dos columnas. Se actualizó ese texto (fila, clips por link).
+
+## TikTok aprobado (20/10/2026)
+- `TIKTOK_ABIERTO = true`: vuelve "Vincular TikTok" en Perfil y en Clips > Mis clips. Convive con subir clips por link.
+- TikTok tiene registrada la vuelta en la dirección vieja (`haxmatch.lauti.workers.dev/api/tiktok/volver`) y cambiarla pide otra revisión. Por eso, desde haxmatch.com el navegador pasa por la dirección vieja con un formulario (`POST /api/tiktok/ir`) que deja ahí el código de la vinculación y sigue a TikTok. Solo se acepta si el formulario sale de haxmatch.com (cabecera `Origin`), así otra página no puede iniciar una vinculación a nombre de nadie. Al terminar vuelve a haxmatch.com. La dirección vieja no muda nada de `/api/`, así que esto sigue andando con la mudanza prendida.
+- Cuando TikTok acepte haxmatch.com como vuelta, alcanza con borrar `TIKTOK_VUELTA` de `wrangler.jsonc`.

@@ -16,7 +16,7 @@
 
 import { entrar as kickEntrar, kickConfigurado, revisarVivos, volver as kickVolver } from './kick.js'
 import { abrirLinkClip } from './clips.js'
-import { entrar, revocar, sincronizar, tiktokConfigurado, volver } from './tiktok.js'
+import { entrar, ir, revocar, sincronizar, tiktokConfigurado, volver } from './tiktok.js'
 
 const txt = new TextEncoder()
 const SERVICIOS = /^https:\/\/(fcm\.googleapis\.com|[a-z0-9-]+\.push\.apple\.com|updates\.push\.services\.mozilla\.com|[a-z0-9-]+\.notify\.windows\.com)\//
@@ -244,6 +244,7 @@ export default {
     if (pathname === '/api/push/configurar' && request.method === 'GET') return paginaConfigurar(request, env)
     if (pathname === '/api/tiktok/estado' && request.method === 'GET') return json({ configurado: tiktokConfigurado(env) })
     if (pathname === '/api/tiktok/entrar' && request.method === 'POST') return entrar(request, env)
+    if (pathname === '/api/tiktok/ir' && request.method === 'POST') return ir(request, env)
     if (pathname === '/api/tiktok/volver' && request.method === 'GET') return volver(request, env)
     if (pathname === '/api/tiktok/sincronizar' && request.method === 'POST') return sincronizar(request, env, ctx)
     if (pathname === '/api/tiktok/revocar' && request.method === 'POST') return revocar(request, env, ctx)

@@ -115,10 +115,13 @@ export function Ingresar() {
               Pegás el link de tu jugada de TikTok o YouTube y aparece al instante en la sección Clips, para que la vea
               y reaccione el resto de la comunidad.
             </p>
+            <p>
+              Y si vinculás tu cuenta de TikTok, tus videos públicos con <strong>#haxball</strong> o <strong>#haxmatch</strong> aparecen solos.
+            </p>
             <ul className="steps m">
+              <li>Solo leemos tu nombre de TikTok y la lista de tus videos públicos.</li>
               <li>Los videos se reproducen desde TikTok o YouTube: no los copiamos ni publicamos nada en tu cuenta.</li>
-              <li>Tocando el nombre de quien subió un clip, ves su perfil y lo podés agregar a amigos.</li>
-              <li>Podés borrar tus clips cuando quieras.</li>
+              <li>Podés borrar tus clips, ocultar un video o desvincular TikTok cuando quieras.</li>
             </ul>
           </section>
 

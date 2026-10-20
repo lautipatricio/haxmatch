@@ -43,3 +43,6 @@
 @Podés borrar tus clips cuando quieras.|Você pode apagar seus clipes quando quiser.|You can delete your clips anytime.
 @Quedás en la fila, a la vista de las salas a las que les falta gente.|Você entra na fila, à vista das salas que precisam de gente.|You join the queue, where rooms that need players can see you.
 @Tocando el nombre de quien subió un clip, ves su perfil y lo podés agregar a amigos.|Tocando no nome de quem enviou um clipe, você vê o perfil e pode adicionar como amigo.|Tap the name of whoever posted a clip to see their profile and add them as a friend.
+@Podés borrar tus clips, ocultar un video o desvincular TikTok cuando quieras.|Você pode apagar seus clipes, ocultar um vídeo ou desvincular o TikTok quando quiser.|You can delete your clips, hide a video or unlink TikTok anytime.
+@Y si vinculás tu cuenta de TikTok, tus videos públicos con|E se você vincular sua conta do TikTok, seus vídeos públicos com|And if you link your TikTok account, your public videos with
+@aparecen solos.|aparecem sozinhos.|show up on their own.

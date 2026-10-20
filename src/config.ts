@@ -43,5 +43,5 @@ export const APOYO_URL: string = ''
  * Mientras tanto, en la app publicada el botón dice "Pronto". Cuando TikTok la apruebe,
  * poné esto en true.
  */
-export const TIKTOK_ABIERTO: boolean = false
+export const TIKTOK_ABIERTO: boolean = true
 export const TIKTOK_PRONTO: boolean = REAL_PUBLICADA && !TIKTOK_ABIERTO

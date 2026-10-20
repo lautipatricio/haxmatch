@@ -34,6 +34,8 @@
     "SUPABASE_KEY": "sb_publishable_RDSaEKcPGpviQsKr0ks2-w_j5HCHyTW",
     // Dirección principal. Con MUDAR_DIRECCION en "si", la de workers.dev manda todo para acá.
     "DIRECCION": "https://haxmatch.com",
-    "MUDAR_DIRECCION": "si"
+    "MUDAR_DIRECCION": "si",
+    // La dirección que TikTok tiene registrada para volver de la vinculación (worker/tiktok.js).
+    "TIKTOK_VUELTA": "https://haxmatch.lauti.workers.dev"
   }
 }

@@ -173,15 +173,43 @@ export async function entrar(request, env) {
 
   const inicio = await base(env, 'tiktok_empezar', { p_user: usuario })
   if (!inicio.ok || typeof inicio.dato !== 'string') return json({ error: 'No pudimos empezar la vinculación. Probá de nuevo.' }, 502)
+  // TikTok solo acepta volver a la dirección que se le registró (TIKTOK_VUELTA). Si la app está
+  // en otra, el navegador pasa primero por esa dirección (/api/tiktok/ir) para dejar ahí el código.
+  const vuelta = vueltaTikTok(env, origin)
+  if (vuelta !== origin) return json({ ir: `${vuelta}/api/tiktok/ir`, state: inicio.dato })
+  return json({ url: autorizar(env, vuelta, inicio.dato) }, 200, { 'set-cookie': galletaTikTok(inicio.dato) })
+}
+
+const vueltaTikTok = (env, origin) => (env.TIKTOK_VUELTA ? new URL(env.TIKTOK_VUELTA).origin : origin)
+const galletaTikTok = (state) => `${COOKIE}=${state}; Path=/api/tiktok; Max-Age=900; HttpOnly; Secure; SameSite=Lax`
+
+function autorizar(env, vuelta, state) {
   const destino = new URL(AUTORIZAR)
   destino.searchParams.set('client_key', llave(env))
   destino.searchParams.set('response_type', 'code')
   destino.searchParams.set('scope', PERMISOS)
-  destino.searchParams.set('redirect_uri', `${origin}/api/tiktok/volver`)
-  destino.searchParams.set('state', inicio.dato)
-  // El mismo código queda en este navegador: al volver de TikTok tienen que coincidir.
-  return json({ url: destino.toString() }, 200, {
-    'set-cookie': `${COOKIE}=${inicio.dato}; Path=/api/tiktok; Max-Age=900; HttpOnly; Secure; SameSite=Lax`,
+  destino.searchParams.set('redirect_uri', `${vuelta}/api/tiktok/volver`)
+  destino.searchParams.set('state', state)
+  return destino.toString()
+}
+
+/**
+ * 1 bis. La app (en la dirección principal) manda el navegador acá con un formulario.
+ * Solo se acepta si el formulario sale de la propia app: el navegador lo dice en "Origin" y
+ * otra página no lo puede falsificar. Se deja el código en este navegador y se sigue a TikTok.
+ */
+export async function ir(request, env) {
+  const url = new URL(request.url)
+  const volverALaApp = (resultado) => Response.redirect(`${env.DIRECCION || url.origin}/clips/mis-videos?tiktok=${resultado}`, 303)
+  if (!tiktokConfigurado(env)) return volverALaApp('error')
+  const principal = env.DIRECCION ? new URL(env.DIRECCION).origin : null
+  if (!principal || request.headers.get('origin') !== principal) return json({ error: 'No autorizado' }, 403)
+  let state = ''
+  try { state = String((await request.formData()).get('state') ?? '') } catch { state = '' }
+  if (!/^[0-9a-f]{64}$/.test(state)) return volverALaApp('vencido')
+  return new Response(null, {
+    status: 303,
+    headers: { location: autorizar(env, url.origin, state), 'set-cookie': galletaTikTok(state), 'cache-control': 'no-store' },
   })
 }
 
@@ -192,7 +220,7 @@ export async function volver(request, env) {
   const terminar = (resultado) => new Response(null, {
     status: 302,
     headers: {
-      location: `${url.origin}/clips/mis-videos?tiktok=${resultado}`,
+      location: `${env.DIRECCION || url.origin}/clips/mis-videos?tiktok=${resultado}`,
       'set-cookie': `${COOKIE}=; Path=/api/tiktok; Max-Age=0; HttpOnly; Secure; SameSite=Lax`,
       'cache-control': 'no-store',
     },

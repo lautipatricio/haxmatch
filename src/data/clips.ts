@@ -120,7 +120,21 @@ export async function irATikTok(): Promise<string | null> {
   if (!sesion) return 'Primero entrá con Discord.'
   try {
     const r = await fetch('/api/tiktok/entrar', { method: 'POST', headers: { Authorization: `Bearer ${sesion}` }, cache: 'no-store' })
-    const d = await r.json() as { url?: string; error?: string }
+    const d = await r.json() as { url?: string; ir?: string; state?: string; error?: string }
+    // La vuelta de TikTok está registrada en otra dirección: se pasa por ahí con un formulario.
+    if (r.ok && d.ir && d.state && /^https:\/\/[^/]+\/api\/tiktok\/ir$/.test(d.ir)) {
+      const f = document.createElement('form')
+      f.method = 'POST'
+      f.action = d.ir
+      const campo = document.createElement('input')
+      campo.type = 'hidden'
+      campo.name = 'state'
+      campo.value = d.state
+      f.appendChild(campo)
+      document.body.appendChild(f)
+      f.submit()
+      return null
+    }
     if (!r.ok || !d.url || !d.url.startsWith('https://www.tiktok.com/')) return d.error ?? 'No pudimos empezar la vinculación. Probá de nuevo.'
     window.location.assign(d.url)
     return null
