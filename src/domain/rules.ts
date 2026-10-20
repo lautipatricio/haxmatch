@@ -222,7 +222,7 @@ export function linkDeSala(texto: string): { link: string | null } | { error: st
   return { link: `https://www.haxball.com/play?c=${m[1]}${m[2] ?? ''}` }
 }
 
-export type PlataformaClip = 'tiktok' | 'youtube'
+export type PlataformaClip = 'tiktok'
 export type LinkClip =
   | { plataforma: PlataformaClip; videoId: string; enlace: string }
   /** Link corto de TikTok (vm.tiktok.com, tiktok.com/t/...): hay que abrirlo para saber qué video es. */
@@ -230,7 +230,7 @@ export type LinkClip =
   | { error: string }
 
 /**
- * Link de un clip de TikTok o de YouTube, en su forma limpia (igual que en la base, paso 13).
+ * Link de un clip de TikTok, en su forma limpia (igual que en la base, paso 15).
  * Los links cortos de TikTok se devuelven aparte: los abre la web antes de guardarlos.
  */
 export function linkDeClip(texto: string): LinkClip {
@@ -241,8 +241,6 @@ export function linkDeClip(texto: string): LinkClip {
   if (/^(?:https?:\/\/)?(?:(?:vm|vt)\.tiktok\.com\/[A-Za-z0-9]{5,20}|(?:www\.|m\.)?tiktok\.com\/t\/[A-Za-z0-9]{5,20})\/?(?:[?#].*)?$/i.test(v)) {
     return { corto: v.startsWith('http') ? v.replace(/^http:/, 'https:') : `https://${v}` }
   }
-  m = /^(?:https?:\/\/)?(?:www\.|m\.)?youtube\.com\/(?:shorts\/|watch\?(?:[^#]*&)?v=|live\/)([A-Za-z0-9_-]{11})(?:[&?/#].*)?$/i.exec(v)
-    ?? /^(?:https?:\/\/)?youtu\.be\/([A-Za-z0-9_-]{11})(?:[?/#].*)?$/i.exec(v)
-  if (m) return { plataforma: 'youtube', videoId: m[1], enlace: `https://youtu.be/${m[1]}` }
-  return { error: 'Ese link no es de un video de TikTok o de YouTube. Abrí el video y copiá su link.' }
+  if (/(youtube\.com|youtu\.be)/i.test(v)) return { error: 'Por ahora solo se pueden subir clips de TikTok.' }
+  return { error: 'Ese link no es de un video de TikTok. Abrí el video y copiá su link.' }
 }

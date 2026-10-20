@@ -1,5 +1,5 @@
 -- HaxMatch · Paso 13: clips por link, con aprobación
--- Ojo: si ya corriste el paso 14, después de volver a correr este, corré también el 14.
+-- Ojo: si ya corriste los pasos 14 y 15, después de volver a correr este, corré también el 14 y el 15.
 --
 -- Va después de los pasos 1 a 12. Se puede correr de nuevo sin romper nada.
 --

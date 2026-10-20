@@ -532,3 +532,7 @@ Mientras TikTok no apruebe la vinculación (y también después), los clips se p
 - `TIKTOK_ABIERTO = true`: vuelve "Vincular TikTok" en Perfil y en Clips > Mis clips. Convive con subir clips por link.
 - TikTok tiene registrada la vuelta en la dirección vieja (`haxmatch.lauti.workers.dev/api/tiktok/volver`) y cambiarla pide otra revisión. Por eso, desde haxmatch.com el navegador pasa por la dirección vieja con un formulario (`POST /api/tiktok/ir`) que deja ahí el código de la vinculación y sigue a TikTok. Solo se acepta si el formulario sale de haxmatch.com (cabecera `Origin`), así otra página no puede iniciar una vinculación a nombre de nadie. Al terminar vuelve a haxmatch.com. La dirección vieja no muda nada de `/api/`, así que esto sigue andando con la mudanza prendida.
 - Cuando TikTok acepte haxmatch.com como vuelta, alcanza con borrar `TIKTOK_VUELTA` de `wrangler.jsonc`.
+
+## Clips: solo TikTok (20/10/2026)
+- YouTube sale de la app. Las cuentas que quedan son Discord, TikTok y Kick. Se quitó la fila de YouTube del Perfil, el reproductor de YouTube y toda mención en los textos, los Términos y la Política de privacidad (vigentes desde el 20/10).
+- Paso 15 (`supabase/15_solo_tiktok.sql`): `subir_clip` acepta solo links de TikTok; con uno de YouTube responde "Por ahora solo se pueden subir clips de TikTok.". Borra los clips de YouTube que había. La app, además, no muestra ningún clip que no sea de TikTok aunque la base todavía no tenga el paso 15.

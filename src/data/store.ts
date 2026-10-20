@@ -1838,7 +1838,7 @@ export const useStore = create<Store>()((set, get) => {
     const s = get()
     const ahora = s.ahora()
     const todos = [...s.misLinks, ...s.reels.filter((x) => x.origen === 'link')]
-    if (todos.some((x) => ('videoId' in x ? x.videoId : x.tiktokId ?? x.youtubeId) === l.videoId)) return 'Ya subiste ese clip'
+    if (todos.some((x) => ('videoId' in x ? x.videoId : x.tiktokId) === l.videoId)) return 'Ya subiste ese clip'
     const c: ClipLink = { id: id('c'), userId: YO, plataforma: l.plataforma, videoId: l.videoId, enlace: l.enlace, titulo: t, estado: 'aprobado', motivo: null, creadoAt: ahora, revisadoAt: ahora }
     set({
       misLinks: [c, ...s.misLinks],

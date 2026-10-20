@@ -540,11 +540,6 @@ export function Perfil() {
                 : <Link className={`btn${s.tiktok ? ' btn--sec' : ''}`} to="/clips/mis-videos">{s.tiktok ? 'Mis videos' : 'Vincular'}</Link>}
             </div>
             <CuentaKick />
-            <div className="card card--row">
-              <Avatar nombre="YouTube" />
-              <div className="grow"><div className="strong">YouTube</div><div className="m">Subí tus Shorts pegando el link</div></div>
-              <Link className="btn btn--sec" to="/clips?subir=1">Subir clip</Link>
-            </div>
           </div>
 
           <div className="lista">

@@ -7,7 +7,7 @@ import { YO, buscarMia, feed, misPuntos, nombreDe, useStore } from '../data/stor
 import { nivelDe } from '../domain/rules'
 import type { Reel } from '../domain/types'
 import { Avatar, BannerBusqueda, Empty, Head, Icon, Portada, Sheet, TabBar, hace, useAhora } from '../ui'
-import { MisClipsSubidos, ReproductorYouTube, SubirClip } from './ClipsLink'
+import { MisClipsSubidos, SubirClip } from './ClipsLink'
 
 const TIKTOK = 'https://www.tiktok.com'
 // Reproductor de TikTok sin sus textos, sus videos relacionados ni su barra de controles:
@@ -311,7 +311,7 @@ export function Clips() {
       <div className="screen">
         <Head title="Clips">{verMisClips && <Link className="btn btn--sec" to="/clips/mis-videos">Mis clips</Link>}</Head>
         <BannerBusqueda detalle="Te avisamos cuando encontremos una coincidencia" />
-        <Empty title="Sin clips todavía" text="Pegá el link de un clip tuyo de TikTok o YouTube y aparece acá para toda la comunidad.">
+        <Empty title="Sin clips todavía" text="Pegá el link de un clip tuyo de TikTok y aparece acá para toda la comunidad.">
           <button className="btn" onClick={() => setSubir(true)}>Subir clip</button>
         </Empty>
         {hojaSubir}
@@ -358,21 +358,19 @@ export function Clips() {
                     <Icon name="corazon" size={20} fill={reaccione} />{r.reacciones + (reaccione ? 1 : 0)}
                   </button>
                   <span className="m cut grow">{detalle}</span>
-                  {r.enlace && <a className="reel__enlace" href={r.enlace} target="_blank" rel="noopener noreferrer">{r.youtubeId ? 'Ver en YouTube' : 'Ver en TikTok'}</a>}
+                  {r.enlace && <a className="reel__enlace" href={r.enlace} target="_blank" rel="noopener noreferrer">Ver en TikTok</a>}
                 </div>
               </div>
             )
             return (
-              <article key={r.id} data-id={r.id} className={`reel${r.tiktokId || r.youtubeId ? ' reel--video' : ''}`} style={{ '--tinte': autor?.color } as CSSProperties}
+              <article key={r.id} data-id={r.id} className={`reel${r.tiktokId ? ' reel--video' : ''}`} style={{ '--tinte': autor?.color } as CSSProperties}
                 aria-label={`${r.titulo || 'Clip'}, de ${nombreDe(s, r.userId)}`}>
-                {r.tiktokId || r.youtubeId ? (
+                {r.tiktokId ? (
                   <>
                     {/* Solo el clip en pantalla carga el reproductor; los demás muestran su miniatura. */}
                     {i !== activo
-                      ? <div className="reel__video reel__video--espera"><Portada src={r.portada ?? (r.youtubeId ? `https://i.ytimg.com/vi/${r.youtubeId}/hqdefault.jpg` : undefined)} /><span><Icon name="play" size={40} /></span></div>
-                      : r.youtubeId
-                        ? <ReproductorYouTube key={r.youtubeId} id={r.youtubeId} titulo={r.titulo} />
-                        : <Reproductor key={r.tiktokId} id={r.tiktokId!} titulo={r.titulo} />}
+                      ? <div className="reel__video reel__video--espera"><Portada src={r.portada} /><span><Icon name="play" size={40} /></span></div>
+                      : <Reproductor key={r.tiktokId} id={r.tiktokId!} titulo={r.titulo} />}
                     {info}
                   </>
                 ) : (

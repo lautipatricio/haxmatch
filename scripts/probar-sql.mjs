@@ -1396,17 +1396,18 @@ await falla('un visitante no puede pedirlo', () => x.rpc(null, 'cuantos_jugadore
 {
 titulo('Clips por link (se publican solos)')
 const TT = 'https://www.tiktok.com/@ana.hax/video/7412345678901234567?is_from_webapp=1'
-const YT = 'https://youtube.com/shorts/dQw4w9WgXcQ?si=abc'
-await fallaPor('rechaza un link que no es de TikTok ni de YouTube', /no es de un video/, () => x.rpc(caro, 'subir_clip', { p_enlace: 'https://ejemplo.com/video/1' }))
+const TT2 = 'm.tiktok.com/@ana.hax/video/7412345678901234568?lang=es'
+await fallaPor('rechaza un link que no es de TikTok', /no es de un video de TikTok/, () => x.rpc(caro, 'subir_clip', { p_enlace: 'https://ejemplo.com/video/1' }))
+await fallaPor('y uno de YouTube, con su mensaje', /solo se pueden subir clips de TikTok/, () => x.rpc(caro, 'subir_clip', { p_enlace: 'https://youtube.com/shorts/dQw4w9WgXcQ?si=abc' }))
 const c1 = await x.rpc(caro, 'subir_clip', { p_enlace: TT })
 ok(c1.estado === 'aprobado' && c1.plataforma === 'tiktok' && c1.video_id === '7412345678901234567', 'un link de TikTok válido se publica en el momento')
 ok(c1.enlace === 'https://www.tiktok.com/@ana.hax/video/7412345678901234567' && c1.titulo === '', 'guarda el link limpio, sin título')
 const puntosReel = (await x.admin(`select puntos from public.puntos where user_id = $1 and tipo = 'reel' and referencia = $2`, [caro.id, `link:${c1.id}`]))[0]
 ok(puntosReel && puntosReel.puntos >= 0, `suma como un reel (${puntosReel?.puntos} puntos)`)
-const c2 = await x.rpc(caro, 'subir_clip', { p_enlace: YT })
-ok(c2.plataforma === 'youtube' && c2.video_id === 'dQw4w9WgXcQ' && c2.enlace === 'https://youtu.be/dQw4w9WgXcQ', 'un Short de YouTube también')
-ok((await x.rpc(caro, 'subir_clip', { p_enlace: 'https://www.youtube.com/watch?list=x&v=aBcDeFgHiJk' })).video_id === 'aBcDeFgHiJk', 'y un video común de YouTube')
-await fallaPor('el mismo video no se sube dos veces', /Ya subiste/, () => x.rpc(caro, 'subir_clip', { p_enlace: 'https://youtu.be/dQw4w9WgXcQ' }))
+const c2 = await x.rpc(caro, 'subir_clip', { p_enlace: TT2 })
+ok(c2.plataforma === 'tiktok' && c2.enlace === 'https://www.tiktok.com/@ana.hax/video/7412345678901234568', 'acepta el link del celular y lo deja limpio')
+ok((await x.rpc(caro, 'subir_clip', { p_enlace: 'https://www.tiktok.com/@ana.hax/video/7412345678901234569' })).video_id === '7412345678901234569', 'y otro video más')
+await fallaPor('el mismo video no se sube dos veces', /Ya subiste/, () => x.rpc(caro, 'subir_clip', { p_enlace: 'https://www.tiktok.com/@ana.hax/video/7412345678901234568' }))
 await fallaPor('ni lo puede subir otro', /lo subió otro/, () => x.rpc(dani, 'subir_clip', { p_enlace: TT }))
 const d0 = await x.rpc(dani, 'clips_link')
 ok(d0.feed.length === 3 && d0.recientes === null, 'los demás los ven en Clips (y no ven la lista de quien administra)')
@@ -1437,7 +1438,7 @@ await x.rpc(caro, 'borrar_clip', { p_id: c2.id })
 ok((await x.rpc(caro, 'clips_link')).mios.length === 2, 'el dueño puede borrar los suyos')
 
 await x.admin(`update public.profiles set suspendido_hasta = now() + interval '1 day' where id = $1`, [dani.id])
-await fallaPor('una cuenta suspendida no puede subir', /suspendida/, () => x.rpc(dani, 'subir_clip', { p_enlace: 'https://youtu.be/yyyyyyyyyyy' }))
+await fallaPor('una cuenta suspendida no puede subir', /suspendida/, () => x.rpc(dani, 'subir_clip', { p_enlace: 'https://www.tiktok.com/@dani/video/99999999' }))
 await x.admin(`update public.profiles set suspendido_hasta = null where id = $1`, [dani.id])
 await falla('un visitante no puede ver los clips', () => x.rpc(null, 'clips_link'))
 await x.admin('delete from public.admins where user_id = $1', [ana.id])

@@ -150,8 +150,6 @@ export interface Reel {
   formato?: Formato
   /** Número del video en TikTok: con eso se arma el reproductor. */
   tiktokId?: string
-  /** Número del video en YouTube (clips subidos por link). */
-  youtubeId?: string
   /** Dirección del video en TikTok. */
   enlace?: string
   duracion?: number
@@ -215,11 +213,11 @@ export interface Reporte {
   at: number
 }
 
-/** Clip subido pegando un link de TikTok o YouTube. Lo tiene que aprobar quien administra. */
+/** Clip subido pegando un link de TikTok. Se publica solo; quien administra lo puede quitar. */
 export interface ClipLink {
   id: string
   userId: string
-  plataforma: 'tiktok' | 'youtube'
+  plataforma: 'tiktok'
   videoId: string
   enlace: string
   titulo: string

@@ -173,7 +173,7 @@ export interface LinksLocal {
 }
 
 const aLink = (f: FilaLink, id: (u: string) => string): ClipLink => ({
-  id: f.id, userId: id(f.user_id), plataforma: f.plataforma, videoId: f.video_id, enlace: f.enlace, titulo: f.titulo,
+  id: f.id, userId: id(f.user_id), plataforma: 'tiktok', videoId: f.video_id, enlace: f.enlace, titulo: f.titulo,
   estado: f.estado, motivo: f.motivo, creadoAt: Date.parse(f.creado_at), revisadoAt: f.revisado_at ? Date.parse(f.revisado_at) : null,
 })
 
@@ -182,7 +182,7 @@ export function reelDeLink(c: ClipLink, reacciones: number): Reel {
   return {
     id: c.id, userId: c.userId, origen: 'link', titulo: c.titulo, hashtags: [], visible: true,
     publicadoAt: c.revisadoAt ?? c.creadoAt, reacciones, enlace: c.enlace,
-    ...(c.plataforma === 'tiktok' ? { tiktokId: c.videoId } : { youtubeId: c.videoId }),
+    tiktokId: c.videoId,
   }
 }
 
@@ -198,7 +198,9 @@ export async function leerLinks(miId: string): Promise<LinksLocal | null> {
       : null
     if (f.user_id !== miId) usuarios[f.user_id] = { id: f.user_id, username: f.nick, discord: f.username, nivel: typeof f.nivel === 'number' ? f.nivel : null, color: colorDe(f.user_id), foto }
   }
-  const e = r.data
+  // Solo TikTok: si quedara algún clip de otra plataforma (antes del paso 15), no se muestra.
+  const soloTikTok = (l?: FilaLink[] | null) => l ? l.filter((f) => f.plataforma === 'tiktok') : l
+  const e = { feed: soloTikTok(r.data.feed), mios: soloTikTok(r.data.mios), recientes: soloTikTok(r.data.recientes) }
   for (const f of [...(e.feed ?? []), ...(e.recientes ?? [])]) anotar(f)
   return {
     // Como en los de TikTok, la reacción propia se suma en pantalla.

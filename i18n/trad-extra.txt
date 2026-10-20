@@ -46,3 +46,10 @@
 @Podés borrar tus clips, ocultar un video o desvincular TikTok cuando quieras.|Você pode apagar seus clipes, ocultar um vídeo ou desvincular o TikTok quando quiser.|You can delete your clips, hide a video or unlink TikTok anytime.
 @Y si vinculás tu cuenta de TikTok, tus videos públicos con|E se você vincular sua conta do TikTok, seus vídeos públicos com|And if you link your TikTok account, your public videos with
 @aparecen solos.|aparecem sozinhos.|show up on their own.
+@Clip de TikTok|Clipe do TikTok|TikTok clip
+@Ese link no es de un video de TikTok. Abrí el video y copiá su link.|Esse link não é de um vídeo do TikTok. Abra o vídeo e copie o link.|That link isn't a TikTok video. Open the video and copy its link.
+@Pegá el link de un clip tuyo de TikTok y aparece acá para toda la comunidad.|Cole o link de um clipe seu do TikTok e ele aparece aqui para toda a comunidade.|Paste the link to one of your TikTok clips and it shows up here for the whole community.
+@Pegá el link de un video público tuyo de TikTok y aparece en Clips al instante.|Cole o link de um vídeo público seu do TikTok e ele aparece em Clipes na hora.|Paste the link to one of your public TikTok videos and it shows up in Clips right away.
+@Pegá el link de un video tuyo de TikTok y aparece en Clips al instante.|Cole o link de um vídeo seu do TikTok e ele aparece em Clipes na hora.|Paste the link to one of your TikTok videos and it shows up in Clips right away.
+@Pegás el link de tu jugada de TikTok y aparece al instante en la sección Clips, para que la vea y reaccione el resto de la comunidad.|Cole o link do seu lance do TikTok e ele aparece na hora na seção Clipes, para o resto da comunidade ver e reagir.|Paste the link to your TikTok highlight and it shows up right away in Clips, for the rest of the community to watch and react.
+@Por ahora solo se pueden subir clips de TikTok.|Por enquanto só dá para enviar clipes do TikTok.|For now, only TikTok clips can be posted.

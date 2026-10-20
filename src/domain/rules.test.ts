@@ -169,12 +169,9 @@ describe('linkDeClip', () => {
     expect(linkDeClip('https://vm.tiktok.com/ZMabc123/')).toEqual({ corto: 'https://vm.tiktok.com/ZMabc123/' })
     expect(linkDeClip('tiktok.com/t/ZTabc12345')).toEqual({ corto: 'https://tiktok.com/t/ZTabc12345' })
   })
-  it('lee Shorts, videos comunes y links cortos de YouTube', () => {
-    const r = { plataforma: 'youtube', videoId: 'dQw4w9WgXcQ', enlace: 'https://youtu.be/dQw4w9WgXcQ' }
-    expect(linkDeClip('https://youtube.com/shorts/dQw4w9WgXcQ?si=abc')).toEqual(r)
-    expect(linkDeClip('https://www.youtube.com/watch?list=x&v=dQw4w9WgXcQ&t=3')).toEqual(r)
-    expect(linkDeClip('youtu.be/dQw4w9WgXcQ?si=1')).toEqual(r)
-    expect(linkDeClip('https://m.youtube.com/watch?v=dQw4w9WgXcQ')).toEqual(r)
+  it('no acepta YouTube: los clips son solo de TikTok', () => {
+    expect(linkDeClip('https://youtube.com/shorts/dQw4w9WgXcQ?si=abc')).toEqual({ error: 'Por ahora solo se pueden subir clips de TikTok.' })
+    expect(linkDeClip('youtu.be/dQw4w9WgXcQ?si=1')).toEqual({ error: 'Por ahora solo se pueden subir clips de TikTok.' })
   })
   it('rechaza lo demás', () => {
     expect(linkDeClip('')).toHaveProperty('error')

@@ -112,7 +112,7 @@ export function Ingresar() {
           <section>
             <h2 className="h">Clips de la comunidad</h2>
             <p>
-              Pegás el link de tu jugada de TikTok o YouTube y aparece al instante en la sección Clips, para que la vea
+              Pegás el link de tu jugada de TikTok y aparece al instante en la sección Clips, para que la vea
               y reaccione el resto de la comunidad.
             </p>
             <p>
@@ -120,7 +120,7 @@ export function Ingresar() {
             </p>
             <ul className="steps m">
               <li>Solo leemos tu nombre de TikTok y la lista de tus videos públicos.</li>
-              <li>Los videos se reproducen desde TikTok o YouTube: no los copiamos ni publicamos nada en tu cuenta.</li>
+              <li>Los videos se reproducen desde TikTok: no los copiamos ni publicamos nada en tu cuenta.</li>
               <li>Podés borrar tus clips, ocultar un video o desvincular TikTok cuando quieras.</li>
             </ul>
           </section>

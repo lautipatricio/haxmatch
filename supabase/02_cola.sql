@@ -1,5 +1,5 @@
 -- HaxMatch · Paso 2: cola, grupos, salas y matches entre usuarios reales
--- Ojo: si ya corriste el paso 14, después de volver a correr este, corré también el 14.
+-- Ojo: si ya corriste los pasos 14 y 15, después de volver a correr este, corré también el 14 y el 15.
 -- Se pega completo en Supabase > SQL Editor y se ejecuta con "Run".
 -- Necesita que antes se haya ejecutado 01_perfiles.sql.
 -- Se puede ejecutar más de una vez sin romper nada.

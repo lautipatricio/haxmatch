@@ -1,27 +1,15 @@
-// Clips subidos pegando un link de TikTok o YouTube: se publican solos; quien administra puede quitarlos.
+// Clips subidos pegando un link de TikTok: se publican solos; quien administra puede quitarlos.
 import { useState, type FormEvent } from 'react'
 import { YO, nombreDe, useStore, usuarioDe } from '../data/store'
 import type { ClipLink } from '../domain/types'
 import { Avatar, Sheet, hace, useAhora } from '../ui'
 
 /** Los clips van sin título: se los nombra por de dónde vienen. */
-export const nombreClip = (c: { titulo: string; plataforma: 'tiktok' | 'youtube' }) => c.titulo || `Clip de ${c.plataforma === 'tiktok' ? 'TikTok' : 'YouTube'}`
-
-/** Video de YouTube en el feed. Arranca solo y sin sonido (así lo permiten los navegadores); el sonido, con sus controles. */
-export function ReproductorYouTube({ id, titulo }: { id: string; titulo: string }) {
-  return (
-    <div className="reel__video reel__video--directo">
-      <iframe src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&playsinline=1&loop=1&playlist=${id}&rel=0`}
-        title={titulo || 'Video de YouTube'} allow="autoplay; encrypted-media; fullscreen; picture-in-picture" referrerPolicy="strict-origin-when-cross-origin" />
-    </div>
-  )
-}
+export const nombreClip = (c: { titulo: string }) => c.titulo || 'Clip de TikTok'
 
 /** Vista previa chica, con los controles del propio video. */
 function VistaPrevia({ c }: { c: ClipLink }) {
-  const src = c.plataforma === 'tiktok'
-    ? `https://www.tiktok.com/player/v1/${c.videoId}?controls=1&progress_bar=1&play_button=1&volume_control=1&music_info=0&description=0&rel=0&autoplay=0`
-    : `https://www.youtube-nocookie.com/embed/${c.videoId}?playsinline=1&rel=0`
+  const src = `https://www.tiktok.com/player/v1/${c.videoId}?controls=1&progress_bar=1&play_button=1&volume_control=1&music_info=0&description=0&rel=0&autoplay=0`
   return (
     <div className="clip-previa">
       <iframe src={src} title={`Vista previa: ${nombreClip(c)}`} allow="encrypted-media; fullscreen" referrerPolicy="strict-origin-when-cross-origin" />
@@ -29,7 +17,7 @@ function VistaPrevia({ c }: { c: ClipLink }) {
   )
 }
 
-const plataforma = (c: ClipLink) => (c.plataforma === 'tiktok' ? 'TikTok' : 'YouTube')
+const plataforma = (_c: ClipLink) => 'TikTok'
 
 /** Pegar el link de un clip y publicarlo. */
 export function SubirClip({ onCerrar }: { onCerrar: () => void }) {
@@ -50,7 +38,7 @@ export function SubirClip({ onCerrar }: { onCerrar: () => void }) {
   return (
     <Sheet title="Subir un clip" onCerrar={onCerrar}>
       <form className="lista" onSubmit={(e) => void enviar(e)}>
-        <div className="m">Pegá el link de un video público tuyo de TikTok o de YouTube y aparece en Clips al instante.</div>
+        <div className="m">Pegá el link de un video público tuyo de TikTok y aparece en Clips al instante.</div>
         <label className="h sub" htmlFor="clip-link">Link del video</label>
         <input id="clip-link" className="field" type="url" inputMode="url" autoComplete="off" autoCapitalize="none" spellCheck={false}
           value={enlace} maxLength={300} placeholder="https://www.tiktok.com/@vos/video/…" aria-invalid={!!error}
@@ -85,7 +73,7 @@ export function MisClipsSubidos({ onSubir }: { onSubir: () => void }) {
         <h2 id="t-subidos" className="h sub grow">Clips que subiste</h2>
         <button className="btn" onClick={onSubir}>Subir clip</button>
       </div>
-      {mios.length === 0 && <div className="m">Pegá el link de un video tuyo de TikTok o YouTube y aparece en Clips al instante.</div>}
+      {mios.length === 0 && <div className="m">Pegá el link de un video tuyo de TikTok y aparece en Clips al instante.</div>}
       {error && <div className="err" role="alert">{error}</div>}
       {mios.map((c) => (
         <div key={c.id} className="card card--row">
