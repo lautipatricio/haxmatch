@@ -270,7 +270,7 @@ export default {
     if (pathname === '/api/kick/estado' && request.method === 'GET') return json({ configurado: kickConfigurado(env) })
     if (pathname === '/api/kick/entrar' && request.method === 'POST') return kickEntrar(request, env)
     if (pathname === '/api/kick/volver' && request.method === 'GET') return kickVolver(request, env)
-    if (pathname === '/api/clips/abrir' && request.method === 'POST') return abrirLinkClip(request)
+    if (pathname === '/api/clips/abrir' && request.method === 'POST') return abrirLinkClip(request, env)
     if (pathname.startsWith('/api/')) return json({ error: 'No existe' }, 404)
     return env.ASSETS.fetch(request)
   },

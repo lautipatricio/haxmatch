@@ -29,11 +29,36 @@ export async function abrirCorto(url, traer = fetch) {
   return null
 }
 
-export async function abrirLinkClip(request) {
+/**
+ * Quién pide: solo alguien con sesión de HaxMatch puede hacer que el servidor abra links.
+ * Sin esto, cualquiera podía usar /api/clips/abrir para mandar pedidos a TikTok desde nuestro servidor.
+ */
+export async function hayUsuario(request, env, traer = fetch) {
+  const sesion = (request.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '')
+  if (!sesion || !env?.SUPABASE_URL) return false
+  try {
+    const r = await traer(`${env.SUPABASE_URL}/auth/v1/user`, { headers: { apikey: env.SUPABASE_KEY, Authorization: `Bearer ${sesion}` } })
+    return r.ok
+  } catch {
+    return false
+  }
+}
+
+export async function abrirLinkClip(request, env, traer = fetch) {
+  const { origin } = new URL(request.url)
+  const desde = request.headers.get('origin')
+  if (desde && desde !== origin) return json({ error: 'No autorizado' }, 403)
+  if (!(await hayUsuario(request, env, traer))) return json({ error: 'Hay que entrar con Discord' }, 401)
+  // Tope por persona y por minuto, si en Cloudflare está el límite configurado (wrangler.jsonc: LIMITE_CLIPS).
+  if (env?.LIMITE_CLIPS) {
+    const clave = (request.headers.get('authorization') ?? '').slice(-24)
+    const { success } = await env.LIMITE_CLIPS.limit({ key: clave })
+    if (!success) return json({ error: 'Abriste muchos links seguidos. Esperá un minuto.' }, 429)
+  }
   let url
   try { url = (await request.json()).url } catch { return json({ error: 'Pedido mal armado' }, 400) }
   try {
-    const completo = await abrirCorto(url)
+    const completo = await abrirCorto(url, traer)
     if (!completo) return json({ error: 'No pudimos abrir ese link de TikTok. Abrí el video en TikTok y copiá su link completo.' }, 422)
     return json({ url: completo })
   } catch {

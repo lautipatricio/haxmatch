@@ -54,7 +54,7 @@ await falla('no puede leer quién invitó a otro', () => x.sql(B, 'select referi
 await falla('un visitante no puede leer perfiles', () => x.sql(null, 'select nick from public.profiles'))
 await x.sql(B, `update public.profiles set nick = 'Hackeado' where id = '${A.id}'`)
 ok((await x.rpc(A, 'mi_perfil')).nick === 'lauti_hax', 'no puede cambiar el perfil de otro')
-await x.sql(B, `update public.profiles set foto_url = 'https://ejemplo/foto.jpg', nick = 'Pepe' where id = '${B.id}'`)
+await x.sql(B, `update public.profiles set foto_url = 'https://ejemplo.supabase.co/storage/v1/object/public/avatares/${B.id}/foto.jpg?v=1', nick = 'Pepe' where id = '${B.id}'`)
 ok((await x.rpc(B, 'mi_perfil')).nick === 'Pepe', 'sí puede cambiar su foto y su nick')
 await fallaPor('pero después tiene que esperar 15 días para volver a cambiar el nick, por cualquier camino', /Podés volver a cambiar/, () => x.sql(B, `update public.profiles set nick = 'Pepe2' where id = '${B.id}'`))
 await fallaPor('(también volviendo a completar el registro)', /Podés volver a cambiar/, () => x.rpc(B, 'completar_registro', { p_nick: 'Pepe3', p_region: ['CHI'] }))
@@ -436,7 +436,7 @@ ok(p?.auto === false && (await estado(ana)).mensajes.filter((q) => q.estado === 
 titulo('Datos que no pueden colarse')
 await limpiar()
 await falla('una búsqueda no acepta listas enormes', () => jugador(beto, { p_posicion: Array(50).fill('GK') }))
-await x.admin(`update public.profiles set foto_url = 'https://otro-sitio.example/pixel.gif' where id = $1`, [beto.id])
+await fallaPor('la base ya no acepta una foto de otro sitio', /perfiles_foto_propia/, () => x.admin(`update public.profiles set foto_url = 'https://otro-sitio.example/pixel.gif' where id = $1`, [beto.id]))
 await x.admin(`update public.profiles set foto_url = 'https://proyecto.supabase.co/storage/v1/object/public/avatares/' || id || '/foto.jpg?v=123' where id = $1`, [caro.id])
 await jugador(beto); await jugador(caro)
 const us = (await estado(dani)).usuarios
@@ -1456,6 +1456,29 @@ await fallaPor('no acepta cualquier cosa', /Elegí tu país/, () => x.rpc(fran, 
 await x.rpc(fran, 'crear_busqueda', { p_modo: 'jugador', p_formato: ['3v3'], p_posicion: ['Polifuncional'], p_cancha: ['Cualquiera'], p_region: ['ARG'], p_duracion: '15min' })
 ok((await x.admin(`select region from public.busquedas where user_id = $1 and estado = 'activa'`, [fran.id]))[0].region.join() === 'MX', 'la búsqueda lleva el país del perfil, mande lo que mande la app')
 await x.rpc(fran, 'cancelar_busqueda')
+}
+
+{
+titulo('Seguridad (auditoría 22/10): cada uno toca solo lo suyo')
+const sa = await altaUsuario(x, 901, 'seg_a', 'SegA')
+const sb = await altaUsuario(x, 902, 'seg_b', 'SegB')
+const propia = (u) => `https://proyecto.supabase.co/storage/v1/object/public/avatares/${u.id}/foto.jpg?v=123`
+await x.sql(sa, 'update public.profiles set foto_url = $1 where id = $2', [propia(sa), sa.id])
+ok((await x.admin('select foto_url from public.profiles where id = $1', [sa.id]))[0].foto_url === propia(sa), 'puede poner su propia foto subida a avatares')
+await fallaPor('no puede poner una foto de cualquier sitio', /perfiles_foto_propia/, () => x.sql(sa, 'update public.profiles set foto_url = $1 where id = $2', ['https://sitio-malo.com/rastreo.gif', sa.id]))
+await fallaPor('no puede usar la carpeta de otro jugador', /perfiles_foto_propia/, () => x.sql(sa, 'update public.profiles set foto_url = $1 where id = $2', [propia(sb), sa.id]))
+await x.sql(sa, 'update public.profiles set nick = $1 where id = $2', ['Hackeado', sb.id])
+ok((await x.admin('select nick from public.profiles where id = $1', [sb.id]))[0].nick === 'SegB', 'no puede cambiar el nick de otro (0 filas)')
+await fallaPor('no puede darse puntos', /permission denied/, () => x.sql(sa, 'update public.profiles set puntos = 99999 where id = $1', [sa.id]))
+await fallaPor('no puede leer el discord_id de nadie', /permission denied/, () => x.sql(sa, 'select discord_id from public.profiles'))
+await fallaPor('un visitante no lee perfiles', /permission denied/, () => x.sql(null, 'select id from public.profiles'))
+for (const t of ['mensajes', 'config_privada', 'push_suscripciones', 'busquedas', 'reportes', 'admins'])
+  await fallaPor(`no puede leer la tabla ${t} directo`, /permission denied/, () => x.sql(sa, `select 1 from public.${t} limit 1`))
+await fallaPor('no entra al panel de admin', /No autorizado/, () => x.rpc(sa, 'admin_resumen'))
+await fallaPor('no puede suspender a nadie', /No autorizado/, () => x.rpc(sa, 'admin_suspender', { p_user: sb.id, p_dias: 30, p_motivo: 'x' }))
+await fallaPor('no acepta avisos a una dirección interna (SSRF)', /no permite/, () => x.rpc(sa, 'guardar_suscripcion', { p_endpoint: 'https://169.254.169.254/latest', p_p256dh: 'a'.repeat(87), p_auth: 'b'.repeat(22) }))
+await fallaPor('sin la clave, las funciones de los servicios no responden', /No autorizado/, () => x.rpc(null, 'kick_lista', { p_secreto: 'x'.repeat(40) }))
+await x.admin('delete from public.profiles where id in ($1, $2)', [sa.id, sb.id])
 }
 
 console.log(fallas ? `\n${fallas} comprobaciones fallaron.` : '\nTodo bien.')
