@@ -536,3 +536,11 @@ Mientras TikTok no apruebe la vinculación (y también después), los clips se p
 ## Clips: solo TikTok (20/10/2026)
 - YouTube sale de la app. Las cuentas que quedan son Discord, TikTok y Kick. Se quitó la fila de YouTube del Perfil, el reproductor de YouTube y toda mención en los textos, los Términos y la Política de privacidad (vigentes desde el 20/10).
 - Paso 15 (`supabase/15_solo_tiktok.sql`): `subir_clip` acepta solo links de TikTok; con uno de YouTube responde "Por ahora solo se pueden subir clips de TikTok.". Borra los clips de YouTube que había. La app, además, no muestra ningún clip que no sea de TikTok aunque la base todavía no tenga el paso 15.
+
+## Auditoría de seguridad (22/10/2026)
+- Se probó con ataques reales (un usuario contra los datos de otro, visitante sin sesión, clave falsa, SSRF): 19 de 22 bloqueados de entrada. Pruebas en `supabase/pruebas/seguridad.sql` (contra la base real, todo se revierte) y en `npm run test:sql` (base local).
+- Arreglado (`supabase/16_seguridad.sql`, falta aplicarlo en Supabase): la foto de perfil solo puede ser la propia de `avatares`; `rls_auto_enable` deja de poder llamarse desde la API.
+- Arreglado en el worker: `/api/clips/abrir` pide sesión y acepta un tope por minuto (`LIMITE_CLIPS`, opcional). Pruebas en `worker/clips.test.js`.
+- Riesgo aceptado: cualquier usuario con sesión puede leer id, usuario, nick, país y foto de los demás desde la tabla `profiles` (lo prueba "un usuario ve los datos públicos de los demás"). Permite listar a todos los jugadores. Si se quiere cerrar, cambiar la política "perfiles: lectura" a `id = auth.uid()` y ajustar esa prueba.
+- Dependencias: `npm audit` marca 8 (2 críticas, 1 alta). Todas salvo react-router son de herramientas de desarrollo (vite, vitest, esbuild) y no llegan a la app publicada. Las de react-router no aplican hoy (todos los `<Link>` arman rutas propias con IDs). Arreglarlas pide subir de versión mayor (vite 8, vitest 5, react-router 7): queda para hacerlo con tiempo y probar todo.
+- El ingreso es solo con Discord: no hay contraseñas propias ni recuperación de contraseña que revisar.

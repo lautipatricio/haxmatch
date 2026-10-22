@@ -225,7 +225,9 @@ export const linksApi = {
 /** Abre un link corto de TikTok (el del botón Compartir del celular) y devuelve el link completo del video. */
 export async function abrirLinkCorto(url: string): Promise<{ url?: string; error?: string }> {
   try {
-    const r = await fetch('/api/clips/abrir', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }), cache: 'no-store' })
+    const sesion = await tokenDeSesion()
+    if (!sesion) return { error: 'Entrá con Discord para subir clips.' }
+    const r = await fetch('/api/clips/abrir', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sesion}` }, body: JSON.stringify({ url }), cache: 'no-store' })
     const d = await r.json() as { url?: string; error?: string }
     if (r.ok && d.url) return { url: d.url }
     return { error: d.error ?? 'No pudimos abrir ese link. Abrí el video y copiá su link completo.' }
